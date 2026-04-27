@@ -25,13 +25,10 @@ import type { RawFinding } from './findings.js';
 const OPENROUTER_PROVIDER = 'openrouter';
 const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
 
-const PI_RESEARCH_EXTENSION = join(
-  homedir(),
-  'Documents',
-  'pi-research',
-  'src',
-  'index.ts',
-);
+// Allow override via PI_RESEARCH_HOME env var (used in CI)
+// Defaults to ~/Documents/pi-research for local development
+const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
+const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 export async function runResearch(
   prompt: string,

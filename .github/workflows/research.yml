@@ -35,17 +35,23 @@ jobs:
         run: npm install
         working-directory: agent
 
+      - name: Checkout pi-research extension
+        uses: actions/checkout@v4
+        with:
+          repository: Lincoln504/pi-research
+          path: pi-research
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install pi-research deps
         run: npm install
-        working-directory: ../pi-research
-        # Only needed if pi-research is checked out alongside this repo.
-        # If not, skip this step and ensure @mariozechner/pi-coding-agent is in agent/package.json.
+        working-directory: pi-research
 
       - name: Run research agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PI_RESEARCH_SKIP_HEALTHCHECK: '1'
           PI_RESEARCH_BROWSER_HEADLESS: 'true'
+          PI_RESEARCH_HOME: ${{ github.workspace }}/pi-research
         run: |
           ARGS="--batch-size ${{ inputs.batch_size || '3' }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
