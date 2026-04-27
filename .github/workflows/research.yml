@@ -1,0 +1,72 @@
+name: Run Research Agent
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of categories to research per run'
+        default: '3'
+        type: string
+      dry_run:
+        description: 'Dry run (no commit/push)'
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install agent deps
+        run: npm install
+        working-directory: agent
+
+      - name: Install pi-research deps
+        run: npm install
+        working-directory: ../pi-research
+        # Only needed if pi-research is checked out alongside this repo.
+        # If not, skip this step and ensure @mariozechner/pi-coding-agent is in agent/package.json.
+
+      - name: Run research agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PI_RESEARCH_SKIP_HEALTHCHECK: '1'
+          PI_RESEARCH_BROWSER_HEADLESS: 'true'
+        run: |
+          ARGS="--batch-size ${{ inputs.batch_size || '3' }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          npx tsx src/main.ts $ARGS
+        working-directory: agent
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet agent/data/findings.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit findings
+        if: steps.changes.outputs.changed == 'true' && inputs.dry_run != 'true'
+        run: |
+          git config user.name "wall-of-shame-bot"
+          git config user.email "bot@wall-of-shame"
+          COUNT=$(node -e "const f=require('./agent/data/findings.json'); console.log(f.totalFindings)")
+          git add agent/data/findings.json agent/data/run-state.json
+          git commit -m "findings: automated research run — ${COUNT} total entries"
+          git push
