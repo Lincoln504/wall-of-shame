@@ -12,7 +12,9 @@ const JSON_SCHEMA = `Return ONLY a raw JSON array (no markdown, no code blocks, 
     "severity": "low|medium|high"
   }
 ]
-Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries.`;
+Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries.
+
+IMPORTANT: Use depth: 0 / quick mode for every research call — no deep multi-round research needed.`;
 
 export const CATEGORIES: Category[] = [
   // ── Economic Ideology & Exploitation ────────────────────────────────────────

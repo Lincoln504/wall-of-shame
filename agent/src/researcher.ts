@@ -20,6 +20,11 @@ import {
 } from '@mariozechner/pi-coding-agent';
 import type { RawFinding } from './findings.js';
 
+// ── Model config ──────────────────────────────────────────────────────────────
+
+const OPENROUTER_PROVIDER = 'openrouter';
+const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
+
 const PI_RESEARCH_EXTENSION = join(
   homedir(),
   'Documents',
@@ -58,6 +63,16 @@ export async function runResearch(
   const modelRegistry = ModelRegistry.create(authStorage);
   const settingsManager = SettingsManager.create(agentDir);
 
+  // Resolve the DeepSeek model from the registry
+  const model = modelRegistry.find(OPENROUTER_PROVIDER, DEEPSEEK_MODEL_ID);
+  if (!model) {
+    throw new Error(
+      `Model ${OPENROUTER_PROVIDER}/${DEEPSEEK_MODEL_ID} not found in registry. ` +
+      `Check ~/.pi/agent/models.json under the "${OPENROUTER_PROVIDER}" provider.`
+    );
+  }
+  log(`  [pi] using model: ${model.provider}/${model.id}`);
+
   log(`  [pi] creating session for: ${label}`);
 
   const { session } = await createAgentSession({
@@ -68,6 +83,7 @@ export async function runResearch(
     modelRegistry,
     settingsManager,
     sessionManager: SessionManager.inMemory(),
+    model,
   });
 
   let fullOutput = '';
@@ -100,7 +116,7 @@ export async function runResearch(
   return extractFindings(fullOutput);
 }
 
-function extractFindings(output: string): RawFinding[] {
+export function extractFindings(output: string): RawFinding[] {
   // Strip markdown code fences if present
   const stripped = output.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
 

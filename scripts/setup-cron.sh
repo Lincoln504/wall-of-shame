@@ -30,6 +30,7 @@ else
 fi
 
 echo ""
+echo "Interactive menu: cd $AGENT_DIR && npx tsx src/cli.ts"
 echo "To run manually:  cd $AGENT_DIR && npx tsx src/main.ts"
 echo "To dry run:       cd $AGENT_DIR && npx tsx src/main.ts --dry-run"
 echo "Cron log:         $LOG_FILE"

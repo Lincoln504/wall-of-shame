@@ -9,7 +9,10 @@
  *   npx tsx src/main.ts [--batch-size N] [--dry-run]
  *
  * Env:
- *   ANTHROPIC_API_KEY  — required for pi-research (inherited from shell / cron env)
+ *   OpenRouter API key is read from ~/.pi/agent/auth.json (openrouter.api_key)
+ *   or the ANTHROPIC_API_KEY fallback if you reconfigure the model.
+ *
+ * Model: deepseek/deepseek-v4-flash via OpenRouter (configured in ~/.pi/agent/)
  */
 
 import { getBatch, CATEGORY_COUNT } from './categories.js';

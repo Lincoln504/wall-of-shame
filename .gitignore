@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.log
+*.bak
+.DS_Store
 agent/data/cron.log
 agent/data/run-state.json
 .env
