@@ -59,7 +59,7 @@ describe('CLI menu options logic', () => {
   it('option 2: runResearchBatch(true) uses same batch logic', () => {
     const state = loadState();
     const batch = getBatch(state.categoryIndex, 3);
-    expect(batch.every(c => typeof c.researchPrompt === 'string')).toBe(true);
+    expect(batch.every(c => typeof c.researchQuery === 'string')).toBe(true);
   });
 
   it('option 3: showStats can compute severity counts', () => {

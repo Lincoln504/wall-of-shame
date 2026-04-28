@@ -23,8 +23,8 @@ describe('CATEGORIES', () => {
       expect(typeof cat.name).toBe('string');
       expect(cat.description).toBeTruthy();
       expect(typeof cat.description).toBe('string');
-      expect(cat.researchPrompt).toBeTruthy();
-      expect(typeof cat.researchPrompt).toBe('string');
+      expect(cat.researchQuery).toBeTruthy();
+      expect(typeof cat.researchQuery).toBe('string');
     }
   });
 
@@ -40,25 +40,27 @@ describe('CATEGORIES', () => {
     }
   });
 
-  it('each researchPrompt contains the category key placeholder text', () => {
+  it('each researchQuery contains the category name', () => {
     for (const cat of CATEGORIES) {
-      expect(cat.researchPrompt).toContain(cat.key);
+      const nameLower = cat.name.toLowerCase();
+      const queryLower = cat.researchQuery.toLowerCase();
+      // At least one significant word (>=5 chars) from the name should appear in the query
+      const words = nameLower.split(/[^a-z]+/).filter(w => w.length >= 5);
+      const matched = words.length === 0 || words.some(w => queryLower.includes(w));
+      expect(matched).toBe(true);
     }
   });
 
-  it('each researchPrompt mentions "research tool" or "depth: 0" or "quick mode"', () => {
-    // The JSON_SCHEMA should include the quick mode instruction
+  it('each researchQuery has query keywords', () => {
     const firstCat = CATEGORIES[0];
-    expect(firstCat.researchPrompt).toContain('depth: 0');
-    expect(firstCat.researchPrompt).toContain('quick mode');
+    expect(firstCat.researchQuery.length).toBeGreaterThan(50);
+    expect(firstCat.researchQuery).toContain('Find');
+    expect(firstCat.researchQuery).toContain('Research these angles');
   });
 
-  it('all research prompts contain required JSON_SCHEMA markers', () => {
+  it('all research queries are substantial strings', () => {
     for (const cat of CATEGORIES) {
-      expect(cat.researchPrompt).toContain('"url":');
-      expect(cat.researchPrompt).toContain('"summary":');
-      expect(cat.researchPrompt).toContain('"whyBad":');
-      expect(cat.researchPrompt).toContain('"severity":');
+      expect(cat.researchQuery.length).toBeGreaterThan(20);
     }
   });
 
@@ -95,22 +97,20 @@ describe('getBatch', () => {
   });
 
   it('wraps around when index + size exceeds CATEGORY_COUNT', () => {
-    // getBatch uses (index * size) % CATEGORIES.length as start.
-    // For a wrap, pick an index where (index * size) % len is near the end.
-    // With len=34, size=3: idx=11 => (11*3)%34 = 33%34 = 33 (last cat),
-    // then +1 wraps to 0, +2 wraps to 1.
-    const batch = getBatch(11, 3);
-    const start = (11 * 3) % CATEGORY_COUNT;
-    expect(batch[0].key).toBe(CATEGORIES[start].key);
-    expect(batch[1].key).toBe(CATEGORIES[(start + 1) % CATEGORY_COUNT].key);
-    expect(batch[2].key).toBe(CATEGORIES[(start + 2) % CATEGORY_COUNT].key);
+    // getBatch uses index % CATEGORIES.length as start.
+    // For a wrap, pick an index near the end.
+    // With len=34, size=3: idx=32 => start=32, then +1=33, +2=0 (wraps).
+    const batch = getBatch(32, 3);
+    expect(batch[0].key).toBe(CATEGORIES[32].key);
+    expect(batch[1].key).toBe(CATEGORIES[33].key);
+    expect(batch[2].key).toBe(CATEGORIES[0].key);
   });
 
-  it('handles batch number where start wraps', () => {
+  it('handles batch index where start wraps', () => {
     const batch = getBatch(CATEGORY_COUNT, 2);
-    const start = (CATEGORY_COUNT * 2) % CATEGORY_COUNT;
-    expect(batch[0].key).toBe(CATEGORIES[start].key);
-    expect(batch[1].key).toBe(CATEGORIES[(start + 1) % CATEGORY_COUNT].key);
+    // index=34 => start = 34 % 34 = 0
+    expect(batch[0].key).toBe(CATEGORIES[0].key);
+    expect(batch[1].key).toBe(CATEGORIES[1].key);
   });
 
   it('handles batch size larger than total categories (wraps multiple times)', () => {
@@ -140,19 +140,17 @@ describe('getBatch', () => {
       expect(cat.key).toBeTruthy();
       expect(cat.name).toBeTruthy();
       expect(cat.description).toBeTruthy();
-      expect(cat.researchPrompt).toBeTruthy();
+      expect(cat.researchQuery).toBeTruthy();
     }
   });
 
   it('sequential batches cover all categories over time', () => {
-    // getBatch(index, size) uses start = (index * size) % len.
-    // Iterating index 0,1,2,... with size=4 gives start positions:
-    // 0, 4, 8, 12, ..., eventually wrapping.
-    // Run enough batches to cover all categories.
+    // getBatch(index, size) uses start = index % len.
+    // Iterating index 0,1,2,...,33 with size=4 covers all start positions.
     const batchSize = 4;
     const seen = new Set<string>();
 
-    for (let idx = 0; idx < CATEGORY_COUNT * 2; idx++) {
+    for (let idx = 0; idx < CATEGORY_COUNT; idx++) {
       const batch = getBatch(idx, batchSize);
       for (const cat of batch) {
         seen.add(cat.key);

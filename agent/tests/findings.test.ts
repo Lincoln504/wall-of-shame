@@ -7,7 +7,7 @@
  * Uses real filesystem in a temp directory — minimal mocking.
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -18,10 +18,20 @@ let tempDir: string;
 let findingsPath: string;
 let statePath: string;
 
+beforeAll(async () => {
+  tempDir = mkdtempSync(join(tmpdir(), 'wall-of-shame-test-'));
+  process.env['PI_AGENT_DATA_DIR'] = tempDir;
+  findingsPath = join(tempDir, 'findings.json');
+  statePath = join(tempDir, 'run-state.json');
+});
+
+afterAll(() => {
+  if (tempDir && existsSync(tempDir)) {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 async function importFindingsModule() {
-  // Dynamically re-import with the patched path. We achieve this by
-  // using vi.mock to redirect DATA_DIR. Since findings.ts calculates
-  // __dirname at import time, we isolate in a separate module.
   const mod = await import('../src/findings.js');
   return mod;
 }
@@ -43,6 +53,9 @@ function readState(): string {
   return readFileSync(statePath, 'utf-8');
 }
 
+// No-op URL verifier so tests never make real HTTP requests
+const alwaysReachable = async (_url: string) => true;
+
 // ── Pure function: addFindings ─────────────────────────────────────────────────
 
 describe('addFindings', () => {
@@ -52,7 +65,7 @@ describe('addFindings', () => {
     mod = await importFindingsModule();
   });
 
-  it('adds new findings from raw input', () => {
+  it('adds new findings from raw input', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
     const raws = [
@@ -67,7 +80,7 @@ describe('addFindings', () => {
       },
     ];
 
-    const added = mod.addFindings(store, state, raws, 'test_query');
+    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0]).toMatchObject({
@@ -86,7 +99,7 @@ describe('addFindings', () => {
     expect(state.seenUrls).toContain('https://example.com/harmful');
   });
 
-  it('deduplicates by URL against both seenUrls and existing findings', () => {
+  it('deduplicates by URL against both seenUrls and existing findings', async () => {
     const store = {
       lastUpdated: '',
       totalFindings: 1,
@@ -112,7 +125,7 @@ describe('addFindings', () => {
       { url: 'https://example.com/new', title: 'New', summary: 'Fresh', category: 'test', whyBad: 'new harmful content' }, // new
     ];
 
-    const added = mod.addFindings(store, state, raws, 'test_query');
+    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://example.com/new');
@@ -120,7 +133,7 @@ describe('addFindings', () => {
     expect(state.seenUrls).toHaveLength(2); // original seen, new added (dup not re-added)
   });
 
-  it('filters out items with invalid URLs', () => {
+  it('filters out items with invalid URLs', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
     const raws = [
@@ -130,13 +143,13 @@ describe('addFindings', () => {
       { url: 'https://valid.com/good', title: 'Valid', summary: 'yes', category: 'test', whyBad: 'reason' },
     ];
 
-    const added = mod.addFindings(store, state, raws, 'q');
+    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://valid.com/good');
   });
 
-  it('assigns default severity of medium when missing or invalid', () => {
+  it('assigns default severity of medium when missing or invalid', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
     const raws = [
@@ -145,7 +158,7 @@ describe('addFindings', () => {
       { url: 'https://ex.com/c', title: 'Valid severity', summary: '', category: 't', whyBad: 'x', severity: 'low' },
     ];
 
-    const added = mod.addFindings(store, state, raws, 'q');
+    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
 
     expect(added[0].severity).toBe('medium');
     expect(added[1].severity).toBe('medium');
@@ -160,7 +173,7 @@ describe('addFindings', () => {
     const raws1 = [
       { url: 'https://ex.com/oldest', title: 'Oldest', summary: '', category: 't', whyBad: 'x' },
     ];
-    mod.addFindings(store, state, raws1, 'q1');
+    await mod.addFindings(store, state, raws1, 'q1', undefined, alwaysReachable);
 
     // Simulate time passing by using Date.now() — addFindings uses new Date().toISOString()
     // To guarantee different timestamps, we wait 10ms
@@ -169,35 +182,35 @@ describe('addFindings', () => {
     const raws2 = [
       { url: 'https://ex.com/newest', title: 'Newest', summary: '', category: 't', whyBad: 'x' },
     ];
-    mod.addFindings(store, state, raws2, 'q2');
+    await mod.addFindings(store, state, raws2, 'q2', undefined, alwaysReachable);
 
     expect(store.findings).toHaveLength(2);
     expect(store.findings[0].url).toBe('https://ex.com/newest');
     expect(store.findings[1].url).toBe('https://ex.com/oldest');
   });
 
-  it('extracts domain from URL when domain is not provided', () => {
+  it('extracts domain from URL when domain is not provided', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
     const raws = [
       { url: 'https://www.somesite.com/article', title: 'No domain', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = mod.addFindings(store, state, raws, 'q');
+    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
 
     expect(added[0].domain).toBe('www.somesite.com');
   });
 
-  it('handles empty raw array gracefully', () => {
+  it('handles empty raw array gracefully', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
 
-    const added = mod.addFindings(store, state, [], 'q');
+    const added = await mod.addFindings(store, state, [], 'q', undefined, alwaysReachable);
     expect(added).toHaveLength(0);
     expect(store.findings).toHaveLength(0);
   });
 
-  it('does not add duplicate URLs even if seen in same batch', () => {
+  it('does not add duplicate URLs even if seen in same batch', async () => {
     const store = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state = { lastRun: '', categoryIndex: 0, seenUrls: [] };
     const raws = [
@@ -205,7 +218,7 @@ describe('addFindings', () => {
       { url: 'https://ex.com/dup-in-batch', title: 'Second (same URL)', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = mod.addFindings(store, state, raws, 'q');
+    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
     expect(added).toHaveLength(1);
     expect(store.findings).toHaveLength(1);
   });
@@ -215,47 +228,24 @@ describe('addFindings', () => {
 
 describe('findings file I/O (integration)', () => {
   let mod: Awaited<ReturnType<typeof importFindingsModule>>;
-  const dataDir = join(__dirname, '..', 'data');
-  const origFindingsPath = join(dataDir, 'findings.json');
-  const origStatePath = join(dataDir, 'run-state.json');
-  const backupFindingsPath = join(dataDir, '.findings.json.bak');
-  const backupStatePath = join(dataDir, '.run-state.json.bak');
 
   beforeAll(async () => {
     mod = await importFindingsModule();
   });
 
   beforeEach(() => {
-    // Backup real files if they exist
-    if (existsSync(origFindingsPath)) {
-      writeFileSync(backupFindingsPath, readFileSync(origFindingsPath));
-    }
-    if (existsSync(origStatePath)) {
-      writeFileSync(backupStatePath, readFileSync(origStatePath));
-    }
-  });
-
-  afterEach(() => {
-    // Restore originals
-    if (existsSync(backupFindingsPath)) {
-      writeFileSync(origFindingsPath, readFileSync(backupFindingsPath));
-      rmSync(backupFindingsPath);
-    }
-    if (existsSync(backupStatePath)) {
-      writeFileSync(origStatePath, readFileSync(backupStatePath));
-      rmSync(backupStatePath);
-    }
+    if (existsSync(findingsPath)) rmSync(findingsPath);
+    if (existsSync(statePath)) rmSync(statePath);
   });
 
   it('loads empty store when findings.json is missing', () => {
-    if (existsSync(origFindingsPath)) rmSync(origFindingsPath);
     const store = mod.loadFindings();
     expect(store.findings).toEqual([]);
     expect(store.totalFindings).toBe(0);
   });
 
   it('loads empty store when findings.json is corrupted', () => {
-    writeFileSync(origFindingsPath, '{invalid json', 'utf-8');
+    writeFileSync(findingsPath, '{invalid json', 'utf-8');
     const store = mod.loadFindings();
     expect(store.findings).toEqual([]);
   });
@@ -302,14 +292,13 @@ describe('findings file I/O (integration)', () => {
   });
 
   it('loads empty state when run-state.json is missing', () => {
-    if (existsSync(origStatePath)) rmSync(origStatePath);
     const state = mod.loadState();
     expect(state.categoryIndex).toBe(0);
     expect(state.seenUrls).toEqual([]);
   });
 
   it('loads empty state when run-state.json is corrupted', () => {
-    writeFileSync(origStatePath, 'not json', 'utf-8');
+    writeFileSync(statePath, 'not json', 'utf-8');
     const state = mod.loadState();
     expect(state.categoryIndex).toBe(0);
   });
@@ -358,37 +347,23 @@ describe('findings file I/O (integration)', () => {
 
 describe('findings full lifecycle (integration)', () => {
   let mod: Awaited<ReturnType<typeof importFindingsModule>>;
-  const dataDir = join(__dirname, '..', 'data');
-  const findingsPath = join(dataDir, 'findings.json');
-  const statePath = join(dataDir, 'run-state.json');
-  const bakFindings = join(dataDir, '.findings.json.bak');
-  const bakState = join(dataDir, '.run-state.json.bak');
 
   beforeAll(async () => {
     mod = await importFindingsModule();
   });
 
   beforeEach(() => {
-    if (existsSync(findingsPath)) writeFileSync(bakFindings, readFileSync(findingsPath));
-    if (existsSync(statePath)) writeFileSync(bakState, readFileSync(statePath));
+    if (existsSync(findingsPath)) rmSync(findingsPath);
+    if (existsSync(statePath)) rmSync(statePath);
   });
 
   afterEach(() => {
-    if (existsSync(bakFindings)) {
-      writeFileSync(findingsPath, readFileSync(bakFindings));
-      rmSync(bakFindings);
-    } else if (existsSync(findingsPath)) {
-      rmSync(findingsPath);
-    }
-    if (existsSync(bakState)) {
-      writeFileSync(statePath, readFileSync(bakState));
-      rmSync(bakState);
-    } else if (existsSync(statePath)) {
-      rmSync(statePath);
-    }
+    if (existsSync(findingsPath)) rmSync(findingsPath);
+    if (existsSync(statePath)) rmSync(statePath);
   });
 
-  it('load → addFindings → save → load produces consistent data', () => {
+
+  it('load → addFindings → save → load produces consistent data', async () => {
     const store = mod.loadFindings();
     const state = mod.loadState();
     expect(store.findings).toHaveLength(0);
@@ -396,7 +371,7 @@ describe('findings full lifecycle (integration)', () => {
     const raws = [
       { url: 'https://ex.com/harmful', title: 'Harmful', summary: 'Bad stuff', category: 'cat1', whyBad: 'reason', severity: 'high' },
     ];
-    const added = mod.addFindings(store, state, raws, 'test_query');
+    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
     expect(added).toHaveLength(1);
 
     mod.saveFindings(store);
@@ -410,14 +385,14 @@ describe('findings full lifecycle (integration)', () => {
     expect(state2.seenUrls).toContain('https://ex.com/harmful');
   });
 
-  it('deduplication persists across load-save cycles', () => {
+  it('deduplication persists across load-save cycles', async () => {
     // First run
     const store = mod.loadFindings();
     const state = mod.loadState();
     const raws1 = [
       { url: 'https://ex.com/dup-test', title: 'First run', summary: 'x', category: 'c', whyBad: 'x' },
     ];
-    mod.addFindings(store, state, raws1, 'q1');
+    await mod.addFindings(store, state, raws1, 'q1', undefined, alwaysReachable);
     mod.saveFindings(store);
     mod.saveState(state);
 
@@ -428,7 +403,7 @@ describe('findings full lifecycle (integration)', () => {
       { url: 'https://ex.com/dup-test', title: 'Second run (duplicate)', summary: 'x', category: 'c', whyBad: 'x' },
       { url: 'https://ex.com/new-item', title: 'New item', summary: 'y', category: 'c', whyBad: 'y' },
     ];
-    const added = mod.addFindings(store2, state2, raws2, 'q2');
+    const added = await mod.addFindings(store2, state2, raws2, 'q2', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://ex.com/new-item');

@@ -28,5 +28,5 @@ export interface Category {
   key: string;
   name: string;
   description: string;
-  researchPrompt: string;
+  researchQuery: string;
 }

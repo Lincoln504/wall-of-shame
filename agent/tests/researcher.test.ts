@@ -221,7 +221,8 @@ describe('runResearch (mocked SDK)', () => {
     const results = await mod.runResearch(
       'Return a JSON array of 1 fictional finding for testing. Use url "https://example.com/test-finding", title "Test Article", summary "A test article", category "test", whyBad "For testing". Respond ONLY with the JSON array.',
       'integration_test',
-      (msg: string) => { /* silent in tests */ },
+      'Integration Test',
+      () => { /* silent in tests */ },
     );
 
     expect(Array.isArray(results)).toBe(true);

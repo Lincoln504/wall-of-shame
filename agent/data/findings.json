@@ -1,51 +1,15 @@
 {
   "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 40,
+  "totalFindings": 37,
   "findings": [
-    {
-      "id": "f6e4feda-cb38-4fdd-88b5-93aaaafce2cc",
-      "url": "https://thefga.org/good-jobs-for-youth/",
-      "title": "Good Jobs for Youth",
-      "domain": "thefga.org",
-      "summary": "FGA's coalition explicitly argues for expanding youth access to 'all industries' including manufacturing and construction, framing hazardous work as a matter of equal opportunity and upward mobility.",
-      "category": "child_labor",
-      "whyBad": "An organized advocacy coalition funded by the DeVos foundation that explicitly lobbies to weaken hazardous occupation prohibitions for minors, erasing the distinction between safe age-appropriate work and dangerous industrial labor by framing both as 'character-building opportunity.'",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
-    {
-      "id": "0fd2ac19-2519-4da6-86ae-a77d04e95f62",
-      "url": "https://thefga.org/analysis/child-labor-laws-youth-employment-opportunity/",
-      "title": "Child Labor Laws Block Youth Opportunity",
-      "domain": "thefga.org",
-      "summary": "FGA argues that 'outdated child labor laws' harm teens by denying them work experience, treating all work including meatpacking and construction as uniformly character-building.",
-      "category": "child_labor",
-      "whyBad": "The most prolific producer of content normalizing child labor deregulation, systematically minimizing the distinction between safe employment and hazardous work. FGA's framing was directly cited by state legislators in Iowa, Arkansas, and Ohio when passing rollback laws in 2023-2024.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
     {
       "id": "f3ba9afb-fc63-42fa-869e-fe7969800a0e",
       "url": "https://www.cato.org/commentary/child-labor-laws-dont-protect-kids-they-keep-them-poor",
-      "title": "Child Labor Laws Don't Protect Kids — They Keep Them Poor",
+      "title": "Child Labor Laws Don't Protect Kids \u2014 They Keep Them Poor",
       "domain": "cato.org",
       "summary": "Cato argues that child labor laws trap poor immigrant families in poverty by preventing children from working, framing migrant child labor as an inevitable and desirable 'family survival strategy.'",
       "category": "child_labor",
       "whyBad": "Provides intellectual cover for the exploitation of migrant children in hazardous work by framing government protection as paternalistic overreach. Casts the choice between hazardous labor and destitution as a legitimate 'family strategy' that the state should not interfere with, directly undermining federal enforcement efforts.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
-    {
-      "id": "8e580b13-9143-4bdf-9d19-57bad77470f0",
-      "url": "https://fee.org/articles/child-labor-laws-hurt-the-poor-most/",
-      "title": "Child Labor Laws Hurt the Poor Most",
-      "domain": "fee.org",
-      "summary": "FEE argues that minimum age requirements, hour restrictions, and hazardous occupation prohibitions are 'barriers to entry' that disproportionately harm low-income and minority youth, using a 'any job is better than no job' framing.",
-      "category": "child_labor",
-      "whyBad": "Explicitly argues that government should not prevent a teenager from working in construction or manufacturing because any job, regardless of hazards, is preferable to no job. This framing erases the moral and legal distinction between safe employment and hazardous child labor, specifically targeting protections that exist precisely because children are more vulnerable to injury and death in these settings.",
       "severity": "high",
       "foundAt": "2026-04-28T17:31:15.223Z",
       "researchQuery": "child_labor"
@@ -77,7 +41,7 @@
     {
       "id": "c5741723-9c2a-4e6f-8d95-1ddd27190681",
       "url": "https://restaurant.org/advocacy/",
-      "title": "National Restaurant Association Advocacy — Youth Employment Flexibility",
+      "title": "National Restaurant Association Advocacy \u2014 Youth Employment Flexibility",
       "domain": "restaurant.org",
       "summary": "The National Restaurant Association lobbies for flexible scheduling and late-night shifts for minors, opposing DOL child labor enforcement in the hospitality sector as harmful to youth employment opportunities.",
       "category": "child_labor",
@@ -91,9 +55,9 @@
       "url": "https://heartland.org/opinion/letting-teens-work-fewer-restrictions-more-opportunity",
       "title": "Letting Teens Work: Fewer Restrictions, More Opportunity",
       "domain": "heartland.org",
-      "summary": "Heartland Institute argues child labor laws 'deprive teenagers of valuable lessons' and that hazardous work exemptions — particularly in agriculture — should be expanded because farming and construction 'teach skills no classroom can.'",
+      "summary": "Heartland Institute argues child labor laws 'deprive teenagers of valuable lessons' and that hazardous work exemptions \u2014 particularly in agriculture \u2014 should be expanded because farming and construction 'teach skills no classroom can.'",
       "category": "child_labor",
-      "whyBad": "Explicitly argues for expanding hazardous work exemptions that allow children as young as 12 to work unlimited hours in agriculture. Frames farm and construction labor — among the most dangerous occupations for minors — as uniquely character-building, dismissing safety protections as relics of a '1970s economy.'",
+      "whyBad": "Explicitly argues for expanding hazardous work exemptions that allow children as young as 12 to work unlimited hours in agriculture. Frames farm and construction labor \u2014 among the most dangerous occupations for minors \u2014 as uniquely character-building, dismissing safety protections as relics of a '1970s economy.'",
       "severity": "high",
       "foundAt": "2026-04-28T17:31:15.223Z",
       "researchQuery": "child_labor"
@@ -113,7 +77,7 @@
     {
       "id": "82c0d902-155e-4d7d-8e6d-7dc594c85447",
       "url": "https://www.theblaze.com/contributions/fast-food-workers-you-dont-deserve-15-an-hour-to-flip-burgers-and-thats-ok",
-      "title": "Fast Food Workers: You Don't Deserve $15 an Hour to Flip Burgers — and That's OK",
+      "title": "Fast Food Workers: You Don't Deserve $15 an Hour to Flip Burgers \u2014 and That's OK",
       "domain": "theblaze.com",
       "summary": "Argues that fast food workers do not deserve a living wage for their labor and that poverty-level wages are the deserved outcome of individual choices about what jobs to pursue.",
       "category": "poverty_blaming",
@@ -163,7 +127,7 @@
       "url": "https://www.latimes.com/opinion/opinion-la/la-ol-why-poor-people-make-bad-decisions-20131125-story.html",
       "title": "The human side of poverty: Why poor people make bad decisions",
       "domain": "latimes.com",
-      "summary": "Frames poor people's behavior as a series of 'impulsive and bad decisions — eating junk food, smoking, having children with multiple partners' — deploying behavioral economics to explain poverty while omitting structural context like wages, costs, and systemic barriers.",
+      "summary": "Frames poor people's behavior as a series of 'impulsive and bad decisions \u2014 eating junk food, smoking, having children with multiple partners' \u2014 deploying behavioral economics to explain poverty while omitting structural context like wages, costs, and systemic barriers.",
       "category": "poverty_blaming",
       "whyBad": "Publishes a classic 'blaming the victim' narrative in a major newspaper that catalogues poor people's personal habits as the cause of their poverty, reinforcing stereotypes that poverty results from poor impulse control rather than material deprivation and lack of opportunity.",
       "severity": "medium",
@@ -177,7 +141,7 @@
       "domain": "fee.org",
       "summary": "Selectively invokes anthropologist Oscar Lewis's 'culture of poverty' concept to argue that personal responsibility, not structural factors, causes poverty, while ignoring that Lewis blamed the 'capitalist mode of production' for trapping people in poverty.",
       "category": "poverty_blaming",
-      "whyBad": "Deliberately misrepresents a scholar's work by quoting him selectively — citing his 'culture of poverty' observations while suppressing his central conclusion that capitalism is the root cause — in a transparent ideological maneuver to blame the poor for being poor.",
+      "whyBad": "Deliberately misrepresents a scholar's work by quoting him selectively \u2014 citing his 'culture of poverty' observations while suppressing his central conclusion that capitalism is the root cause \u2014 in a transparent ideological maneuver to blame the poor for being poor.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:27:52.271Z",
       "researchQuery": "poverty_blaming"
@@ -189,7 +153,7 @@
       "domain": "econlib.org",
       "summary": "Argues that 'poverty in the US is heavily influenced by bad decision-making,' citing bankruptcy studies to claim personal behavior rather than systemic factors is the primary driver of poverty.",
       "category": "poverty_blaming",
-      "whyBad": "Presents a false dichotomy that ignores decades of research on structural determinants of poverty — wage theft, housing discrimination, medical debt, regressive taxation — and reduces a complex systemic problem to individual financial illiteracy and poor choices.",
+      "whyBad": "Presents a false dichotomy that ignores decades of research on structural determinants of poverty \u2014 wage theft, housing discrimination, medical debt, regressive taxation \u2014 and reduces a complex systemic problem to individual financial illiteracy and poor choices.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:27:52.271Z",
       "researchQuery": "poverty_blaming"
@@ -213,7 +177,7 @@
       "domain": "news.bloomberglaw.com",
       "summary": "DoorDash's benefits pilot offered couriers monthly payments equivalent to 4% of earnings in lieu of traditional benefits, and the company cited this as evidence workers prefer contractor status despite the 4% figure being dramatically less than the 20-30% of wages employers typically contribute for full benefits.",
       "category": "gig_exploitation",
-      "whyBad": "DoorDash designed a benefits 'pilot' offering mere 4% of earnings — a fraction of the full benefits package an employer would provide — and then used workers' continued participation in this inadequate scheme to argue that workers 'prefer' contractor status, generating self-serving data to undermine reform.",
+      "whyBad": "DoorDash designed a benefits 'pilot' offering mere 4% of earnings \u2014 a fraction of the full benefits package an employer would provide \u2014 and then used workers' continued participation in this inadequate scheme to argue that workers 'prefer' contractor status, generating self-serving data to undermine reform.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:24:17.316Z",
       "researchQuery": "gig_exploitation"
@@ -285,7 +249,7 @@
       "domain": "vox.com",
       "summary": "California drivers told Recode they signed messages from Lyft and Uber asking politicians to oppose AB5 without understanding the implications, revealing a corporate strategy of manipulating workers into advocating against their own employment protections.",
       "category": "gig_exploitation",
-      "whyBad": "Platforms actively deceived their own workforce into lobbying for the very legal regime that denies them minimum wage, healthcare, sick leave, and unemployment benefits — a coercive tactic that weaponizes worker ignorance of complex labor law to preserve corporate profit margins.",
+      "whyBad": "Platforms actively deceived their own workforce into lobbying for the very legal regime that denies them minimum wage, healthcare, sick leave, and unemployment benefits \u2014 a coercive tactic that weaponizes worker ignorance of complex labor law to preserve corporate profit margins.",
       "severity": "high",
       "foundAt": "2026-04-28T17:24:17.315Z",
       "researchQuery": "gig_exploitation"
@@ -429,7 +393,7 @@
       "domain": "cei.org",
       "summary": "Annual report that tallies the total estimated cost of federal regulations, presenting regulation as a hidden tax burden. Concludes that deregulation would unlock economic growth and that most regulations impose costs that outweigh their benefits.",
       "category": "deregulation_framing",
-      "whyBad": "Deliberately counts gross regulatory costs without weighing against benefits (cleaner air, safer workplaces, prevented financial crises). Does not distinguish between net-positive regulations (FDA drug safety, clean water rules) and genuinely burdensome ones. The 'hidden tax' framing is an ideological premise, not an empirical finding. Used as the primary deregulation bible by every administration since Reagan — cited in executive orders mandating two-for-one repeal requirements.",
+      "whyBad": "Deliberately counts gross regulatory costs without weighing against benefits (cleaner air, safer workplaces, prevented financial crises). Does not distinguish between net-positive regulations (FDA drug safety, clean water rules) and genuinely burdensome ones. The 'hidden tax' framing is an ideological premise, not an empirical finding. Used as the primary deregulation bible by every administration since Reagan \u2014 cited in executive orders mandating two-for-one repeal requirements.",
       "severity": "medium",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
@@ -453,7 +417,7 @@
       "domain": "taxfoundation.org",
       "summary": "Presents the case for lowering capital gains tax rates, arguing that lower rates encourage investment, boost productivity, and ultimately increase wages for workers. Frames capital gains taxation as 'double taxation' that discourages risk-taking.",
       "category": "capital_gains_workers",
-      "whyBad": "Assumes a direct, proportional chain from capital gains tax cuts to worker wage gains — but post-2000 data shows a decoupling: productivity up ~70% while median wages rose ~18%. The 'double taxation' framing ignores that retained corporate earnings are never taxed at the individual level for most shareholders. No mention that capital gains tax preferences (step-up in basis at death, carried interest loophole, 1031 exchanges) already make effective rates on capital income far below the statutory rate. Used to defend proposals that 90%+ of benefits would flow to the top 10%.",
+      "whyBad": "Assumes a direct, proportional chain from capital gains tax cuts to worker wage gains \u2014 but post-2000 data shows a decoupling: productivity up ~70% while median wages rose ~18%. The 'double taxation' framing ignores that retained corporate earnings are never taxed at the individual level for most shareholders. No mention that capital gains tax preferences (step-up in basis at death, carried interest loophole, 1031 exchanges) already make effective rates on capital income far below the statutory rate. Used to defend proposals that 90%+ of benefits would flow to the top 10%.",
       "severity": "medium",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
@@ -465,7 +429,7 @@
       "domain": "heritage.org",
       "summary": "Heritage Foundation analysis arguing that Biden-era proposed tax increases (corporate rate, top marginal rate, capital gains) would destroy jobs, reduce GDP, and make the US uncompetitive. Uses Heritage's IGM dynamic scoring model to generate worst-case macroeconomic projections.",
       "category": "trickle_down",
-      "whyBad": "Relies on Heritage's IGM model which assumes extreme supply-side elasticities rejected by the CBO, JCT, Treasury OTA, and Penn Wharton Budget Model. The same model predicted TCJA would boost GDP by 3-4% permanently — actual post-2017 GDP growth was ~2.5% and has since reverted. No acknowledgment that corporate effective tax rates post-TCJA were already near historic lows (11% effective rate for S&P 500 in 2018). Used to oppose every component of Biden's Build Back Better agenda, preserving a tax code under which 55 Fortune 500 companies paid $0 in federal tax in 2020.",
+      "whyBad": "Relies on Heritage's IGM model which assumes extreme supply-side elasticities rejected by the CBO, JCT, Treasury OTA, and Penn Wharton Budget Model. The same model predicted TCJA would boost GDP by 3-4% permanently \u2014 actual post-2017 GDP growth was ~2.5% and has since reverted. No acknowledgment that corporate effective tax rates post-TCJA were already near historic lows (11% effective rate for S&P 500 in 2018). Used to oppose every component of Biden's Build Back Better agenda, preserving a tax code under which 55 Fortune 500 companies paid $0 in federal tax in 2020.",
       "severity": "high",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"

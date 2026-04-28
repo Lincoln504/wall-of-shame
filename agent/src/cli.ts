@@ -88,13 +88,12 @@ function printMenu(): void {
 // ── Option 1 & 2: Run research ────────────────────────────────────────────────
 
 async function runResearchBatch(dryRun: boolean): Promise<void> {
-  banner();
   console.log(`${BOLD}${dryRun ? YELLOW + 'DRY-RUN' : GREEN + 'RUNNING'} RESEARCH BATCH${RESET}`);
   divider();
 
   // Ask for batch size
   const sizeInput = await question(`${DIM}Batch size (default 3):${RESET} `);
-  const batchSize = parseInt(sizeInput, 10) || 3;
+  const batchSize = Math.min(Math.max(parseInt(sizeInput, 10) || 3, 1), 10);
 
   console.log();
   const store = loadFindings();
@@ -111,8 +110,8 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   console.log();
 
   if (dryRun) {
-    const confirm = await question(`${YELLOW}Run dry?${RESET} (Y/n): `);
-    if (confirm.toLowerCase() === 'n') return;
+    const confirm = await question(`${YELLOW}Sketch what would be researched? (y/N)${RESET} `);
+    if (confirm.toLowerCase() !== 'y') return;
   } else {
     const confirm = await question(`${RED}Run research?${RESET} This costs API credits! (y/N): `);
     if (confirm.toLowerCase() !== 'y') return;
@@ -122,35 +121,45 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   const startTime = Date.now();
   let totalAdded = 0;
   let totalErrors = 0;
+  let anySucceeded = false;
 
-  for (let i = 0; i < batch.length; i++) {
-    const cat = batch[i]!;
-    process.stdout.write(`\n${BOLD}[${i + 1}/${batch.length}]${RESET} Researching: ${cat.name} ... `);
+  if (dryRun) {
+    // Dry-run: just show what would be done — no API calls
+    console.log(`\n${YELLOW}This is a dry-run — nothing will be researched or saved.${RESET}`);
+    console.log(`${DIM}The following categories would be processed:${RESET}`);
+    for (const cat of batch) {
+      console.log(`  • ${cat.name} ${DIM}(${cat.key})${RESET}`);
+    }
+    console.log(`\n${YELLOW}To actually run research, select option 1 instead.${RESET}\n`);
+    totalAdded = 0;
+  } else {
+    for (let i = 0; i < batch.length; i++) {
+      const cat = batch[i]!;
+      process.stdout.write(`\n${BOLD}[${i + 1}/${batch.length}]${RESET} Researching: ${cat.name} ... `);
 
-    try {
-      // Dynamic import to avoid loading pi SDK at startup
-      const { runResearch } = await import('./researcher.js');
-      const raws = await runResearch(cat.researchPrompt, cat.name, () => {});
+      try {
+        // Dynamic import to avoid loading pi SDK at startup
+        const { runResearch } = await import('./researcher.js');
+        const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
+        const raws = await runResearch(cat.researchQuery, cat.key, cat.name, logFn);
 
-      process.stdout.write(`${GREEN}${raws.length} raw findings${RESET}\n`);
+        process.stdout.write(`${GREEN}${raws.length} raw findings${RESET}\n`);
 
-      if (!dryRun) {
-        const added = (await import('./findings.js')).addFindings(store, state, raws, cat.key);
+        const added = await (await import('./findings.js')).addFindings(store, state, raws, cat.key, logFn);
         process.stdout.write(`  ${GREEN}+${added.length} new${RESET} (deduplicated)\n`);
         totalAdded += added.length;
-      } else {
-        process.stdout.write(`  ${YELLOW}(dry-run: would add up to ${raws.length})${RESET}\n`);
+        anySucceeded = true;
+      } catch (err) {
+        process.stdout.write(`${RED}ERROR${RESET}\n`);
+        process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
+        totalErrors++;
       }
-    } catch (err) {
-      process.stdout.write(`${RED}ERROR${RESET}\n`);
-      process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
-      totalErrors++;
     }
-  }
 
-  // Advance category index
-  if (!dryRun) {
-    state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
+    // Advance category index only if at least one category succeeded
+    if (anySucceeded) {
+      state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
+    }
     (await import('./findings.js')).saveFindings(store);
     (await import('./findings.js')).saveState(state);
   }

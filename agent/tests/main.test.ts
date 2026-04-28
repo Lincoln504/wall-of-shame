@@ -9,12 +9,25 @@
  * category index advancement, and error handling.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { CATEGORIES, CATEGORY_COUNT, getBatch } from '../src/categories.js';
 import type { Finding, FindingsStore, RunState, Category } from '../src/types.js';
+
+let tempDir: string;
+
+beforeAll(() => {
+  tempDir = mkdtempSync(join(tmpdir(), 'wall-of-shame-main-test-'));
+  process.env['PI_AGENT_DATA_DIR'] = tempDir;
+});
+
+afterAll(() => {
+  if (tempDir && existsSync(tempDir)) {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
 
 // ── CLI argument parsing tests ────────────────────────────────────────────────
 
@@ -164,32 +177,12 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
 // ── Integration: full flow with real data ─────────────────────────────────────
 
 describe('full main.ts lifecycle integration', () => {
-  const dataDir = join(__dirname, '..', 'data');
-  const findingsPath = join(dataDir, 'findings.json');
-  const statePath = join(dataDir, 'run-state.json');
-  const bakFindings = join(dataDir, '.findings.json.bak');
-  const bakState = join(dataDir, '.run-state.json.bak');
-
   beforeEach(() => {
-    // Backup real data
-    if (existsSync(findingsPath)) {
-      writeFileSync(bakFindings, readFileSync(findingsPath));
-    }
-    if (existsSync(statePath)) {
-      writeFileSync(bakState, readFileSync(statePath));
-    }
-  });
-
-  afterEach(() => {
-    // Restore originals
-    if (existsSync(bakFindings)) {
-      writeFileSync(findingsPath, readFileSync(bakFindings));
-      rmSync(bakFindings);
-    }
-    if (existsSync(bakState)) {
-      writeFileSync(statePath, readFileSync(bakState));
-      rmSync(bakState);
-    }
+    // Each test starts with a clean slate by clearing the temp dir files
+    const findingsPath = join(tempDir, 'findings.json');
+    const statePath = join(tempDir, 'run-state.json');
+    if (existsSync(findingsPath)) rmSync(findingsPath);
+    if (existsSync(statePath)) rmSync(statePath);
   });
 
   it('loads findings and state for a new run (simulating main.ts startup)', async () => {
@@ -261,7 +254,7 @@ describe('full main.ts lifecycle integration', () => {
         },
       ];
 
-      const added = addFindings(store, state, mockRaws, cat.key);
+      const added = await addFindings(store, state, mockRaws, cat.key, undefined, async () => true);
       totalAdded += added.length;
     }
 
@@ -315,11 +308,12 @@ describe('full main.ts lifecycle integration', () => {
     expect(newIndex).toBe((CATEGORY_COUNT - 1 + 3) % CATEGORY_COUNT);
     expect(newIndex).toBe(2); // (34-1+3)%34 = 36%34 = 2
 
-    // getBatch(startIndex, batchSize) calculates start = (startIndex * batchSize) % len
-    // For startIndex=33, batchSize=3: start = (33*3)%34 = 99%34 = 31
+    // getBatch(startIndex, batchSize) calculates start = index % len
+    // For startIndex=33, batchSize=3: start = 33
     const batch = getBatch(startIndex, batchSize);
-    const expectedStart = (startIndex * batchSize) % CATEGORY_COUNT;
+    const expectedStart = startIndex % CATEGORY_COUNT;
     expect(batch[0].key).toBe(CATEGORIES[expectedStart].key);
-    expect(batch[batch.length - 1].key).toBe(CATEGORIES[(expectedStart + batchSize - 1) % CATEGORY_COUNT].key);
+    expect(batch[1].key).toBe(CATEGORIES[(expectedStart + 1) % CATEGORY_COUNT].key);
+    expect(batch[2].key).toBe(CATEGORIES[(expectedStart + 2) % CATEGORY_COUNT].key);
   });
 });

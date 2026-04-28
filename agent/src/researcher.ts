@@ -27,11 +27,13 @@ const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 const EXTRACTION_PROMPT = `Now analyze the research results above and extract findings.
 
+CRITICAL: Only include URLs that were actually visited and confirmed to contain the described content during this research session. Do NOT construct, guess, or infer URLs — if you did not browse to a URL and read it, omit it entirely.
+
 Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
 [
   {
     "url": "https://...",
-    "title": "exact article title",
+    "title": "exact article title as it appeared on the page",
     "domain": "example.com",
     "summary": "2-3 sentences on what the article argues or normalizes",
     "category": "<CATEGORY_KEY>",

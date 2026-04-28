@@ -59,36 +59,42 @@ async function main() {
   hr();
 
   let totalAdded = 0;
+  let anySucceeded = false;
 
-  for (let i = 0; i < batch.length; i++) {
-    const cat = batch[i]!;
-    log(`[${i + 1}/${batch.length}] researching: ${cat.name}`);
-
-    let raws: import('./findings.js').RawFinding[];
-    try {
-      raws = await runResearch(cat.researchPrompt, cat.name, log);
-    } catch (err) {
-      log(`ERROR during research for ${cat.key}: ${String(err)}`);
-      raws = [];
+  if (dryRun) {
+    log('DRY-RUN: skipping research — no API calls will be made');
+    for (const cat of batch) {
+      log(`  would research: ${cat.name} (${cat.key})`);
     }
+    hr();
+  } else {
+    for (let i = 0; i < batch.length; i++) {
+      const cat = batch[i]!;
+      log(`[${i + 1}/${batch.length}] researching: ${cat.name}`);
 
-    log(`  raw findings from pi: ${raws.length}`);
+      let raws: import('./findings.js').RawFinding[];
+      try {
+        raws = await runResearch(cat.researchQuery, cat.key, cat.name, log);
+        anySucceeded = true;
+      } catch (err) {
+        log(`ERROR during research for ${cat.key}: ${String(err)}`);
+        raws = [];
+      }
 
-    if (!dryRun) {
-      const added = addFindings(store, state, raws, cat.key);
+      log(`  raw findings from pi: ${raws.length}`);
+
+      const added = await addFindings(store, state, raws, cat.key, log);
       log(`  new (deduplicated): ${added.length}`);
       totalAdded += added.length;
-    } else {
-      log(`  dry-run: would add up to ${raws.length} entries`);
+
+      hr();
     }
 
-    hr();
-  }
+    // Only advance category index if at least one category succeeded
+    if (anySucceeded) {
+      state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
+    }
 
-  // Advance category index so next run covers the next batch
-  state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
-
-  if (!dryRun) {
     saveFindings(store);
     saveState(state);
     log(`saved findings.json — total: ${store.findings.length}  (+${totalAdded} this run)`);
