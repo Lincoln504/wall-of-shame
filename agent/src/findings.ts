@@ -5,23 +5,42 @@ import { randomUUID } from 'crypto';
 import type { Finding, FindingsStore, RunState } from './types.js';
 
 // Status codes that mean the URL exists even if we can't read the body.
-// 401 is intentionally excluded: sites like WSJ sit behind Cloudflare bot
-// challenges that return 401 for ALL requests (real or fake), making 401
-// useless for existence detection and letting hallucinated URLs slip through.
+// 401 excluded: sites like WSJ return 401 for ALL bot requests (real or fake)
+// so it cannot signal existence.
 const REACHABLE_CODES = new Set([200, 301, 302, 303, 307, 308, 403, 406, 429]);
+
+// Strings present in bot-challenge bodies (Imperva/Incapsula, Cloudflare, DataDome).
+// These sites return HTTP 200 but serve a JS challenge instead of real content,
+// making 200 meaningless for existence detection.
+const BOT_CHALLENGE_MARKERS = [
+  '_Incapsula_Resource',   // Imperva
+  'captcha-delivery.com',  // DataDome
+  'cf-chl-bypass',         // Cloudflare
+  '__cf_chl_',             // Cloudflare
+];
 
 export async function verifyUrl(url: string, timeoutMs = 8000): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(url, {
-      method: 'HEAD',
+      // GET (not HEAD) so we can inspect the body for bot-challenge markers
+      method: 'GET',
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; wall-of-shame-bot/1.0)' },
       redirect: 'follow',
     });
     clearTimeout(timer);
-    return REACHABLE_CODES.has(res.status);
+
+    if (!REACHABLE_CODES.has(res.status)) return false;
+
+    // For 200 responses, read a small chunk to detect bot challenge pages
+    if (res.status === 200) {
+      const chunk = await res.text().then(t => t.slice(0, 4096));
+      if (BOT_CHALLENGE_MARKERS.some(m => chunk.includes(m))) return false;
+    }
+
+    return true;
   } catch {
     return false;
   }

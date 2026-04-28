@@ -27,7 +27,7 @@ const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 const EXTRACTION_PROMPT = `Now analyze the research results above and extract findings.
 
-CRITICAL: Only include URLs that were actually visited and confirmed to contain the described content during this research session. Do NOT construct, guess, or infer URLs — if you did not browse to a URL and read it, omit it entirely. Also omit any URL from a hard-paywalled source (wsj.com, ft.com, bloomberg.com, economist.com) — these cannot be verified and are not useful to link.
+CRITICAL: Only include URLs that were actually visited and confirmed to contain the described content during this research session. Do NOT construct, guess, or infer URLs — if you did not browse to a URL and read it, omit it entirely. Also omit URLs from these domains — they are behind bot-protection or hard paywalls that make URLs unverifiable: wsj.com, ft.com, bloomberg.com, economist.com, cato.org.
 
 Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
 [

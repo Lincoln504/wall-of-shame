@@ -1,31 +1,7 @@
 {
   "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 35,
+  "totalFindings": 31,
   "findings": [
-    {
-      "id": "f3ba9afb-fc63-42fa-869e-fe7969800a0e",
-      "url": "https://www.cato.org/commentary/child-labor-laws-dont-protect-kids-they-keep-them-poor",
-      "title": "Child Labor Laws Don't Protect Kids \u2014 They Keep Them Poor",
-      "domain": "cato.org",
-      "summary": "Cato argues that child labor laws trap poor immigrant families in poverty by preventing children from working, framing migrant child labor as an inevitable and desirable 'family survival strategy.'",
-      "category": "child_labor",
-      "whyBad": "Provides intellectual cover for the exploitation of migrant children in hazardous work by framing government protection as paternalistic overreach. Casts the choice between hazardous labor and destitution as a legitimate 'family strategy' that the state should not interfere with, directly undermining federal enforcement efforts.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
-    {
-      "id": "f034e97e-6cdd-4ce7-9347-7aca9405ea3b",
-      "url": "https://www.heartland.org/news-opinion/news/dol-child-labor-enforcement-overreaches/",
-      "title": "DOL Child Labor Enforcement Overreaches",
-      "domain": "heartland.org",
-      "summary": "Heartland Institute attacks the Department of Labor's Wage and Hour Division for increasing child labor enforcement, arguing that investigations 'target small businesses trying to give kids a chance.'",
-      "category": "child_labor",
-      "whyBad": "Directly attacks federal enforcement of child labor protections following major investigations exposing migrant children working in hazardous conditions in meatpacking plants. Frames the enforcement response to documented exploitation as a 'regulatory assault' that harms the very children it claims to protect.",
-      "severity": "medium",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
     {
       "id": "c5741723-9c2a-4e6f-8d95-1ddd27190681",
       "url": "https://restaurant.org/advocacy/",
@@ -35,18 +11,6 @@
       "category": "child_labor",
       "whyBad": "Industry lobbying group explicitly opposes federal enforcement actions against employers who violate child labor laws in restaurants. Frames business models dependent on late-night child labor as beneficial 'opportunity,' directly opposing protections against minors working unsafe hours.",
       "severity": "medium",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
-    {
-      "id": "e0faa324-f57b-47eb-9476-6edb5de2df90",
-      "url": "https://heartland.org/opinion/letting-teens-work-fewer-restrictions-more-opportunity",
-      "title": "Letting Teens Work: Fewer Restrictions, More Opportunity",
-      "domain": "heartland.org",
-      "summary": "Heartland Institute argues child labor laws 'deprive teenagers of valuable lessons' and that hazardous work exemptions \u2014 particularly in agriculture \u2014 should be expanded because farming and construction 'teach skills no classroom can.'",
-      "category": "child_labor",
-      "whyBad": "Explicitly argues for expanding hazardous work exemptions that allow children as young as 12 to work unlimited hours in agriculture. Frames farm and construction labor \u2014 among the most dangerous occupations for minors \u2014 as uniquely character-building, dismissing safety protections as relics of a '1970s economy.'",
-      "severity": "high",
       "foundAt": "2026-04-28T17:31:15.223Z",
       "researchQuery": "child_labor"
     },
@@ -337,18 +301,6 @@
       "severity": "high",
       "foundAt": "2026-04-28T07:56:09.534Z",
       "researchQuery": "billionaire_worship"
-    },
-    {
-      "id": "446d5b40-966b-469a-9d06-eb7783bf0453",
-      "url": "https://www.cato.org/sites/cato.org/files/pubs/pdf/the_myth_of_the_1_percent.pdf",
-      "title": "The Myth of the 1%",
-      "domain": "cato.org",
-      "summary": "Alan Reynolds argues that the top 1% is not a stable privileged class because people move in and out of the income bracket year-to-year. Concludes that inequality concerns are overblown and tax policy targeting top earners is misguided.",
-      "category": "wealth_inequality_dismissal",
-      "whyBad": "Conflates income mobility with wealth concentration. IRS panel data shows that while income composition churns, the wealth share of the top 1% has been remarkably stable and growing (from ~25% in 1980 to ~32% today). The argument is used by lawmakers and lobbyists to block progressive taxation and wealth taxes by framing inequality as a statistical mirage rather than structural reality. Critically rebutted by Saez-Zucman administrative wealth data.",
-      "severity": "high",
-      "foundAt": "2026-04-28T07:24:35.137Z",
-      "researchQuery": "trickle_down"
     },
     {
       "id": "6f3a2915-4a83-46ed-83ce-81161f310363",
