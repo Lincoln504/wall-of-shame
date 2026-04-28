@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show, createMemo } from 'solid-js';
+import { createSignal, createResource, For, Show, createMemo, onCleanup } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -56,6 +56,31 @@ function categoryLabel(key: string): string {
   return CATEGORY_LABELS[key] ?? key.replace(/_/g, ' ');
 }
 
+function downloadFile(content: string, fileName: string, contentType: string) {
+  const a = document.createElement('a');
+  const file = new Blob([content], { type: contentType });
+  a.href = URL.createObjectURL(file);
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function jsonToCsv(findings: Finding[]) {
+  const headers = ['Title', 'URL', 'Domain', 'Category', 'Severity', 'Found At', 'Summary', 'Why Bad'];
+  const rows = findings.map(f => [
+    f.title,
+    f.url,
+    f.domain,
+    f.category,
+    f.severity,
+    f.foundAt,
+    f.summary,
+    f.whyBad
+  ].map(val => `"${(val || '').toString().replace(/"/g, '""')}"`).join(','));
+  
+  return [headers.join(','), ...rows].join('\n');
+}
+
 function FindingCard(props: { finding: Finding }) {
   const f = props.finding;
   const color = SEVERITY_COLOR[f.severity] ?? '#757575';
@@ -89,6 +114,7 @@ export default function App() {
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
   const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity'>('newest');
+  const [showDownload, setShowDownload] = createSignal(false);
 
   const categories = createMemo(() => {
     const d = data();
@@ -121,6 +147,31 @@ export default function App() {
     }
     return [...list].sort((a, b) => b.foundAt.localeCompare(a.foundAt));
   });
+
+  const downloadJSON = () => {
+    const d = data();
+    if (!d) return;
+    const content = JSON.stringify(d, null, 2);
+    downloadFile(content, 'wall-of-shame.json', 'application/json');
+    setShowDownload(false);
+  };
+
+  const downloadCSV = () => {
+    const d = data();
+    if (!d) return;
+    const content = jsonToCsv(d.findings);
+    downloadFile(content, 'wall-of-shame.csv', 'text/csv;charset=utf-8;');
+    setShowDownload(false);
+  };
+
+  // Close dropdown on outside click
+  const clickOutside = (e: MouseEvent) => {
+    if (showDownload() && !(e.target as HTMLElement).closest('.download-container')) {
+      setShowDownload(false);
+    }
+  };
+  window.addEventListener('click', clickOutside);
+  onCleanup(() => window.removeEventListener('click', clickOutside));
 
   return (
     <div style={s.root}>
@@ -169,6 +220,18 @@ export default function App() {
           <option value="oldest">Oldest</option>
           <option value="severity">By Severity</option>
         </select>
+        
+        <div class="download-container" style={s.downloadContainer}>
+          <button onClick={() => setShowDownload(!showDownload())} style={s.downloadBtn}>
+            Download ↓
+          </button>
+          <Show when={showDownload()}>
+            <div style={s.dropdown}>
+              <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
+              <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
+            </div>
+          </Show>
+        </div>
       </div>
 
       <Show when={data.loading}>
@@ -206,7 +269,7 @@ export default function App() {
 
 // ── Inline styles ────────────────────────────────────────────────────────────
 
-const s: Record<string, object> = {
+const s: Record<string, any> = {
   root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem' },
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
   title: { 'font-size': '2.5rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
@@ -226,6 +289,24 @@ const s: Record<string, object> = {
   select: {
     padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
     background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer',
+  },
+  downloadContainer: { position: 'relative' },
+  downloadBtn: {
+    padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #1a1a1a',
+    background: '#1a1a1a', color: '#fff', 'font-size': '0.9rem', cursor: 'pointer',
+    'font-weight': '500', transition: 'opacity 0.2s',
+  },
+  dropdown: {
+    position: 'absolute', top: '100%', right: '0', 'margin-top': '0.5rem',
+    background: '#fff', border: '1px solid #ddd', 'border-radius': '6px',
+    'box-shadow': '0 4px 12px rgba(0,0,0,0.1)', 'z-index': 10,
+    display: 'flex', 'flex-direction': 'column', 'min-width': '100px',
+    overflow: 'hidden'
+  },
+  dropdownItem: {
+    padding: '0.6rem 1rem', background: 'none', border: 'none',
+    'text-align': 'left', cursor: 'pointer', 'font-size': '0.85rem',
+    color: '#333', transition: 'background 0.2s',
   },
   resultsBar: { 'font-size': '0.85rem', color: '#999', 'margin-bottom': '1rem', 'text-align': 'center' },
   grid: { display: 'flex', 'flex-direction': 'column', gap: '2rem' },
