@@ -5,193 +5,262 @@ export const CATEGORIES: Category[] = [
     key: 'labor',
     name: 'Labor & Workers\' Rights',
     description: 'Content undermining worker protections, framing exploitation as freedom, or blaming workers for systemic conditions',
-    researchQuery: `Find articles, op-eds, corporate PR, and think-tank pieces that attack worker rights, unions, or labor protections — or that frame exploitation as empowerment.
+    researchQuery: `Find content that harms workers' rights or normalizes exploitation. Cast a wide net — include obviously ideological sources AND neutrally-titled mainstream articles that contain harmful framing on closer inspection.
 
-Research these angles:
-- Union avoidance guides and "right to work" advocacy
-- Gig platform PR framing contractor misclassification as "flexibility"
-- "Minimum wage kills jobs" arguments ignoring contrary evidence
-- Child labor law rollback advocacy framed as "opportunity"
-- "Bootstraps" content blaming poverty on personal failure rather than systemic causes
-- Welfare cuts framed as fighting "dependency"
-- Arguments that workers are better off without collective bargaining`,
+PASS 1 — obviously ideological sources:
+- Union avoidance guides and "right to work" advocacy from business/HR publications
+- Gig platform PR (Uber, Lyft, DoorDash) framing contractor misclassification as "flexibility"
+- "Minimum wage kills jobs" arguments in think-tank reports
+- Child labor law rollback advocacy framed as "youth opportunity"
+- Welfare cuts justified by "dependency" framing
+
+PASS 2 — neutrally-titled mainstream content to investigate:
+- News coverage of labor disputes that frames employer talking points uncritically
+- Business section articles about "the gig economy" that omit worker harm data
+- Policy coverage of minimum wage debates that treats industry-funded studies as neutral
+- "Work ethic" or "skills gap" explainers that implicitly blame workers for low wages
+- Coverage of union elections that leads with company statements over worker voices
+- Economics articles that discuss "labor market flexibility" without defining who bears the cost`,
   },
   {
     key: 'economics',
     name: 'Economic Inequality & Propaganda',
     description: 'Supply-side mythology, billionaire worship, meritocracy myths, and corporate-funded policy laundering',
-    researchQuery: `Find articles, think-tank reports, and op-eds that promote trickle-down economics, defend extreme wealth concentration, deny inequality, or launder corporate interests as independent expert analysis.
+    researchQuery: `Find content that defends extreme wealth, promotes trickle-down economics, or launders corporate interests as expert analysis. Include both openly ideological and neutrally-framed pieces.
 
-Research these angles:
-- "Tax cuts pay for themselves" supply-side cheerleading
-- Billionaire profiles celebrating wealth as purely deserved merit
-- "Wealth inequality isn't real" arguments using misleading metrics
-- Corporate-funded think tanks presenting industry positions as neutral research
-- Dark money in politics defended as free speech without acknowledging corruption
-- "Anyone can make it with hard work" meritocracy myths ignoring structural barriers
-- Capital gains tax cuts framed as helping workers`,
+PASS 1 — openly ideological:
+- "Tax cuts pay for themselves" op-eds from Heritage, AEI, Cato, Tax Foundation
+- Billionaire profiles in Forbes/Fortune treating wealth as purely merit-based
+- "Wealth inequality isn't a problem" arguments using cherry-picked consumption data
+- Dark money in politics defended as free speech
+- "Anyone can succeed with hard work" meritocracy myths in business commentary
+
+PASS 2 — neutrally-titled content to investigate:
+- News articles about tax policy that present industry dynamic-scoring models without scrutiny
+- "Economic growth" stories that use GDP without mentioning distribution
+- Business journalism about stock buybacks that omits worker wage trade-offs
+- Coverage of billionaire philanthropy that does not question tax avoidance underlying the wealth
+- "What economists say about inequality" explainers that overweight pro-wealth academics
+- Financial literacy content that attributes poverty to personal decisions rather than structural factors`,
   },
   {
     key: 'race',
     name: 'Racial Discrimination & Revisionism',
     description: 'Content promoting racial hierarchies, denying structural racism, or rehabilitating historical racial violence',
-    researchQuery: `Find articles, academic-adjacent content, and op-eds that use pseudoscience to argue racial hierarchies, invoke colorblindness to block anti-racism, rehabilitate colonial or Confederate history, or deny indigenous rights.
+    researchQuery: `Find content that promotes racial hierarchy, blocks anti-racist remedies, or rewrites racialized history. Include fringe pseudoscience AND mainstream commentary with structural racism denial.
 
-Research these angles:
-- "Race and IQ" pseudoscience on American Renaissance or HBD blogs
-- "Reverse racism" and "colorblind" anti-DEI arguments
-- "MLK would oppose affirmative action" history misappropriation
-- "British Empire was good actually" and colonial revisionism
+PASS 1 — overtly harmful:
+- "Race and IQ" pseudoscience on American Renaissance, VDARE, or HBD blogs
+- "Reverse racism" and "colorblind" anti-DEI op-eds
 - Lost Cause / Confederate heritage defenses
-- Pipeline advocacy dismissing treaty violations with indigenous nations
-- "Systemic racism doesn't exist" arguments opposing structural remedies`,
+- "British Empire was net positive" colonial revisionism
+- Pipeline advocacy dismissing indigenous treaty rights
+
+PASS 2 — neutrally-titled content to investigate:
+- "Diversity in the workplace" coverage that frames DEI as unfair to white employees without evidence
+- School curriculum articles that present "both sides" on whether slavery caused the Civil War
+- Crime statistics reporting that correlates race with criminality without structural context
+- College admissions coverage framing affirmative action as "racial preference" without historical context
+- Business journalism about racial wealth gap that attributes it to savings behavior rather than redlining or discrimination
+- "Cultural" explanations for outcome gaps that omit structural factors`,
   },
   {
     key: 'gender',
     name: 'Gender & Sexual Discrimination',
     description: 'Misogyny, trans panic, conversion therapy defense, and pay gap denial packaged as commentary or advice',
-    researchQuery: `Find content that dehumanizes women, targets trans people with manufactured fear, defends conversion therapy, or denies gender-based discrimination.
+    researchQuery: `Find content that targets women, LGBTQ+ people, or denies gender-based discrimination. Look beyond obvious hate content to neutrally-framed pieces that normalize discrimination.
 
-Research these angles:
-- Red pill / incel ideology packaged as dating advice or men's rights
-- "Women choose lower-paying jobs" pay gap denial ignoring why those choices occur
-- "Groomer" and "protect women's spaces" trans panic rhetoric without evidence
-- "Detransition" stories weaponized against gender-affirming care
-- Conversion therapy defended as religious freedom
-- "Women belong in traditional roles" dressed as lifestyle content`,
+PASS 1 — overtly harmful:
+- Red pill / incel ideology packaged as dating or self-improvement advice
+- "Groomer" and "protect women's spaces" trans panic rhetoric
+- Conversion therapy defended as religious or therapeutic freedom
+- "Women choose lower-paying careers" pay gap denial
+
+PASS 2 — neutrally-titled content to investigate:
+- Workplace productivity articles that describe women's career interruptions without acknowledging structural causes
+- "Science of sex differences" pieces that selectively cite biology to justify social inequality
+- Sports journalism about trans athletes that presents debunked physiological claims as settled science
+- Coverage of gender pay gap that uses "controlled" comparisons without explaining what's being controlled away
+- Parenting or education content that reinforces rigid gender roles as natural
+- Mental health coverage that pathologizes gender nonconformity without clinical basis`,
   },
   {
     key: 'immigration',
     name: 'Immigration & Xenophobia',
     description: 'Anti-immigrant rhetoric, demographic panic, and collective punishment of immigrant communities',
-    researchQuery: `Find articles and commentary that frame immigration as an existential demographic threat, promote replacement theory, advocate collective punishment of immigrant groups, or use fear of crime and terrorism to dehumanize migrants.
+    researchQuery: `Find content that dehumanizes immigrants or frames immigration as an existential threat. Include explicit ethnonationalism AND mainstream coverage with embedded xenophobic framing.
 
-Research these angles:
+PASS 1 — overtly harmful:
 - "Great replacement" or "demographic change as civilizational threat" content
 - "Islam is incompatible with democracy" Muslim collective punishment arguments
-- "Immigrants cause crime" rhetoric using cherry-picked data
+- "Immigrants cause crime" rhetoric using cherry-picked anecdotes
 - Anti-refugee content framing asylum seekers as invaders
-- "Illegal alien" dehumanization in policy advocacy
-- Border panic content without context of root causes or asylum law
-- Travel ban and Muslim ban defenses`,
+
+PASS 2 — neutrally-titled content to investigate:
+- Border security news that uses "surge" and "invasion" language without attribution
+- Immigration economics coverage that cites labor market displacement claims without peer-reviewed support
+- Crime reporting that identifies suspect immigration status but not that of native-born defendants
+- "Integration challenges" articles that frame cultural difference as inherent threat
+- Policy coverage of immigration enforcement that omits due process and asylum law context
+- News about visa programs that frames foreign workers as taking American jobs without economic evidence`,
   },
   {
     key: 'religion',
     name: 'Religious Nationalism & Sectarian Discrimination',
     description: 'Christian nationalist policy advocacy, religious law imposition, and faith-based discrimination',
-    researchQuery: `Find articles and advocacy content that argue the US is or should be a Christian nation, push to encode religious doctrine into law, or promote faith-based discrimination against religious minorities and LGBTQ+ people.
+    researchQuery: `Find content that pushes religious doctrine into law or frames secular governance as an attack on faith. Include explicit dominionism AND mainstream coverage that normalizes theocratic framing.
 
-Research these angles:
+PASS 1 — overtly harmful:
 - "America was founded as a Christian nation" constitutional revisionism
 - Seven Mountain Dominionism and Project Blitz advocacy
-- "Religious freedom" as cover to impose Christian practices in public institutions
-- Opposition to church-state separation framed as protecting Christianity
-- "Secularism is an attack on Christianity" persecution complex content
-- Religious arguments for anti-LGBTQ+ legislation presented as neutral policy`,
+- "Religious freedom" weaponized to impose Christian practices in public institutions
+- Religious arguments for anti-LGBTQ+ legislation presented as neutral policy
+
+PASS 2 — neutrally-titled content to investigate:
+- Religious liberty coverage that frames any limit on faith-based discrimination as persecution
+- School prayer debates that present "both sides" without engaging Establishment Clause precedent
+- "Values voter" political coverage that treats theocratic policy goals as equivalent to secular ones
+- Coverage of faith-based adoption agencies refusing same-sex couples that centers the agencies not the children
+- "War on Christmas" or "anti-Christian bias" stories treating cultural pluralism as religious attack
+- Policy journalism that treats scriptural arguments as valid policy evidence without noting their sectarian basis`,
   },
   {
     key: 'climate',
     name: 'Climate & Environmental Harm',
-    description: 'Climate denial, fossil fuel industry greenwashing, and manufactured delay to climate action',
-    researchQuery: `Find articles, think-tank content, and corporate PR that deny climate science, manufacture delay to climate action, or disguise polluters as environmental leaders.
+    description: 'Climate denial, fossil fuel greenwashing, and manufactured delay to climate action',
+    researchQuery: `Find content that denies climate science, manufactures delay, or disguises polluters as environmental leaders. Include explicit denial AND neutrally-framed delay and greenwashing content.
 
-Research these angles:
-- Heartland Institute / CEI fossil-fuel-funded climate denial
+PASS 1 — overtly harmful:
+- Heartland Institute / CEI fossil-fuel-funded climate denial pieces
 - "The models are always wrong" delay arguments
-- "Net zero will destroy the economy" catastrophizing without context
-- ExxonMobil / Shell / BP "clean energy" advertising while lobbying against regulation
-- "Natural gas is clean" industry messaging
-- Plastic industry "recycling is the answer" campaign history
-- Carbon capture promoted by fossil fuel industry as substitute for emissions cuts`,
+- "Net zero will destroy the economy" catastrophizing without alternatives
+- ExxonMobil / Shell net-zero advertising while lobbying against regulation
+
+PASS 2 — neutrally-titled content to investigate:
+- Energy journalism covering natural gas as a "bridge fuel" without lifecycle emissions data
+- Business coverage of carbon offsets that does not scrutinize additionality or permanence
+- "Both sides" climate coverage that quotes a single contrarian against scientific consensus
+- Technology journalism about carbon capture that presents it as a substitute for emissions reduction
+- Financial coverage of fossil fuel investment that omits stranded-asset and climate risk
+- Agriculture or industry news that frames environmental regulation as purely a cost without benefit analysis`,
   },
   {
     key: 'health',
     name: 'Health Misinformation',
     description: 'Anti-vaccine propaganda, quackery targeting vulnerable people, and attacks on evidence-based medicine',
-    researchQuery: `Find websites, articles, and content that spread false health information, market dangerous alternative treatments, or undermine public health through misinformation.
+    researchQuery: `Find content that spreads dangerous health misinformation or markets unproven treatments. Include explicit anti-vaccine content AND neutrally-framed pieces that undermine public health.
 
-Research these angles:
-- VAERS data misrepresentation to fabricate vaccine death counts
+PASS 1 — overtly harmful:
+- VAERS data misrepresentation to fabricate vaccine injury counts
 - RFK Jr., Mercola, or similar anti-vax influencer content
-- "Natural immunity is always superior" absolute arguments dismissing vaccine evidence
 - "Cure cancer naturally" supplement and alternative therapy marketing
-- "Doctors don't want you to know" health conspiracy content
-- Ivermectin / hydroxychloroquine promoted as universal cures
-- COVID vaccine conspiracy content (depopulation, microchip, mRNA gene editing)`,
+- COVID conspiracy content (depopulation, microchip, mRNA gene editing)
+
+PASS 2 — neutrally-titled content to investigate:
+- Health journalism covering vaccine hesitancy that platforms anti-vax voices as "balance"
+- Wellness content promoting unproven supplements without citing lack of clinical evidence
+- "Natural health" articles that frame pharmaceutical medicine as inherently corporate and dangerous
+- Mental health coverage that promotes unproven treatments alongside evidence-based ones without distinction
+- Coverage of medical studies that overstates findings or ignores sample size and replication issues
+- "Alternative medicine" explainers that present anecdote as equivalent to clinical trial data`,
   },
   {
     key: 'democracy',
     name: 'Democracy & Political Rights',
-    description: 'Voter suppression advocacy, authoritarian admiration, and content undermining democratic participation',
-    researchQuery: `Find articles and policy advocacy that restrict voting access, praise authoritarian governance, or normalize the erosion of democratic norms and institutions.
+    description: 'Voter suppression advocacy, authoritarian admiration, and normalization of anti-democratic erosion',
+    researchQuery: `Find content that restricts democratic participation, praises authoritarian governance, or erodes democratic norms. Include explicit anti-democratic advocacy AND neutrally-framed normalization.
 
-Research these angles:
-- "Election integrity" voter suppression advocacy without evidence of fraud
-- Strict voter ID defenses ignoring documented disenfranchisement
-- Tucker Carlson / Orbán's Hungary admiration pieces
-- "Strong executive power" arguments for reducing judicial or legislative checks
-- "Courts are obstructing governance" executive overreach advocacy
-- Dark money in politics defended as free speech
-- Bothsidesism journalism treating factual asymmetries as balanced debates`,
+PASS 1 — overtly harmful:
+- Heritage Foundation "election integrity" voter suppression advocacy
+- Tucker Carlson / Orbán admiration pieces
+- "Strong executive power" arguments for judicial bypass
+- Citizens United dark money defenses
+
+PASS 2 — neutrally-titled content to investigate:
+- Election coverage that treats unsubstantiated fraud claims as equally credible to election administration evidence
+- Voter ID coverage that cites "common sense" without engaging documented disenfranchisement data
+- Political journalism that describes authoritarian leaders as "strongmen" admiringly or without challenge
+- "Gridlock" framing that implies democratic deliberation is dysfunction requiring executive override
+- Coverage of court-packing or norm violations that treats "both sides do it" as accurate without evidence
+- Campaign finance journalism that presents unlimited dark money as simply "free speech" without corruption context`,
   },
   {
     key: 'policing',
     name: 'Criminal Justice & Policing',
     description: 'Police brutality apologia, prison labor normalization, and opposition to accountability reforms',
-    researchQuery: `Find articles and content that defend documented police misconduct, oppose accountability reforms, or normalize the exploitation of incarcerated people.
+    researchQuery: `Find content that defends police misconduct, opposes accountability, or normalizes prison exploitation. Include explicit apologia AND neutrally-framed coverage that buries accountability.
 
-Research these angles:
-- "Officer had no choice" defenses in clear excessive force cases
-- Qualified immunity defense articles
-- "Defund the police" strawman attacks conflating any reform with abolition
+PASS 1 — overtly harmful:
+- "Officer had no choice" defenses in documented excessive-force cases
+- Qualified immunity defense pieces
 - "Prison labor teaches discipline" defenses of near-zero wage forced work
-- Corporate PR around prison labor sourcing
-- Arguments opposing body camera requirements or police transparency
-- ALEC model legislation supporting prison labor expansion`,
+- ALEC model legislation supporting prison labor expansion
+
+PASS 2 — neutrally-titled content to investigate:
+- Crime reporting that leads with police narrative without independent verification or victim account
+- Coverage of police reform proposals that foregrounds officer safety objections without engaging reform evidence
+- Prison journalism that describes labor programs as "rehabilitation" without examining wages or voluntariness
+- "Law and order" political coverage that equates protest with criminality without legal distinction
+- Sentencing or incarceration data coverage that uses raw numbers without racial disparity context
+- "Police staffing shortage" stories that frame any accountability measure as the cause`,
   },
   {
     key: 'technology',
     name: 'Technology & Privacy',
     description: 'Surveillance normalization, social media harm denial, and AI ethics dismissal',
-    researchQuery: `Find articles and industry-funded content that normalize mass surveillance, minimize documented harms from social media or AI systems, or argue tech companies should be free from accountability.
+    researchQuery: `Find content that normalizes surveillance, minimizes tech harms, or argues against accountability for tech companies. Include explicit dismissals AND neutrally-framed content that buries harms.
 
-Research these angles:
+PASS 1 — overtly harmful:
 - "Nothing to hide" surveillance defense articles
-- Corporate surveillance capitalism defense ("data lets us serve you better")
-- Facial recognition advocacy despite documented racial bias
 - "Social media doesn't cause teen depression" industry-funded studies
-- "Parents are responsible, not platforms" deflection from addictive design
-- "AI safety is sci-fi hysteria" dismissal pieces
-- "Don't regulate AI" arguments from effective accelerationism`,
+- "AI safety is sci-fi hysteria" dismissal pieces from effective accelerationism
+
+PASS 2 — neutrally-titled content to investigate:
+- Smart city or public safety tech journalism that presents facial recognition without accuracy or bias data
+- AI coverage that discusses capabilities without mentioning documented bias in hiring, lending, or criminal justice
+- Social media platform coverage that cites engagement metrics as user satisfaction without wellbeing data
+- Data privacy journalism that presents industry self-regulation as equivalent to legislative protection
+- "Innovation" coverage of surveillance tech that omits use-case abuse documented in FOIA records
+- Platform content moderation coverage that treats any moderation as equivalent censorship to government speech restrictions`,
   },
   {
     key: 'disability',
     name: 'Disability Rights',
-    description: 'Opposition to disability accommodations, ADA enforcement, or content using disability as rhetorical weapon',
-    researchQuery: `Find content that frames disability accommodations as excessive burden, opposes ADA enforcement, portrays disabled people as inherently less valuable, or weaponizes disability as political rhetoric.
+    description: 'Opposition to disability accommodations, ADA enforcement, or weaponization of disability as rhetoric',
+    researchQuery: `Find content that frames disability rights as excessive burden or uses disability rhetorically. Include explicit opposition AND neutrally-framed coverage that marginalizes disabled people.
 
-Research these angles:
+PASS 1 — overtly harmful:
 - "ADA lawsuits are shakedowns" business opposition to accessibility
-- "Accommodations make everyone weak" arguments applied to disability
 - Articles opposing disability benefits as enabling dependency
-- Opposing neurodiversity accommodations in schools
-- Using "mentally ill" as political insult
-- "Participation trophies and ADA hurt society" framing`,
+- Using "mentally ill" or cognitive disability as political insult
+
+PASS 2 — neutrally-titled content to investigate:
+- Workplace productivity coverage that frames neurodivergent accommodation as competitive disadvantage
+- Education journalism about "merit" that omits how disability accommodations are denied or under-resourced
+- Health policy coverage of disability benefits that uses "fraud" framing without base-rate context
+- "Participation trophy" culture commentary that implicitly targets disability accommodations
+- Business coverage of ADA compliance costs that does not weigh against benefits to disabled employees and customers
+- Coverage of disability employment statistics that attributes gaps to individual capability rather than structural barriers`,
   },
   {
     key: 'war',
     name: 'War & Militarism',
     description: 'Warmongering, war crime denial, civilian harm minimization, and arms industry propaganda',
-    researchQuery: `Find articles, op-eds, and think-tank content that advocate military intervention without acknowledging costs, minimize or deny documented war crimes, launder arms industry interests as security policy, or glorify militarism.
+    researchQuery: `Find content that normalizes military violence, denies or minimizes war crimes, or launders arms industry interests. Include explicit hawkish propaganda AND neutrally-framed coverage that sanitizes military harm.
 
-Research these angles:
-- "Collateral damage" language normalizing civilian casualties
-- War crime denial or apologia for documented atrocities (Fallujah, Yemen strikes, etc.)
-- Arms industry funded think tanks advocating military escalation
-- "Bombing them back to the stone age" hawkish commentary normalized in mainstream outlets
-- Drone strike programs defended without acknowledging civilian death counts
+PASS 1 — overtly harmful:
+- Arms industry funded think tanks (CSIS, CNAS, Atlantic Council) advocating military escalation without disclosing funders
+- "Collateral damage" framing in op-eds minimizing civilian casualties
+- War crime denial for documented atrocities
 - "Regime change is necessary" content ignoring historical failure record
-- Veterans-as-props content from defense contractors`,
+
+PASS 2 — neutrally-titled content to investigate:
+- Defense budget journalism that uses military framing ("readiness," "capability gap") without independent analysis
+- War coverage that cites military body counts without civilian casualty data from independent monitors
+- "National security" op-eds that treat military escalation as the only policy option
+- Arms sales coverage that describes weapons transfers without end-use and civilian harm context
+- Coverage of drone programs that uses official "precision strike" language without independent casualty verification
+- Veterans affairs journalism that centers military institution reputation over veteran harm outcomes`,
   },
 ];
 

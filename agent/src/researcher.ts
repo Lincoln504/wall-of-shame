@@ -35,12 +35,18 @@ Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
     "url": "https://...",
     "title": "exact article title as it appeared on the page",
     "domain": "example.com",
-    "summary": "2-3 sentences on what the article argues or normalizes",
+    "summary": "2-3 sentences describing the specific argument the piece makes, including the exact framing or claim it advances — not a generic description of the topic",
     "category": "<CATEGORY_KEY>",
-    "whyBad": "specific, precise explanation of what makes this harmful, biased, or maliciously ideological",
+    "whyBad": "Cite at least one specific claim, statistic, or phrase from the article and explain precisely why it is false, misleading, or manipulative. Name the rhetorical or logical technique being used (e.g. cherry-picking, false equivalence, omission, slippery slope, appeal to tradition). State what evidence or context the piece ignores. Explain the real-world harm: who is targeted, what policy or behavior it justifies, and what documented counter-evidence exists.",
     "severity": "low|medium|high"
   }
 ]
+
+Severity guide:
+- high: makes specific false or manipulative claims likely to directly inform harmful policy or behavior
+- medium: uses misleading framing or omission that distorts public understanding
+- low: relies on dog-whistles or subtle bias without outright fabrication
+
 Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
@@ -176,7 +182,19 @@ export async function runResearch(
       ? `\n\nALREADY IN LIST (DO NOT RE-RESEARCH OR INCLUDE):\n${existingUrls.slice(0, 50).join('\n')}${existingUrls.length > 50 ? '\n...and others' : ''}`
       : '';
     
-    const researchQuery = `Research task: ${query}${exclusionList}\n\nNote: Use the 'grep' tool to check agent/data/findings.json if you are unsure if a finding is already present.`;
+    const researchQuery = `Research task: ${query}${exclusionList}
+
+SEARCH STRATEGY — use many varied queries across all of these dimensions:
+- Try multiple different keyword phrasings of the same concept (e.g. "worker flexibility" AND "independent contractor rights" AND "gig economy freedom" AND "AB5 repeal")
+- Mix query types: opinion/op-ed searches, news searches, academic-adjacent searches, corporate PR searches, think-tank report searches
+- Try both loaded and neutral-sounding search terms to surface content that may not announce its bias in the title
+- Search by publication type: mainstream newspaper opinion sections, business press, libertarian/conservative outlets, industry association sites, government agency sites
+- Search by named organizations known to produce content in this area
+- Search by specific claims or talking points known to appear in this category
+- Try 8–12 distinct search queries minimum before concluding the research phase
+- For each candidate page found, scrape and read the content before deciding whether it qualifies — do not judge solely by title or URL
+
+Note: Use the 'grep' tool to check agent/data/findings.json if you are unsure if a finding is already present.`;
     
     // Commands in the SDK are traditionally invoked via session.prompt('/command args')
     // which handles adding the command to session history. We'll use session.prompt
