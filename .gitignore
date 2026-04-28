@@ -4,5 +4,9 @@ dist/
 *.bak
 .DS_Store
 agent/data/cron.log
+agent/data/run-state.json
 agent/pi-research-*.md
+agent/specialized-researcher-*.md
+agent/findings-*.md
+agent/supply_side_findings.json
 .env

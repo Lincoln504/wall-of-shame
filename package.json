@@ -1,0 +1,14 @@
+{
+  "name": "wall-of-shame-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "tui": "npm run tui --prefix agent",
+    "cli": "npm run cli --prefix agent",
+    "agent:run": "npm run start --prefix agent",
+    "site:dev": "npm run dev --prefix site",
+    "site:build": "npm run build --prefix site",
+    "site:preview": "npm run preview --prefix site",
+    "test": "npm test --prefix agent"
+  }
+}
