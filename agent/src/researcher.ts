@@ -128,17 +128,17 @@ export async function runResearch(
 
   // Provide a non-blocking UI context to prevent hangs in extensions that use UI calls
   session.extensionRunner.setUIContext({
-    notify: (msg, type) => log(`  [pi] notification: [${type}] ${msg}`),
-    setWidget: (id, creator) => {
+    notify: (msg: string, type: string) => log(`  [pi] notification: [${type}] ${msg}`),
+    setWidget: (id: string, creator: any) => {
       if (creator) log(`  [pi] extension widget active: ${id}`);
     },
-    setStatus: (msg) => log(`  [pi] status: ${msg}`),
-    setWorkingIndicator: (msg) => log(`  [pi] working: ${msg}`),
-    confirm: async (title, msg) => {
+    setStatus: (msg: string) => log(`  [pi] status: ${msg}`),
+    setWorkingIndicator: (msg: string) => log(`  [pi] working: ${msg}`),
+    confirm: async (title: string, msg: string) => {
       log(`  [pi] auto-confirming extension dialog: ${title} - ${msg}`);
       return true;
     },
-    select: async (title, options) => {
+    select: async (title: string, options: any[]) => {
       log(`  [pi] auto-selecting first option for extension dialog: ${title}`);
       return options[0]?.value;
     },
