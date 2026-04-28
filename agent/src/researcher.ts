@@ -1,15 +1,6 @@
-/**
- * researcher.ts
- *
- * Creates a pi SDK session with pi-research extension loaded, runs a research
- * prompt, and returns the structured JSON findings extracted from the response.
- *
- * Pi-research is loaded as an extension via additionalExtensionPaths — no
- * subprocess spawn needed. The session runs fully in-process.
- */
-
 import { homedir } from 'os';
 import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 import {
   createAgentSession,
   DefaultResourceLoader,
@@ -30,8 +21,47 @@ const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
 const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
 const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
+// ── Extraction prompt template ────────────────────────────────────────────────
+// Sent to the LLM after /research completes so it can analyze results and
+// produce structured JSON findings.
+
+const EXTRACTION_PROMPT = `Now analyze the research results above and extract findings.
+
+Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
+[
+  {
+    "url": "https://...",
+    "title": "exact article title",
+    "domain": "example.com",
+    "summary": "2-3 sentences on what the article argues or normalizes",
+    "category": "<CATEGORY_KEY>",
+    "whyBad": "specific, precise explanation of what makes this harmful, biased, or maliciously ideological",
+    "severity": "low|medium|high"
+  }
+]
+Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries.`;
+
+function buildExtractionPrompt(categoryKey: string): string {
+  return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
+}
+
+// ── Main entry point ──────────────────────────────────────────────────────────
+
+/**
+ * Run research for a category.
+ *
+ * Sends `/research <query>` via the pi-research extension slash command to
+ * perform the actual web research, then sends a second prompt instructing the
+ * LLM to analyze the results and output a JSON array of findings.
+ *
+ * @param query     The research query (e.g. what articles to find, angles to explore)
+ * @param categoryKey  The category key to embed in the extraction prompt
+ * @param label     Human-readable label for logging
+ * @param log       Logging function
+ */
 export async function runResearch(
-  prompt: string,
+  query: string,
+  categoryKey: string,
   label: string,
   log: (msg: string) => void,
 ): Promise<RawFinding[]> {
@@ -43,12 +73,25 @@ export async function runResearch(
   const cwd = process.cwd();
   const agentDir = join(homedir(), '.pi', 'agent');
 
+  // Load existing findings URLs to avoid duplicates
+  const findingsPath = join(cwd, 'agent/data/findings.json');
+  let existingUrls: string[] = [];
+  if (existsSync(findingsPath)) {
+    try {
+      const data = JSON.parse(readFileSync(findingsPath, 'utf-8'));
+      existingUrls = (data.findings || []).map((f: any) => f.url);
+    } catch (err) {
+      log(`  [warn] failed to read existing findings: ${String(err)}`);
+    }
+  }
+
   log(`  [pi] loading extension: ${PI_RESEARCH_EXTENSION}`);
 
   const resourceLoader = new DefaultResourceLoader({
     cwd,
     agentDir,
-    additionalExtensionPaths: [PI_RESEARCH_EXTENSION],
+    additionalExtensionPaths: [PI_RESEARCH_HOME],
+    noExtensions: true,
     noSkills: true,
     noPromptTemplates: true,
     noThemes: true,
@@ -83,6 +126,24 @@ export async function runResearch(
     model,
   });
 
+  // Provide a non-blocking UI context to prevent hangs in extensions that use UI calls
+  session.extensionRunner.setUIContext({
+    notify: (msg, type) => log(`  [pi] notification: [${type}] ${msg}`),
+    setWidget: (id, creator) => {
+      if (creator) log(`  [pi] extension widget active: ${id}`);
+    },
+    setStatus: (msg) => log(`  [pi] status: ${msg}`),
+    setWorkingIndicator: (msg) => log(`  [pi] working: ${msg}`),
+    confirm: async (title, msg) => {
+      log(`  [pi] auto-confirming extension dialog: ${title} - ${msg}`);
+      return true;
+    },
+    select: async (title, options) => {
+      log(`  [pi] auto-selecting first option for extension dialog: ${title}`);
+      return options[0]?.value;
+    },
+  } as any);
+
   let fullOutput = '';
   let toolCount = 0;
 
@@ -93,7 +154,7 @@ export async function runResearch(
     ) {
       const delta = (event as any).assistantMessageEvent.delta as string;
       fullOutput += delta;
-      process.stdout.write(delta);
+      // Silence individual deltas for cleaner logs unless we're in extraction phase
     } else if (event.type === 'tool_execution_start') {
       toolCount++;
       log(`  [pi] tool #${toolCount}: ${event.toolName}`);
@@ -101,17 +162,39 @@ export async function runResearch(
   });
 
   try {
-    await session.prompt(prompt);
+    // Step 1: Run research via /research slash command.
+    log(`  [pi] starting research...`);
+    const researchCommand = session.extensionRunner.getCommand('research');
+    if (!researchCommand) {
+      throw new Error('Research command not found. Extension failed to load?');
+    }
+
+    // Instruct the tool to avoid existing URLs and use grep to check findings.json
+    const exclusionList = existingUrls.length > 0 
+      ? `\n\nALREADY IN LIST (DO NOT RE-RESEARCH OR INCLUDE):\n${existingUrls.slice(0, 50).join('\n')}${existingUrls.length > 50 ? '\n...and others' : ''}`
+      : '';
+    
+    const researchQuery = `Research task: ${query}${exclusionList}\n\nNote: Use the 'grep' tool to check agent/data/findings.json if you are unsure if a finding is already present.`;
+    
+    // Commands in the SDK are traditionally invoked via session.prompt('/command args')
+    // which handles adding the command to session history. We'll use session.prompt
+    // but ensured we have a good UI context above.
+    await session.prompt(`/research ${researchQuery}`);
+
+    // Step 2: Send extraction prompt so the LLM analyzes the research
+    // results (now in context from step 1) and outputs structured JSON.
+    log(`  [pi] sending extraction prompt...`);
+    await session.prompt(buildExtractionPrompt(categoryKey));
   } finally {
     unsub();
-    if (typeof (session as any).dispose === 'function') {
-      (session as any).dispose();
-    }
+    session.dispose();
   }
 
   process.stdout.write('\n');
   return extractFindings(fullOutput);
 }
+
+// ── JSON extraction ───────────────────────────────────────────────────────────
 
 export function extractFindings(output: string): RawFinding[] {
   // Strip markdown code fences if present
