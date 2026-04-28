@@ -127,7 +127,7 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          A repository of harmful, biased, and maliciously ideological content tracked across the web.
+          A repository of web content judged to be socially harmful (union busting, trickle-down economics, billionaire worship, etc.).
         </p>
         <Show when={data()}>
           <div style={s.stats}>
