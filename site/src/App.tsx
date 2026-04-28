@@ -127,7 +127,8 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          A repository of web content judged to be socially harmful (union busting, trickle-down economics, billionaire worship, etc.).
+          A repository of web content judged to be socially harmful (racist, classist, misogynistic, and sociopolitically regressive). 
+          Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
         </p>
         <Show when={data()}>
           <div style={s.stats}>
@@ -207,6 +208,7 @@ const s: Record<string, object> = {
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
   title: { 'font-size': '2.5rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
   subtitle: { color: '#666', 'font-size': '1.1rem', 'margin': '0 auto 1.5rem', 'line-height': 1.6, 'max-width': '500px' },
+  inlineLink: { color: '#666', 'text-decoration': 'underline' },
   stats: { display: 'flex', gap: '0.75rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   stat: { 'font-size': '0.75rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.75rem', 'border-radius': '4px', 'font-weight': '500' },
   controls: { 
