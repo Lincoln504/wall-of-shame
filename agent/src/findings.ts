@@ -4,8 +4,11 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import type { Finding, FindingsStore, RunState } from './types.js';
 
-// Status codes that mean the URL exists even if we can't read the body
-const REACHABLE_CODES = new Set([200, 301, 302, 303, 307, 308, 401, 403, 406, 429]);
+// Status codes that mean the URL exists even if we can't read the body.
+// 401 is intentionally excluded: sites like WSJ sit behind Cloudflare bot
+// challenges that return 401 for ALL requests (real or fake), making 401
+// useless for existence detection and letting hallucinated URLs slip through.
+const REACHABLE_CODES = new Set([200, 301, 302, 303, 307, 308, 403, 406, 429]);
 
 export async function verifyUrl(url: string, timeoutMs = 8000): Promise<boolean> {
   try {

@@ -1,6 +1,6 @@
 {
   "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 37,
+  "totalFindings": 35,
   "findings": [
     {
       "id": "f3ba9afb-fc63-42fa-869e-fe7969800a0e",
@@ -22,18 +22,6 @@
       "summary": "Heartland Institute attacks the Department of Labor's Wage and Hour Division for increasing child labor enforcement, arguing that investigations 'target small businesses trying to give kids a chance.'",
       "category": "child_labor",
       "whyBad": "Directly attacks federal enforcement of child labor protections following major investigations exposing migrant children working in hazardous conditions in meatpacking plants. Frames the enforcement response to documented exploitation as a 'regulatory assault' that harms the very children it claims to protect.",
-      "severity": "medium",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
-    {
-      "id": "81fe9e3a-3361-4941-aae9-75aa0b1659c5",
-      "url": "https://www.wsj.com/articles/child-labor-laws-should-be-reformed-not-expanded-45f1bf21",
-      "title": "The Child Labor Law Backlash",
-      "domain": "wsj.com",
-      "summary": "WSJ editorial board argues that strengthening federal child labor enforcement is 'nanny-state regulation' and that DOL investigations of migrant child labor will 'push youth employment underground.'",
-      "category": "child_labor",
-      "whyBad": "Gives mainstream conservative editorial credibility to child labor deregulation arguments, framing documented exploitation of migrant children in hazardous work as an overreach of government authority rather than a failure of enforcement. A major national platform normalizing the deregulation position.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:31:15.223Z",
       "researchQuery": "child_labor"
@@ -395,18 +383,6 @@
       "category": "deregulation_framing",
       "whyBad": "Deliberately counts gross regulatory costs without weighing against benefits (cleaner air, safer workplaces, prevented financial crises). Does not distinguish between net-positive regulations (FDA drug safety, clean water rules) and genuinely burdensome ones. The 'hidden tax' framing is an ideological premise, not an empirical finding. Used as the primary deregulation bible by every administration since Reagan \u2014 cited in executive orders mandating two-for-one repeal requirements.",
       "severity": "medium",
-      "foundAt": "2026-04-28T07:24:35.137Z",
-      "researchQuery": "trickle_down"
-    },
-    {
-      "id": "b8bafccb-c94c-4870-9fd2-b264af836423",
-      "url": "https://www.wsj.com/articles/the-tax-cuts-are-working-1540779933",
-      "title": "The Tax Cuts Are Working",
-      "domain": "wsj.com",
-      "summary": "WSJ editorial board piece attributing post-2017 GDP growth and corporate investment exclusively to the Tax Cuts and Jobs Act. Dismisses concerns about deficit impact and argues the cuts are generating their own revenue through growth.",
-      "category": "trickle_down",
-      "whyBad": "Attributed temporary one-time bonuses and share buybacks as evidence of broad-based prosperity, when real median wage growth during the TCJA period remained flat. Ignored that the investment share of GDP during the post-TCJA period was actually below pre-2008 levels. CBO later confirmed the TCJA would add $1.9T to deficits over 10 years, with only ~20% offset from dynamic feedback. This editorial was cited by 30+ Republican members of Congress in floor speeches opposing any tax increases in 2019-2020.",
-      "severity": "high",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
     },
