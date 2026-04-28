@@ -127,7 +127,7 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          A repository of web content judged to be socially harmful (racist, classist, misogynistic, and sociopolitically regressive). 
+          A repository of web content judged to be socially harmful (racist, classist, misogynistic, and politically regressive). 
           Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
         </p>
         <Show when={data()}>
