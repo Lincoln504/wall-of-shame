@@ -1,19 +1,7 @@
 {
   "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 31,
+  "totalFindings": 30,
   "findings": [
-    {
-      "id": "c5741723-9c2a-4e6f-8d95-1ddd27190681",
-      "url": "https://restaurant.org/advocacy/",
-      "title": "National Restaurant Association Advocacy \u2014 Youth Employment Flexibility",
-      "domain": "restaurant.org",
-      "summary": "The National Restaurant Association lobbies for flexible scheduling and late-night shifts for minors, opposing DOL child labor enforcement in the hospitality sector as harmful to youth employment opportunities.",
-      "category": "child_labor",
-      "whyBad": "Industry lobbying group explicitly opposes federal enforcement actions against employers who violate child labor laws in restaurants. Frames business models dependent on late-night child labor as beneficial 'opportunity,' directly opposing protections against minors working unsafe hours.",
-      "severity": "medium",
-      "foundAt": "2026-04-28T17:31:15.223Z",
-      "researchQuery": "child_labor"
-    },
     {
       "id": "63c2f3f3-3be8-4fb6-afa9-aa91c0f7295b",
       "url": "https://www.alainguillot.com/welfare-trap/",

@@ -41,7 +41,7 @@ Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
     "severity": "low|medium|high"
   }
 ]
-Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries.`;
+Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
   return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
