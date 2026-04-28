@@ -47,6 +47,12 @@ Severity guide:
 - medium: uses misleading framing or omission that distorts public understanding
 - low: relies on dog-whistles or subtle bias without outright fabrication
 
+CRITICAL PERSPECTIVE TEST — before including any entry, ask: does this piece itself advance a harmful or misleading argument, or is it merely reporting on / criticizing someone else's harmful argument? Include only the former. Examples of what NOT to include:
+- A news article reporting that a politician said something racist (that is journalism about racism, not a racist argument)
+- An investigative piece exposing corporate astroturfing (that is criticism of manipulation, not manipulation)
+- A neutral court ruling summary or event recap (that is news, not advocacy)
+A piece qualifies only if its own framing, argument, or omissions are the problem — not the subject it covers.
+
 Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
@@ -193,6 +199,8 @@ SEARCH STRATEGY — use many varied queries across all of these dimensions:
 - Search by specific claims or talking points known to appear in this category
 - Try 8–12 distinct search queries minimum before concluding the research phase
 - For each candidate page found, scrape and read the content before deciding whether it qualifies — do not judge solely by title or URL
+
+PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful. Do NOT flag a page merely because its subject matter is bad. A news article reporting on a harmful act is not itself harmful. An investigative piece exposing corporate manipulation is not itself manipulative. Ask: is this piece advocating for, normalizing, or misleadingly framing the bad thing — or is it reporting on / criticizing it? Only the former belongs in findings.
 
 Note: Use the 'grep' tool to check agent/data/findings.json if you are unsure if a finding is already present.`;
     

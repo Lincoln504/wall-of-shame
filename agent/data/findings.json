@@ -1,6 +1,6 @@
 {
   "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 30,
+  "totalFindings": 24,
   "findings": [
     {
       "id": "63c2f3f3-3be8-4fb6-afa9-aa91c0f7295b",
@@ -22,18 +22,6 @@
       "summary": "Argues that fast food workers do not deserve a living wage for their labor and that poverty-level wages are the deserved outcome of individual choices about what jobs to pursue.",
       "category": "labor",
       "whyBad": "Directly tells workers they deserve poverty wages, erases the dignity of essential service labor, shifts blame entirely onto workers for their own low pay while ignoring that employers profit from underpaying labor, and frames basic economic security as something that must be 'earned' through upward mobility rather than hard work.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:27:52.271Z",
-      "researchQuery": "poverty_blaming"
-    },
-    {
-      "id": "a8ff3719-d3f9-4404-902b-cf06b5542277",
-      "url": "https://apnews.com/united-states-government-4cb7653a5b9e4571a0dd7c7121a2395b",
-      "title": "Carson calls poverty a state of mind",
-      "domain": "apnews.com",
-      "summary": "Then-HUD Secretary Ben Carson stated that 'poverty to a large extent is also a state of mind' and that someone with the 'wrong mindset' could be given 'everything in the world' and still end up poor, entirely erasing structural barriers to economic mobility.",
-      "category": "labor",
-      "whyBad": "Coming from the head of the federal housing agency, this framing blames the victims of systemic poverty for their own condition by reducing poverty to a psychological failing, which directly informs policy decisions about housing assistance for millions of low-income Americans.",
       "severity": "high",
       "foundAt": "2026-04-28T17:27:52.271Z",
       "researchQuery": "poverty_blaming"
@@ -99,30 +87,6 @@
       "researchQuery": "poverty_blaming"
     },
     {
-      "id": "ff639abe-140c-4fb0-b033-32e6fea30152",
-      "url": "https://www.fastcompany.com/90933621/how-uber-and-lyft-quietly-fund-worker-groups-to-pump-the-brakes-on-drivers-organizing",
-      "title": "How Uber and Lyft Quietly Fund Worker Groups to Pump the Brakes on Drivers Organizing",
-      "domain": "fastcompany.com",
-      "summary": "Uber and Lyft fund ostensibly independent worker groups that parrot the companies' messaging, creating a veneer of grassroots support for contractor classification while suppressing genuine worker organizing efforts.",
-      "category": "labor",
-      "whyBad": "Platforms manufacture fake grassroots support ('astroturfing') by funding groups that pretend to represent worker interests while actively fighting against the very labor protections those workers need, a deliberate deception designed to manufacture consent for exploitation.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:24:17.316Z",
-      "researchQuery": "gig_exploitation"
-    },
-    {
-      "id": "5e4cb989-91aa-4c35-b245-b955ddd0281d",
-      "url": "https://news.bloomberglaw.com/daily-labor-report/most-doordash-drivers-prefer-contractor-status-in-benefits-pilot",
-      "title": "Most DoorDash Drivers Prefer Contractor Status in Benefits Pilot",
-      "domain": "news.bloomberglaw.com",
-      "summary": "DoorDash's benefits pilot offered couriers monthly payments equivalent to 4% of earnings in lieu of traditional benefits, and the company cited this as evidence workers prefer contractor status despite the 4% figure being dramatically less than the 20-30% of wages employers typically contribute for full benefits.",
-      "category": "labor",
-      "whyBad": "DoorDash designed a benefits 'pilot' offering mere 4% of earnings \u2014 a fraction of the full benefits package an employer would provide \u2014 and then used workers' continued participation in this inadequate scheme to argue that workers 'prefer' contractor status, generating self-serving data to undermine reform.",
-      "severity": "medium",
-      "foundAt": "2026-04-28T17:24:17.316Z",
-      "researchQuery": "gig_exploitation"
-    },
-    {
       "id": "4ee38c95-5f5f-4e43-b016-835db96012e5",
       "url": "https://www.rstreet.org/commentary/counterpoint-when-it-comes-to-the-gig-economy-the-only-thing-to-fear-is-fear-itself/",
       "title": "Counterpoint: When it Comes to the Gig Economy, the Only Thing to Fear is Fear Itself",
@@ -147,18 +111,6 @@
       "researchQuery": "gig_exploitation"
     },
     {
-      "id": "9b06bbe8-127f-4bf4-8cce-503eae1af840",
-      "url": "https://www.vice.com/en/article/uber-ceo-admits-it-can-make-any-model-work-after-years-denying-employment/",
-      "title": "Uber CEO Admits It Can Make Any Model Work After Years Denying Employment",
-      "domain": "vice.com",
-      "summary": "Uber CEO Dara Khosrowshahi admitted the company 'can make any model work' after years of insisting gig workers could not be employees, exposing the 'flexibility' narrative as a strategic choice rather than a structural necessity.",
-      "category": "labor",
-      "whyBad": "This admission directly contradicts years of corporate lobbying that claimed employment classification was incompatible with gig work, proving the 'flexibility or nothing' binary was a deliberate lie designed to preserve a business model that externalizes costs onto workers.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:24:17.315Z",
-      "researchQuery": "gig_exploitation"
-    },
-    {
       "id": "cc465941-95bf-48bf-bc7a-1a23e7ddbc22",
       "url": "https://about.doordash.com/en-us/news/dol-final-rule-statement/",
       "title": "DoorDash Statement on DOL Final Rule on Worker Classification",
@@ -166,30 +118,6 @@
       "summary": "DoorDash asserts that 'Dashers are properly classified as independent contractors under the FLSA' and that the company 'does not anticipate this rule will affect its business model,' accompanied by a 'freedom to dash' framing that presents total risk transfer to workers as entrepreneurial liberty.",
       "category": "labor",
       "whyBad": "DoorDash categorically denies any misclassification problem while running PR that rebrands the absence of minimum wage guarantees, paid sick days, overtime, and expense reimbursement as 'freedom,' weaponizing the word against workers' material interests.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:24:17.315Z",
-      "researchQuery": "gig_exploitation"
-    },
-    {
-      "id": "68c9d31c-8b4e-49ba-8de2-e8a9d7326dc8",
-      "url": "https://calmatters.org/economy/2024/07/prop-22-california-gig-work-law-upheld/",
-      "title": "Prop 22: California Supreme Court Upholds Gig Worker Law",
-      "domain": "calmatters.org",
-      "summary": "Uber, Lyft, DoorDash, and Instacart spent over $200 million passing Proposition 22, which created a sub-minimum-wage structure for gig workers providing only a fraction of full employment benefits, with virtually no state enforcement of even those reduced promises.",
-      "category": "labor",
-      "whyBad": "The most expensive ballot initiative in California history was a corporate-engineered exemption from labor law that institutionalized a two-tier worker protection system, and nearly four years later neither the promised wages nor health benefits are being enforced, making the 'protection' promise entirely hollow.",
-      "severity": "high",
-      "foundAt": "2026-04-28T17:24:17.315Z",
-      "researchQuery": "gig_exploitation"
-    },
-    {
-      "id": "1c905cd2-526d-45e9-bc93-4f7b46107288",
-      "url": "https://www.vox.com/recode/2019/6/27/18759387/uber-lyft-drivers-misled-companies-political-campaign",
-      "title": "Uber and Lyft Misled Drivers Into Petitioning Against Their Own Worker Rights, Drivers Say",
-      "domain": "vox.com",
-      "summary": "California drivers told Recode they signed messages from Lyft and Uber asking politicians to oppose AB5 without understanding the implications, revealing a corporate strategy of manipulating workers into advocating against their own employment protections.",
-      "category": "labor",
-      "whyBad": "Platforms actively deceived their own workforce into lobbying for the very legal regime that denies them minimum wage, healthcare, sick leave, and unemployment benefits \u2014 a coercive tactic that weaponizes worker ignorance of complex labor law to preserve corporate profit margins.",
       "severity": "high",
       "foundAt": "2026-04-28T17:24:17.315Z",
       "researchQuery": "gig_exploitation"
@@ -233,7 +161,7 @@
     {
       "id": "40863068-c7f8-40b3-a2fa-7c71fb85b422",
       "url": "https://www.nationalreview.com/2025/09/dont-tax-innovation-the-patent-wealth-tax-is-a-terrible-idea/",
-      "title": "Don't Tax Innovation: The Patent Wealth Tax Is a Terrible Idea",
+      "title": "Proposed Patent Value Tax Threatens Innovation and Is Unconstitutional",
       "domain": "nationalreview.com",
       "summary": "Argues that taxing unrealized gains on intellectual property would harm the innovation sector and destroy incentives for patent creation.",
       "category": "economics",
