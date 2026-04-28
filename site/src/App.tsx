@@ -10,9 +10,9 @@ async function fetchFindings(): Promise<FindingsStore> {
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
-  high: '#ff4444',
-  medium: '#ff9944',
-  low: '#ffcc44',
+  high: '#d32f2f',
+  medium: '#ef6c00',
+  low: '#fbc02d',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -58,7 +58,7 @@ function categoryLabel(key: string): string {
 
 function FindingCard(props: { finding: Finding }) {
   const f = props.finding;
-  const color = SEVERITY_COLOR[f.severity] ?? '#aaa';
+  const color = SEVERITY_COLOR[f.severity] ?? '#757575';
   const date = f.foundAt ? new Date(f.foundAt).toLocaleDateString() : '';
 
   return (
@@ -76,7 +76,7 @@ function FindingCard(props: { finding: Finding }) {
       <div style={s.domain}>{f.domain}</div>
       <p style={s.summary}>{f.summary}</p>
       <div style={s.whyBadBox}>
-        <span style={s.whyBadLabel}>Why it's on the wall: </span>
+        <span style={s.whyBadLabel}>Analysis: </span>
         {f.whyBad}
       </div>
     </article>
@@ -125,16 +125,16 @@ export default function App() {
   return (
     <div style={s.root}>
       <header style={s.header}>
-        <h1 style={s.title}>🧱 Wall of Shame</h1>
+        <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          An automated catalogue of harmful, biased, and maliciously ideological content found on the internet.
+          A repository of harmful, biased, and maliciously ideological content tracked across the web.
         </p>
         <Show when={data()}>
           <div style={s.stats}>
-            <span style={s.stat}>{data()!.totalFindings} entries</span>
-            <span style={s.stat}>{categories().length} categories</span>
+            <span style={s.stat}>{data()!.totalFindings} Entries</span>
+            <span style={s.stat}>{categories().length} Categories</span>
             <span style={s.stat}>
-              Updated {new Date(data()!.lastUpdated).toLocaleDateString()}
+              Last updated {new Date(data()!.lastUpdated).toLocaleDateString()}
             </span>
           </div>
         </Show>
@@ -143,7 +143,7 @@ export default function App() {
       <div style={s.controls}>
         <input
           type="search"
-          placeholder="Search titles, summaries, domains..."
+          placeholder="Search..."
           value={search()}
           onInput={e => setSearch(e.currentTarget.value)}
           style={s.searchInput}
@@ -161,26 +161,26 @@ export default function App() {
           <option value="low">Low</option>
         </select>
         <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as 'newest' | 'oldest' | 'severity')} style={s.select}>
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="severity">By severity</option>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="severity">By Severity</option>
         </select>
       </div>
 
       <Show when={data.loading}>
-        <div style={s.loading}>Loading findings...</div>
+        <div style={s.loading}>Loading...</div>
       </Show>
 
       <Show when={data.error}>
-        <div style={s.error}>Failed to load findings. {String(data.error)}</div>
+        <div style={s.error}>Failed to load findings.</div>
       </Show>
 
       <Show when={data()}>
         <div style={s.resultsBar}>
-          Showing {filtered().length} of {data()!.totalFindings} entries
+          Showing {filtered().length} findings
         </div>
         <Show when={filtered().length === 0}>
-          <div style={s.empty}>No findings match your filters.</div>
+          <div style={s.empty}>No entries found.</div>
         </Show>
         <main style={s.grid}>
           <For each={filtered()}>
@@ -190,11 +190,11 @@ export default function App() {
       </Show>
 
       <footer style={s.footer}>
-        Content identified by automated research using{' '}
+        Built with{' '}
         <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">
           pi-research
         </a>
-        {' '}· Updated automatically via GitHub Actions
+        {' '}· Data updated via GitHub Actions
       </footer>
     </div>
   );
@@ -203,51 +203,53 @@ export default function App() {
 // ── Inline styles ────────────────────────────────────────────────────────────
 
 const s: Record<string, object> = {
-  root: { 'max-width': '1100px', margin: '0 auto', padding: '0 1rem 4rem' },
-  header: { padding: '3rem 0 1.5rem', 'border-bottom': '1px solid #2a2a2a', 'margin-bottom': '1.5rem' },
-  title: { 'font-size': '2.4rem', 'font-weight': 800, 'letter-spacing': '-0.5px', 'margin-bottom': '0.5rem' },
-  subtitle: { color: '#888', 'font-size': '1rem', 'max-width': '600px', 'line-height': 1.5 },
-  stats: { display: 'flex', gap: '1.5rem', 'margin-top': '1rem', 'flex-wrap': 'wrap' },
-  stat: { 'font-size': '0.85rem', color: '#aaa', background: '#1a1a1a', padding: '0.3rem 0.8rem', 'border-radius': '99px' },
-  controls: { display: 'flex', gap: '0.75rem', 'flex-wrap': 'wrap', 'margin-bottom': '1rem' },
+  root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem' },
+  header: { padding: '4rem 0 2rem', 'text-align': 'center' },
+  title: { 'font-size': '2.5rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
+  subtitle: { color: '#666', 'font-size': '1.1rem', 'margin': '0 auto 1.5rem', 'line-height': 1.6, 'max-width': '500px' },
+  stats: { display: 'flex', gap: '0.75rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
+  stat: { 'font-size': '0.75rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.75rem', 'border-radius': '4px', 'font-weight': '500' },
+  controls: { 
+    display: 'flex', gap: '0.5rem', 'flex-wrap': 'wrap', 'margin-bottom': '2rem', 
+    padding: '1.5rem 0', 'border-top': '1px solid #eee', 'border-bottom': '1px solid #eee' 
+  },
   searchInput: {
-    flex: '1 1 240px', padding: '0.6rem 0.9rem', 'border-radius': '8px',
-    border: '1px solid #333', background: '#1a1a1a', color: '#e5e5e5',
+    flex: '1 1 200px', padding: '0.5rem 0.75rem', 'border-radius': '6px',
+    border: '1px solid #ddd', background: '#fff', color: '#1a1a1a',
     'font-size': '0.9rem', outline: 'none',
   },
   select: {
-    padding: '0.6rem 0.9rem', 'border-radius': '8px', border: '1px solid #333',
-    background: '#1a1a1a', color: '#e5e5e5', 'font-size': '0.9rem', cursor: 'pointer',
+    padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
+    background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer',
   },
-  resultsBar: { 'font-size': '0.8rem', color: '#666', 'margin-bottom': '1rem' },
-  grid: { display: 'flex', 'flex-direction': 'column', gap: '1rem' },
-  loading: { color: '#888', padding: '3rem', 'text-align': 'center' },
-  error: { color: '#ff6666', padding: '2rem', 'text-align': 'center', background: '#1a0000', 'border-radius': '8px' },
-  empty: { color: '#666', padding: '3rem', 'text-align': 'center' },
+  resultsBar: { 'font-size': '0.85rem', color: '#999', 'margin-bottom': '1rem', 'text-align': 'center' },
+  grid: { display: 'flex', 'flex-direction': 'column', gap: '2rem' },
+  loading: { color: '#999', padding: '4rem', 'text-align': 'center' },
+  error: { color: '#d32f2f', padding: '2rem', 'text-align': 'center' },
+  empty: { color: '#999', padding: '4rem', 'text-align': 'center' },
   card: {
-    background: '#161616', border: '1px solid #2a2a2a', 'border-radius': '10px',
-    padding: '1.2rem 1.4rem', transition: 'border-color 0.2s',
+    background: '#fff', 'border-radius': '0',
+    padding: '0', transition: 'none',
   },
-  cardHeader: { display: 'flex', gap: '0.6rem', 'align-items': 'center', 'margin-bottom': '0.7rem', 'flex-wrap': 'wrap' },
+  cardHeader: { display: 'flex', gap: '0.75rem', 'align-items': 'center', 'margin-bottom': '0.75rem' },
   badge: {
-    'font-size': '0.7rem', 'font-weight': 700, padding: '0.2rem 0.6rem',
-    'border-radius': '99px', color: '#000', 'text-transform': 'uppercase', 'letter-spacing': '0.5px',
+    'font-size': '0.65rem', 'font-weight': '700', padding: '0.15rem 0.5rem',
+    'border-radius': '3px', color: '#fff', 'text-transform': 'uppercase', 'letter-spacing': '0.05em'
   },
   categoryBadge: {
-    'font-size': '0.72rem', padding: '0.2rem 0.7rem', 'border-radius': '99px',
-    background: '#252525', color: '#aaa', border: '1px solid #333',
+    'font-size': '0.7rem', color: '#888', 'font-weight': '500', 'text-transform': 'uppercase', 'letter-spacing': '0.02em'
   },
-  date: { 'font-size': '0.72rem', color: '#555', 'margin-left': 'auto' },
-  cardTitle: { 'font-size': '1.05rem', 'font-weight': 600, 'margin-bottom': '0.25rem', 'line-height': 1.4 },
-  titleLink: { color: '#7eb8f7', 'text-decoration': 'none' },
-  domain: { 'font-size': '0.75rem', color: '#666', 'margin-bottom': '0.6rem' },
-  summary: { 'font-size': '0.88rem', color: '#bbb', 'line-height': 1.6, 'margin-bottom': '0.75rem' },
+  date: { 'font-size': '0.75rem', color: '#bbb', 'margin-left': 'auto' },
+  cardTitle: { 'font-size': '1.4rem', 'font-weight': '600', 'margin-bottom': '0.5rem', 'line-height': 1.3 },
+  titleLink: { color: '#1a1a1a', 'text-decoration': 'none', borderBottom: '1px solid #eee' },
+  domain: { 'font-size': '0.8rem', color: '#999', 'margin-bottom': '1rem', 'font-style': 'italic' },
+  summary: { 'font-size': '1rem', color: '#444', 'line-height': 1.6, 'margin-bottom': '1.25rem' },
   whyBadBox: {
-    'font-size': '0.84rem', color: '#e5c07b', 'line-height': 1.55,
-    background: '#1e1a0d', border: '1px solid #3a3000', 'border-radius': '6px',
-    padding: '0.6rem 0.9rem',
+    'font-size': '0.9rem', color: '#555', 'line-height': 1.6,
+    background: '#fcfcf9', borderLeft: '3px solid #eee',
+    padding: '0.75rem 1rem',
   },
-  whyBadLabel: { 'font-weight': 700, color: '#d4a017' },
-  footer: { 'margin-top': '4rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#555', 'padding-top': '2rem', 'border-top': '1px solid #1a1a1a' },
-  footerLink: { color: '#7eb8f7', 'text-decoration': 'none' },
+  whyBadLabel: { 'font-weight': '700', color: '#333' },
+  footer: { 'margin-top': '6rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#aaa', 'padding-top': '3rem', 'border-top': '1px solid #eee' },
+  footerLink: { color: '#666', 'text-decoration': 'underline' },
 };
