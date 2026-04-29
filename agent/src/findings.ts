@@ -57,7 +57,7 @@ function emptyStore(): FindingsStore {
 }
 
 function emptyState(): RunState {
-  return { lastRun: new Date().toISOString(), categoryIndex: 0, seenUrls: [] };
+  return { lastRun: new Date().toISOString(), categoryIndex: 0, seenUrls: [], queryHistory: {} };
 }
 
 export function loadFindings(): FindingsStore {
@@ -77,11 +77,17 @@ export function saveFindings(store: FindingsStore): void {
 }
 
 export function loadState(): RunState {
-  if (!existsSync(STATE_PATH)) return emptyState();
+  const state = emptyState();
+  if (!existsSync(STATE_PATH)) return state;
   try {
-    return JSON.parse(readFileSync(STATE_PATH, 'utf-8')) as RunState;
+    const loaded = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+    return {
+      ...state,
+      ...loaded,
+      queryHistory: loaded.queryHistory || {}
+    };
   } catch {
-    return emptyState();
+    return state;
   }
 }
 

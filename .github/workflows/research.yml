@@ -73,6 +73,6 @@ jobs:
           git config user.name "wall-of-shame-bot"
           git config user.email "bot@wall-of-shame"
           COUNT=$(node -e "const f=require('./agent/data/findings.json'); console.log(f.totalFindings)")
-          git add agent/data/findings.json agent/data/run-state.json
+          git add agent/data/findings.json
           git commit -m "findings: automated research run — ${COUNT} total entries"
           git push

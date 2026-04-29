@@ -141,12 +141,20 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         // Dynamic import to avoid loading pi SDK at startup
         const { runResearch } = await import('./researcher.js');
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
-        const raws = await runResearch(cat.researchQuery, cat.key, cat.name, logFn);
+        const result = await runResearch(cat.researchQuery, cat.key, cat.name, state.queryHistory, logFn);
+        const raws = result.findings;
 
         process.stdout.write(`${GREEN}${raws.length} raw findings${RESET}\n`);
 
         const added = await (await import('./findings.js')).addFindings(store, state, raws, cat.key, logFn);
         process.stdout.write(`  ${GREEN}+${added.length} new${RESET} (deduplicated)\n`);
+        
+        // Update query history with current timestamp
+        const now = new Date().toISOString();
+        for (const q of result.queries) {
+          state.queryHistory[q] = now;
+        }
+
         totalAdded += added.length;
         anySucceeded = true;
       } catch (err) {

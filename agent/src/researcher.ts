@@ -29,18 +29,21 @@ const EXTRACTION_PROMPT = `Now analyze the research results above and extract fi
 
 CRITICAL: Only include URLs that were actually visited and confirmed to contain the described content during this research session. Do NOT construct, guess, or infer URLs — if you did not browse to a URL and read it, omit it entirely. Also omit URLs from these domains — they are behind bot-protection or hard paywalls that make URLs unverifiable: wsj.com, ft.com, bloomberg.com, economist.com, cato.org.
 
-Return ONLY a raw JSON array (no markdown, no code blocks, no preamble):
-[
-  {
-    "url": "https://...",
-    "title": "exact article title as it appeared on the page",
-    "domain": "example.com",
-    "summary": "2-3 sentences describing the specific argument the piece makes, including the exact framing or claim it advances — not a generic description of the topic",
-    "category": "<CATEGORY_KEY>",
-    "whyBad": "Cite at least one specific claim, statistic, or phrase from the article and explain precisely why it is false, misleading, or manipulative. Name the rhetorical or logical technique being used (e.g. cherry-picking, false equivalence, omission, slippery slope, appeal to tradition). State what evidence or context the piece ignores. Explain the real-world harm: who is targeted, what policy or behavior it justifies, and what documented counter-evidence exists.",
-    "severity": "low|medium|high"
-  }
-]
+Return ONLY a raw JSON object (no markdown, no code blocks, no preamble):
+{
+  "queries": ["the exact search strings you used during the /research phase"],
+  "findings": [
+    {
+      "url": "https://...",
+      "title": "exact article title as it appeared on the page",
+      "domain": "example.com",
+      "summary": "2-3 sentences describing the specific argument the piece makes, including the exact framing or claim it advances — not a generic description of the topic",
+      "category": "<CATEGORY_KEY>",
+      "whyBad": "Cite at least one specific claim, statistic, or phrase from the article and explain precisely why it is false, misleading, or manipulative. Name the rhetorical or logical technique being used (e.g. cherry-picking, false equivalence, omission, slippery slope, appeal to tradition). State what evidence or context the piece ignores. Explain the real-world harm: who is targeted, what policy or behavior it justifies, and what documented counter-evidence exists.",
+      "severity": "low|medium|high"
+    }
+  ]
+}
 
 Severity guide:
 - high: makes specific false or manipulative claims likely to directly inform harmful policy or behavior
@@ -53,10 +56,15 @@ CRITICAL PERSPECTIVE TEST — before including any entry, ask: does this piece i
 - A neutral court ruling summary or event recap (that is news, not advocacy)
 A piece qualifies only if its own framing, argument, or omissions are the problem — not the subject it covers.
 
-Be selective: only include genuinely harmful content. Empty array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
+Be selective: only include genuinely harmful content. Empty findings array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
   return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
+}
+
+export interface ResearchResult {
+  findings: RawFinding[];
+  queries: string[];
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -71,14 +79,16 @@ function buildExtractionPrompt(categoryKey: string): string {
  * @param query     The research query (e.g. what articles to find, angles to explore)
  * @param categoryKey  The category key to embed in the extraction prompt
  * @param label     Human-readable label for logging
+ * @param queryHistory Recently used queries to avoid
  * @param log       Logging function
  */
 export async function runResearch(
   query: string,
   categoryKey: string,
   label: string,
+  queryHistory: Record<string, string>,
   log: (msg: string) => void,
-): Promise<RawFinding[]> {
+): Promise<ResearchResult> {
   // env flags consumed by pi-research
   process.env['PI_RESEARCH_SKIP_HEALTHCHECK'] = '1';
   process.env['PI_RESEARCH_BROWSER_HEADLESS'] = 'true';
@@ -187,8 +197,20 @@ export async function runResearch(
     const exclusionList = existingUrls.length > 0 
       ? `\n\nALREADY IN LIST (DO NOT RE-RESEARCH OR INCLUDE):\n${existingUrls.slice(0, 50).join('\n')}${existingUrls.length > 50 ? '\n...and others' : ''}`
       : '';
+
+    // Calculate forbidden queries (used in the last 7 days)
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const history = queryHistory || {};
+    const forbidden = Object.entries(history)
+      .filter(([_, lastSearched]) => now - new Date(lastSearched).getTime() < ONE_WEEK_MS)
+      .map(([q, _]) => q);
+
+    const avoidList = forbidden.length > 0
+      ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou may search for similar concepts, but use DIFFERENT phrasing.`
+      : '';
     
-    const researchQuery = `Research task: ${query}${exclusionList}
+    const researchQuery = `Research task: ${query}${exclusionList}${avoidList}
 
 SEARCH STRATEGY — use many varied queries across all of these dimensions:
 - Try multiple different keyword phrasings of the same concept (e.g. "worker flexibility" AND "independent contractor rights" AND "gig economy freedom" AND "AB5 repeal")
@@ -219,31 +241,63 @@ Note: Use the 'grep' tool to check agent/data/findings.json if you are unsure if
   }
 
   process.stdout.write('\n');
-  return extractFindings(fullOutput);
+  return extractResearchResult(fullOutput);
 }
 
 // ── JSON extraction ───────────────────────────────────────────────────────────
 
-export function extractFindings(output: string): RawFinding[] {
+export function extractResearchResult(output: string): ResearchResult {
   // Strip markdown code fences if present
   const stripped = output.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
 
-  // Find the outermost JSON array
-  const start = stripped.indexOf('[');
-  const end = stripped.lastIndexOf(']');
-  if (start === -1 || end === -1 || end <= start) return [];
+  // 1. Try to find the new format: { "queries": [...], "findings": [...] }
+  const startIdx = stripped.indexOf('{');
+  const endIdx = stripped.lastIndexOf('}');
+  
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    try {
+      const jsonStr = stripped.slice(startIdx, endIdx + 1);
+      const parsed = JSON.parse(jsonStr);
+      
+      // Check if it's the new format
+      if (parsed && (Array.isArray(parsed.queries) || Array.isArray(parsed.findings))) {
+        const queries = Array.isArray(parsed.queries) ? parsed.queries.filter((q: any) => typeof q === 'string') : [];
+        const findings = Array.isArray(parsed.findings) ? parsed.findings.filter(
+          (item: any): item is RawFinding =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof item.url === 'string' &&
+            item.url.startsWith('http'),
+        ) : [];
 
-  try {
-    const parsed = JSON.parse(stripped.slice(start, end + 1));
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is RawFinding =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof item.url === 'string' &&
-        item.url.startsWith('http'),
-    );
-  } catch {
-    return [];
+        return { findings, queries };
+      }
+    } catch {
+      // ignore and try fallback
+    }
   }
+
+  // 2. Fallback for old format (just an array) or malformed JSON
+  const arrayStart = stripped.indexOf('[');
+  const arrayEnd = stripped.lastIndexOf(']');
+  if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+    try {
+      const parsed = JSON.parse(stripped.slice(arrayStart, arrayEnd + 1));
+      if (Array.isArray(parsed)) {
+        return {
+          findings: parsed.filter(
+            (item: any): item is RawFinding =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof item.url === 'string' &&
+              item.url.startsWith('http'),
+          ),
+          queries: []
+        };
+      }
+    } catch {}
+  }
+
+  return { findings: [], queries: [] };
 }
+

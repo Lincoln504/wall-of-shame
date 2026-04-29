@@ -22,6 +22,7 @@ export interface RunState {
   lastRun: string;
   categoryIndex: number;
   seenUrls: string[];
+  queryHistory: Record<string, string>; // query -> lastSearchedAt (ISO string)
 }
 
 export interface Category {

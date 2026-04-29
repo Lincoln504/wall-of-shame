@@ -74,7 +74,15 @@ async function main() {
 
       let raws: import('./findings.js').RawFinding[];
       try {
-        raws = await runResearch(cat.researchQuery, cat.key, cat.name, log);
+        const result = await runResearch(cat.researchQuery, cat.key, cat.name, state.queryHistory, log);
+        raws = result.findings;
+        
+        // Update query history with current timestamp
+        const now = new Date().toISOString();
+        for (const q of result.queries) {
+          state.queryHistory[q] = now;
+        }
+        
         anySucceeded = true;
       } catch (err) {
         log(`ERROR during research for ${cat.key}: ${String(err)}`);
