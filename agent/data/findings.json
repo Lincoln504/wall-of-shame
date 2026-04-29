@@ -1,7 +1,43 @@
 {
-  "lastUpdated": "2026-04-28T17:31:15.224Z",
-  "totalFindings": 24,
+  "lastUpdated": "2026-04-29T00:00:53.003Z",
+  "totalFindings": 27,
   "findings": [
+    {
+      "id": "f248bff5-1836-41d0-ab02-bddff9b76234",
+      "url": "https://www.newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html",
+      "title": "The depopulation agenda: How vaccines, AI and globalist elites are targeting humanity",
+      "domain": "newstarget.com",
+      "summary": "The article argues that globalist elites backed by the WHO and WEF are deliberately reducing the world population using COVID-19 mRNA vaccines, AI-driven censorship, and social destabilization. It frames routine vaccination during pregnancy as turning women into 'pin cushions' receiving 'up to eight vaccine doses' and alleges the 'transgender movement pushes irreversible sterilization on children' as part of the same depopulation scheme.",
+      "category": "health",
+      "whyBad": "The article claims COVID-19 mRNA vaccines have caused 'an estimated 100+ million deaths worldwide' citing Denis Rancourt, a number that dwarfs the entire confirmed global COVID death toll (~7 million) and has no basis in any peer-reviewed mortality study. It cherry-picks unverified VAERS reports as if they were proven causal injuries while omitting the CDC/EMA consensus that mRNA vaccines are safe and have saved millions of lives. The article weaves multiple unrelated grievances (vaccines, transgender healthcare, AI) into a single depopulation conspiracy narrative using a slippery slope fallacy to suggest any public health measure is a step toward genocide. The real-world harm is promoting complete vaccine refusal, which directly increases susceptibility to preventable diseases and undermines trust in all public health institutions.",
+      "severity": "high",
+      "foundAt": "2026-04-29T00:00:53.003Z",
+      "researchQuery": "health"
+    },
+    {
+      "id": "4e957489-f691-4781-9c9b-85e9d8db7db8",
+      "url": "https://unherd.com/newsroom/does-the-snp-really-believe-there-are-24-genders/",
+      "title": "Does the SNP really believe there are 24 genders?",
+      "domain": "unherd.com",
+      "summary": "Joan Smith argues that the Scottish government's publication of 24 gender categories for official documents is 'nonsense,' claiming there are 'only two sexes' and that collecting gender data is 'an exercise in appeasing narcissists.' The piece frames transgender and non-binary identities as a 'reality-denying cult' and an 'ideology which most sensible people regard as delusional.'",
+      "category": "gender",
+      "whyBad": "The article deploys a pathologizing frame by asserting that gender diversity is a 'delusional' 'cult' and that only 'two sexes' exist — a claim that ignores the well-documented medical and scientific consensus from the American Medical Association, the American Psychological Association, and the World Health Organization that gender identity is distinct from biological sex and that transgender identities are not disorders. The rhetorical technique is a straw-man + slippery slope: it caricatures a bureaucratic taxonomy of 24 categories (designed for data collection on a spectrum that includes standard male/female/trans categories) as absurd proliferation, then uses that caricature to dismiss the entire concept of transgender authenticity. This rhetoric directly harms transgender people by legitimizing discrimination: when an authority figure with institutional credentials (former Chair of the Mayor of London's Violence Against Women and Girls Board) frames trans identities as delusional, it provides cover for policies that exclude, misgender, and deny healthcare to transgender individuals.",
+      "severity": "high",
+      "foundAt": "2026-04-28T23:51:32.650Z",
+      "researchQuery": "gender"
+    },
+    {
+      "id": "d07729fe-2316-44cf-acb5-27c1f25a2048",
+      "url": "https://fee.org/articles/why-billionaires-are-good-for-us",
+      "title": "Why Billionaires Are Good for Us",
+      "domain": "fee.org",
+      "summary": "Argues that billionaires are engines of prosperity whose fortunes benefit everyone through innovation and job creation. Uses circular reasoning that free-market wealth accumulation is inherently deserved and good for society.",
+      "category": "economics",
+      "whyBad": "Presents absolute ownership norms as a moral good while omitting any discussion of how billionaire wealth is accumulated: labor exploitation, regulatory capture, inherited advantage, monopoly rents, and tax avoidance. Ignores that the Forbes 400 holds $4.5T — enough to lift every American living in poverty above the poverty line multiple times over. The 'innovation' frame ignores that most transformative R&D is publicly funded (NIH, DARPA, DOE), not the result of billionaire risk-taking. This piece normalizes extreme wealth concentration as virtuous rather than a policy choice, making it harder to build political will for redistribution.",
+      "severity": "high",
+      "foundAt": "2026-04-28T23:45:40.549Z",
+      "researchQuery": "economics"
+    },
     {
       "id": "63c2f3f3-3be8-4fb6-afa9-aa91c0f7295b",
       "url": "https://www.alainguillot.com/welfare-trap/",
@@ -17,7 +53,7 @@
     {
       "id": "82c0d902-155e-4d7d-8e6d-7dc594c85447",
       "url": "https://www.theblaze.com/contributions/fast-food-workers-you-dont-deserve-15-an-hour-to-flip-burgers-and-thats-ok",
-      "title": "Fast Food Workers: You Don't Deserve $15 an Hour to Flip Burgers \u2014 and That's OK",
+      "title": "Fast Food Workers: You Don't Deserve $15 an Hour to Flip Burgers — and That's OK",
       "domain": "theblaze.com",
       "summary": "Argues that fast food workers do not deserve a living wage for their labor and that poverty-level wages are the deserved outcome of individual choices about what jobs to pursue.",
       "category": "labor",
@@ -55,7 +91,7 @@
       "url": "https://www.latimes.com/opinion/opinion-la/la-ol-why-poor-people-make-bad-decisions-20131125-story.html",
       "title": "The human side of poverty: Why poor people make bad decisions",
       "domain": "latimes.com",
-      "summary": "Frames poor people's behavior as a series of 'impulsive and bad decisions \u2014 eating junk food, smoking, having children with multiple partners' \u2014 deploying behavioral economics to explain poverty while omitting structural context like wages, costs, and systemic barriers.",
+      "summary": "Frames poor people's behavior as a series of 'impulsive and bad decisions — eating junk food, smoking, having children with multiple partners' — deploying behavioral economics to explain poverty while omitting structural context like wages, costs, and systemic barriers.",
       "category": "labor",
       "whyBad": "Publishes a classic 'blaming the victim' narrative in a major newspaper that catalogues poor people's personal habits as the cause of their poverty, reinforcing stereotypes that poverty results from poor impulse control rather than material deprivation and lack of opportunity.",
       "severity": "medium",
@@ -69,7 +105,7 @@
       "domain": "fee.org",
       "summary": "Selectively invokes anthropologist Oscar Lewis's 'culture of poverty' concept to argue that personal responsibility, not structural factors, causes poverty, while ignoring that Lewis blamed the 'capitalist mode of production' for trapping people in poverty.",
       "category": "labor",
-      "whyBad": "Deliberately misrepresents a scholar's work by quoting him selectively \u2014 citing his 'culture of poverty' observations while suppressing his central conclusion that capitalism is the root cause \u2014 in a transparent ideological maneuver to blame the poor for being poor.",
+      "whyBad": "Deliberately misrepresents a scholar's work by quoting him selectively — citing his 'culture of poverty' observations while suppressing his central conclusion that capitalism is the root cause — in a transparent ideological maneuver to blame the poor for being poor.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:27:52.271Z",
       "researchQuery": "poverty_blaming"
@@ -81,7 +117,7 @@
       "domain": "econlib.org",
       "summary": "Argues that 'poverty in the US is heavily influenced by bad decision-making,' citing bankruptcy studies to claim personal behavior rather than systemic factors is the primary driver of poverty.",
       "category": "labor",
-      "whyBad": "Presents a false dichotomy that ignores decades of research on structural determinants of poverty \u2014 wage theft, housing discrimination, medical debt, regressive taxation \u2014 and reduces a complex systemic problem to individual financial illiteracy and poor choices.",
+      "whyBad": "Presents a false dichotomy that ignores decades of research on structural determinants of poverty — wage theft, housing discrimination, medical debt, regressive taxation — and reduces a complex systemic problem to individual financial illiteracy and poor choices.",
       "severity": "medium",
       "foundAt": "2026-04-28T17:27:52.271Z",
       "researchQuery": "poverty_blaming"
@@ -249,7 +285,7 @@
       "domain": "cei.org",
       "summary": "Annual report that tallies the total estimated cost of federal regulations, presenting regulation as a hidden tax burden. Concludes that deregulation would unlock economic growth and that most regulations impose costs that outweigh their benefits.",
       "category": "economics",
-      "whyBad": "Deliberately counts gross regulatory costs without weighing against benefits (cleaner air, safer workplaces, prevented financial crises). Does not distinguish between net-positive regulations (FDA drug safety, clean water rules) and genuinely burdensome ones. The 'hidden tax' framing is an ideological premise, not an empirical finding. Used as the primary deregulation bible by every administration since Reagan \u2014 cited in executive orders mandating two-for-one repeal requirements.",
+      "whyBad": "Deliberately counts gross regulatory costs without weighing against benefits (cleaner air, safer workplaces, prevented financial crises). Does not distinguish between net-positive regulations (FDA drug safety, clean water rules) and genuinely burdensome ones. The 'hidden tax' framing is an ideological premise, not an empirical finding. Used as the primary deregulation bible by every administration since Reagan — cited in executive orders mandating two-for-one repeal requirements.",
       "severity": "medium",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
@@ -261,7 +297,7 @@
       "domain": "taxfoundation.org",
       "summary": "Presents the case for lowering capital gains tax rates, arguing that lower rates encourage investment, boost productivity, and ultimately increase wages for workers. Frames capital gains taxation as 'double taxation' that discourages risk-taking.",
       "category": "economics",
-      "whyBad": "Assumes a direct, proportional chain from capital gains tax cuts to worker wage gains \u2014 but post-2000 data shows a decoupling: productivity up ~70% while median wages rose ~18%. The 'double taxation' framing ignores that retained corporate earnings are never taxed at the individual level for most shareholders. No mention that capital gains tax preferences (step-up in basis at death, carried interest loophole, 1031 exchanges) already make effective rates on capital income far below the statutory rate. Used to defend proposals that 90%+ of benefits would flow to the top 10%.",
+      "whyBad": "Assumes a direct, proportional chain from capital gains tax cuts to worker wage gains — but post-2000 data shows a decoupling: productivity up ~70% while median wages rose ~18%. The 'double taxation' framing ignores that retained corporate earnings are never taxed at the individual level for most shareholders. No mention that capital gains tax preferences (step-up in basis at death, carried interest loophole, 1031 exchanges) already make effective rates on capital income far below the statutory rate. Used to defend proposals that 90%+ of benefits would flow to the top 10%.",
       "severity": "medium",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
@@ -273,7 +309,7 @@
       "domain": "heritage.org",
       "summary": "Heritage Foundation analysis arguing that Biden-era proposed tax increases (corporate rate, top marginal rate, capital gains) would destroy jobs, reduce GDP, and make the US uncompetitive. Uses Heritage's IGM dynamic scoring model to generate worst-case macroeconomic projections.",
       "category": "economics",
-      "whyBad": "Relies on Heritage's IGM model which assumes extreme supply-side elasticities rejected by the CBO, JCT, Treasury OTA, and Penn Wharton Budget Model. The same model predicted TCJA would boost GDP by 3-4% permanently \u2014 actual post-2017 GDP growth was ~2.5% and has since reverted. No acknowledgment that corporate effective tax rates post-TCJA were already near historic lows (11% effective rate for S&P 500 in 2018). Used to oppose every component of Biden's Build Back Better agenda, preserving a tax code under which 55 Fortune 500 companies paid $0 in federal tax in 2020.",
+      "whyBad": "Relies on Heritage's IGM model which assumes extreme supply-side elasticities rejected by the CBO, JCT, Treasury OTA, and Penn Wharton Budget Model. The same model predicted TCJA would boost GDP by 3-4% permanently — actual post-2017 GDP growth was ~2.5% and has since reverted. No acknowledgment that corporate effective tax rates post-TCJA were already near historic lows (11% effective rate for S&P 500 in 2018). Used to oppose every component of Biden's Build Back Better agenda, preserving a tax code under which 55 Fortune 500 companies paid $0 in federal tax in 2020.",
       "severity": "high",
       "foundAt": "2026-04-28T07:24:35.137Z",
       "researchQuery": "trickle_down"
