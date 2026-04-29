@@ -1,7 +1,91 @@
 {
-  "lastUpdated": "2026-04-29T01:54:28.745Z",
-  "totalFindings": 27,
+  "lastUpdated": "2026-04-29T02:52:21.498Z",
+  "totalFindings": 34,
   "findings": [
+    {
+      "id": "dbfd6833-e795-4b27-881b-6910fc848568",
+      "url": "https://www.ifs.org/research/citizens-united-after-10-years-more-speech-better-democracy/",
+      "title": "Citizens United After 10 Years: More Speech, Better Democracy",
+      "domain": "ifs.org",
+      "summary": "Institute for Free Speech argues that Citizens United v. FEC led to 'more speech, better democracy,' claiming there is 'no evidence' that corporate and union independent spending 'leads to corruption or the appearance of corruption' and that the decision strengthened rather than weakened democratic participation.",
+      "category": "democracy",
+      "whyBad": "This piece commits a categorical falsehood by claiming 'no evidence' of corruption from post-Citizens United spending. Since 2010, academic research has documented the connection between campaign contributions and legislative outcomes (e.g., Ferguson et al., 2018 finding that congressional votes correlate with donor interests; Gilens & Page, 2014 finding that economic elites and organized business interests have substantial impact on policy while average citizens have near-zero). Dark money organizations have spent over $1 billion in federal elections since 2010, with massive single-donor contributions creating clear access and influence pathways (e.g., Sheldon Adelson's $150M+ across cycles correlated with policy outcomes on Israel and online gambling; the Koch network's $400M+ correlated with climate and tax policy outcomes). The 'more speech' framing ignores that the speech is dramatically unequal — a tiny number of wealthy donors and corporations dominate political spending. The rhetorical technique is bare assertion — stating 'no evidence' as fact while ignoring an entire academic literature to the contrary. The harm is providing intellectual cover for the campaign finance system that gives billionaires disproportionate influence over American democracy.",
+      "severity": "high",
+      "foundAt": "2026-04-29T02:12:02.488Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "31712530-ad73-4d9f-adf2-a95f886359c0",
+      "url": "https://www.ifs.org/research/five-misconceptions-about-dark-money/",
+      "title": "Five Misconceptions About Dark Money",
+      "domain": "ifs.org",
+      "summary": "Institute for Free Speech argues that 'dark money' is 'merely a pejorative label for nonprofits' engaged in political speech, that disclosure requirements disproportionately harm grassroots organizations, and that compelled donor disclosure creates a chilling effect on First Amendment rights.",
+      "category": "democracy",
+      "whyBad": "The piece reframes transparency as censorship — a technique of rhetorical inversion that takes a democratic accountability measure and rebrands it as an infringement on liberty. This ignores that the Supreme Court has repeatedly and explicitly upheld disclosure requirements as constitutional, including in the same Citizens United decision (2010) that struck down spending limits: 'disclosure permits citizens and shareholders to react to the speech of corporate entities in a proper way.' The 'chilling effect' argument fails to acknowledge that the same Court in NAACP v. Alabama protected disclosure only when it posed a demonstrable threat of harassment — not as a general principle against all disclosure. The 'grassroots burden' claim ignores that sophisticated dark money groups like those IFS defends have far more resources to comply with disclosure than small grassroots organizations. Since the 2010 Citizens United decision, dark money spending has topped $1 billion in federal elections (OpenSecrets), making the argument that disclosure is unnecessary or harmful a direct threat to democratic accountability. The real harm is providing legal and rhetorical cover for unlimited anonymous spending in elections.",
+      "severity": "medium",
+      "foundAt": "2026-04-29T02:12:01.377Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "ed97c261-bea3-478f-a220-c6992cb5457d",
+      "url": "https://www.heritage.org/election-integrity/commentary/voter-suppression-dems-flat-out-wrong-census-data-gives-real-story",
+      "title": "Voter Suppression? Dems Flat-Out Wrong, Census Data Gives Real Story",
+      "domain": "heritage.org",
+      "summary": "Von Spakovsky cites 2020 Census Bureau data showing Black turnout at 63% (up from 60% in 2016) and Asian American turnout at 59% (up from 49% in 2016) to argue that 'voter suppression' is a myth and critics are 'flat-out wrong.'",
+      "category": "democracy",
+      "whyBad": "This argument uses selective data to imply that increased overall turnout proves no barriers exist — a classic cherry-picking technique that ignores three key facts. First, the 2020 election was anomalous: pandemic-era policies massively expanded mail voting and reduced in-person barriers, making it inappropriate for extrapolating to normal conditions. Second, aggregate turnout data cannot disprove that specific laws (voter ID, roll purges, reduced drop boxes) create barriers for specific individuals. Third, von Spakovsky's own Kansas case documented 31,000 citizens blocked from registering by a law he helped defend — citizens who never appeared in turnout data because they couldn't register at all. The piece ignores the distinction between being discouraged but voting anyway and being blocked entirely. The rhetorical technique is omission: presenting data that is technically true but irrelevant to the specific claim being rebutted. The harm is creating a misleading simplicity that allows policymakers to dismiss legitimate complaints of disenfranchisement.",
+      "severity": "medium",
+      "foundAt": "2026-04-29T02:12:00.178Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "0c9ba245-83f5-4860-abfc-a92a4541bcdb",
+      "url": "https://www.heritage.org/election-integrity/report/the-latest-election-data-show-once-again-voter-suppression-claim-just",
+      "title": "The Latest Election Data Show—Once Again—That 'Voter Suppression' Claim Is Just Propaganda",
+      "domain": "heritage.org",
+      "summary": "Hans von Spakovsky's April 2023 Heritage Foundation report arguing that 2022 election data from states like Georgia, Florida, and Texas proves that 'voter suppression' claims are 'just propaganda,' citing increased turnout in states that enacted restrictive voting laws.",
+      "category": "democracy",
+      "whyBad": "This report commits the ecological fallacy — using aggregate turnout data to argue that no individual group was burdened, when in fact turnout increases can hide who was left out. The Heritage Foundation's own Election Fraud Database, which von Spakovsky manages, documents approximately 1,500 fraud cases over decades across hundreds of millions of votes cast — a rate of roughly 0.00006%, which directly undermines the premise that restrictive laws are needed. The Brennan Center found that the database 'substantially inflates and exaggerates the occurrence of voter fraud' and most cited cases 'would not be addressed by the voter suppression laws its staff supports.' The rhetorical technique is straw man: constructing a caricature of 'voter suppression' claims and labeling them 'propaganda' rather than engaging with the specific documented instances where ID laws blocked eligible voters. The harm is direct policy influence — Heritage Action used this frame to lobby for restrictive voting laws across battleground states.",
+      "severity": "high",
+      "foundAt": "2026-04-29T02:11:59.091Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "8a12c665-92dc-4d57-8b42-4b91ef7f8393",
+      "url": "https://tuckercarlson.com/tucker-victor-orban-2025",
+      "title": "Hungary Prime Minister Viktor Orban on USAID, Trump, Immigration, NATO, and the Russia/Ukraine War",
+      "domain": "tuckercarlson.com",
+      "summary": "Carlson's February 2025 interview page introducing Hungarian Prime Minister Viktor Orbán as having 'been vindicated on pretty much everything' and featuring a 64-minute interview where Orbán claims Ukraine could become Europe's 'Afghanistan' and argues the war is about NATO enlargement, not about Ukraine.",
+      "category": "democracy",
+      "whyBad": "Carlson provides an uncritical platform to an authoritarian leader who has dismantled independent media (Hungary ranked 85th in the 2024 Reporters Without Borders Press Freedom Index, down from 23rd in 2010), packed the courts, passed anti-LGBTQ+ legislation that the EU found violated fundamental rights, and implemented electoral changes that Freedom House describes as 'entrenching Fidesz's hold on power.' Carlson's framing of Orbán as 'vindicated on pretty much everything' normalizes democratic backsliding by presenting it as a successful governance model. His characterization that Hungary's press 'is much freer than ours' (from his 2021 broadcasts) is directly contradicted by every major press freedom index. This is not journalism interviewing a controversial figure — it is advocacy presenting an authoritarian model as aspirational to an American audience of millions. The harm is normalizing the idea that dismantling democratic institutions is acceptable if it produces desired cultural or policy outcomes.",
+      "severity": "high",
+      "foundAt": "2026-04-29T02:11:58.935Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "42761c42-6a2e-4383-b534-56989411ea3d",
+      "url": "https://thefederalist.com/2026/04/27/kansas-republicans-are-letting-democrats-destroy-ballot-integrity-safeguards/",
+      "title": "Kansas Republicans Are Letting Democrats Destroy Ballot Integrity Safeguards",
+      "domain": "thefederalist.com",
+      "summary": "Hans von Spakovsky argues that a 'meritless' Democratic lawsuit (League of Women Voters v. Schwab) seeks to 'eliminate the most basic safeguard in mail voting: verifying that the signature on a returned ballot matches that of the voter,' and warns that Kansas Republicans are failing to defend 'ballot integrity safeguards.'",
+      "category": "democracy",
+      "whyBad": "Von Spakovsky manufactures a crisis narrative around signature verification for mail ballots — a safeguard that addresses a fraud problem that is virtually nonexistent. The same author was the key expert witness in Fish v. Kobach defending Kansas's proof-of-citizenship law, where a federal judge found his opinions were 'based on preconceived beliefs related to his advocacy' rather than evidence. That law blocked over 31,000 eligible citizens from registering. Von Spakovsky's own spreadsheet in that case identified only 38 alleged non-citizen registration cases in Kansas's second-largest county over two decades. His framing of routine mail ballot verification litigation as 'destroying ballot integrity' uses a slippery slope fallacy to justify restrictive policies with documented disenfranchisement effects. The real harm: this piece provides intellectual cover for rolling back mail voting access based on a nonexistent fraud crisis.",
+      "severity": "high",
+      "foundAt": "2026-04-29T02:11:58.775Z",
+      "researchQuery": "democracy"
+    },
+    {
+      "id": "792dc0c3-ed10-43ea-b866-cf18f42c6b90",
+      "url": "https://nypost.com/2026/04/25/opinion/we-must-pass-voter-id-it-is-simply-common-sense/",
+      "title": "We must pass voter ID — it is simply common sense",
+      "domain": "nypost.com",
+      "summary": "CA Post Editorial Board op-ed arguing voter ID is 'simply common sense' and 'standard practice in democracies all over the world,' dismissing disenfranchisement concerns by claiming 'turnout has tended to increase, not decrease, in places that have adopted voter ID' and that lawsuits have 'struggled to find any plaintiffs who have actually suffered the loss of their right to vote.'",
+      "category": "democracy",
+      "whyBad": "The piece commits the rhetorical technique of appeal to common sense — framing a contested policy as obvious and beyond debate, thereby dismissing documented evidence of disproportionate disenfranchisement. Studies consistently find that strict voter ID laws disproportionately affect Black, Latino, elderly, and low-income voters who are less likely to possess qualifying ID (GAO, 2014; Brennan Center). The claim that no plaintiffs exist is false: courts in cases like Veasey v. Abbott (Texas) and NAACP v. McCrory (North Carolina) found that such laws imposed burdens on minority voters. The piece also ignores that millions of Americans lack government-issued photo ID — an estimated 11% of eligible voters according to a 2012 GAO study. The real-world harm is that this framing normalizes restrictive voting policies that studies show reduce turnout among already-marginalized populations.",
+      "severity": "medium",
+      "foundAt": "2026-04-29T02:11:58.534Z",
+      "researchQuery": "democracy"
+    },
     {
       "id": "f248bff5-1836-41d0-ab02-bddff9b76234",
       "url": "https://www.newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html",
