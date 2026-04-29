@@ -24,7 +24,7 @@ export function commitAndPush(newCount: number): void {
 
   git('add agent/data/findings.json');
   // Set config inline so commit always works even without global git config
-  git(`-c user.name="wall-of-shame-bot" -c user.email="bot@wall-of-shame.local" commit -m "${msg}"`);
+  git(`-c user.name="Lincoln504" -c user.email="Lincoln504@users.noreply.github.com" commit -m "${msg}"`);
   git('push');
 }
 
