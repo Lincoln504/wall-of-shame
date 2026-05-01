@@ -236,10 +236,35 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
       const start = text.indexOf('{');
       const end = text.lastIndexOf('}');
       if (start === -1 || end === -1) throw new Error('No JSON object found in response');
-      const jsonText = text.slice(start, end + 1);
-      result = JSON.parse(jsonText);
+      
+      let jsonText = text.slice(start, end + 1);
+      
+      // Clean up common model misformatting (e.g. trailing commas, markdown blocks inside JSON)
+      jsonText = jsonText
+        .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
+        .replace(/\\n/g, ' ')          // Replace actual newlines with spaces for safer parsing
+        .replace(/\s+/g, ' ');         // Collapse multiple spaces
+
+      try {
+        result = JSON.parse(jsonText);
+      } catch (parseErr) {
+        // Fallback: try to extract JUST the findings array if the whole object failed
+        log?.(`  [pi] Primary JSON parse failed, attempting secondary extraction...`);
+        const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
+        if (findingsMatch && findingsMatch[1]) {
+          try {
+            const findings = JSON.parse(findingsMatch[1].replace(/,\s*([}\]])/g, '$1'));
+            result = { findings, queries: [] };
+          } catch {
+            throw parseErr;
+          }
+        } else {
+          throw parseErr;
+        }
+      }
     } catch (err) {
-      log(`  [pi] FAILED to parse extraction JSON. Raw response: ${text.slice(0, 500)}...`);
+      log(`  [pi] FAILED to parse extraction JSON. Raw response length: ${text.length}`);
+      log(`  [pi] Snippet: ${text.slice(0, 300)}...`);
       throw new Error(`JSON extraction failed: ${String(err)}`);
     }
 

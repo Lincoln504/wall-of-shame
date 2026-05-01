@@ -118,7 +118,6 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   const startTime = Date.now();
   let totalAdded = 0;
   let totalErrors = 0;
-  let anySucceeded = false;
 
   if (dryRun) {
     // Dry-run: just show what would be done — no API calls
@@ -130,9 +129,11 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
     console.log(`\n${YELLOW}To actually run research, select option 1 instead.${RESET}\n`);
     totalAdded = 0;
   } else {
-    for (let i = 0; i < batch.length; i++) {
-      const cat = batch[i]!;
-      process.stdout.write(`\n${BOLD}[${i + 1}/${batch.length}]${RESET} Researching: ${cat.name} ... `);
+    for (let i = 0; i < batchSize; i++) {
+      const cat = CATEGORIES[state.categoryIndex];
+      if (!cat) break;
+
+      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Researching: ${cat.name} ... `);
 
       try {
         // Dynamic import to avoid loading pi SDK at startup
@@ -160,12 +161,12 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
         (await import('./findings.js')).saveState(state);
         (await import('./findings.js')).saveFindings(store);
-        
-        anySucceeded = true;
       } catch (err) {
         process.stdout.write(`${RED}ERROR${RESET}\n`);
         process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
+        console.log(`\n${YELLOW}Stopping batch due to error. Category index remains at ${state.categoryIndex}.${RESET}`);
         totalErrors++;
+        break;
       }
     }
   }

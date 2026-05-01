@@ -15,7 +15,7 @@
  * Model: deepseek/deepseek-v4-flash via OpenRouter (configured in ~/.pi/agent/)
  */
 
-import { getBatch, CATEGORY_COUNT } from './categories.js';
+import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, saveFindings, loadState, saveState, addFindings } from './findings.js';
 import { runResearch } from './researcher.js';
 
@@ -44,29 +44,27 @@ async function main() {
   log(`existing findings: ${store.findings.length}`);
   log(`resuming at category index: ${state.categoryIndex}`);
 
-  const batch = getBatch(state.categoryIndex, batchSize);
-  log(`this run: ${batch.map(c => c.key).join(', ')}`);
-  hr();
-
   let totalAdded = 0;
-  let anySucceeded = false;
 
   if (dryRun) {
+    const batch = getBatch(state.categoryIndex, batchSize);
     log('DRY-RUN: skipping research — no API calls will be made');
     for (const cat of batch) {
       log(`  would research: ${cat.name} (${cat.key})`);
     }
     hr();
   } else {
-    for (let i = 0; i < batch.length; i++) {
-      const cat = batch[i]!;
-      log(`[${i + 1}/${batch.length}] researching: ${cat.name}`);
+    // Process categories one-by-one to ensure state index only advances for success
+    for (let i = 0; i < batchSize; i++) {
+      const cat = CATEGORIES[state.categoryIndex];
+      if (!cat) break;
 
-      let raws: import('./findings.js').RawFinding[];
+      log(`[${i + 1}/${batchSize}] researching: ${cat.name}`);
+
       try {
         const catHistory = state.queryHistory[cat.key] || {};
         const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
-        raws = result.findings;
+        const raws = result.findings;
         
         // Update query history with current timestamp
         const now = new Date().toISOString();
@@ -79,20 +77,23 @@ async function main() {
         log(`  new (deduplicated): ${added.length}`);
         totalAdded += added.length;
 
-        // Advance state individually per successful category
+        // ONLY advance category index on success
         state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-        anySucceeded = true;
+        
+        // Save state immediately after each successful category
+        saveFindings(store);
+        saveState(state);
       } catch (err) {
         log(`ERROR during research for ${cat.key}: ${String(err)}`);
-        log(`Category ${cat.key} failed - will be retried next run.`);
+        log(`Category ${cat.key} failed - it will remain at index ${state.categoryIndex} for the next run.`);
+        // We stop the batch on first failure to keep state simple and linear
+        break;
       }
 
       hr();
     }
 
-    saveFindings(store);
-    saveState(state);
-    log(`saved data locally — total: ${store.findings.length}  (+${totalAdded} this run)`);
+    log(`Batch complete — total: ${store.findings.length}  (+${totalAdded} this run)`);
   }
 
   hr();
