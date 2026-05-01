@@ -195,16 +195,16 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
       saveFindings(store);
       saveState(state);
-      console.log(`\n${GREEN}✓ Batch processed and saved locally.${RESET}`);
+      console.log(`\n${GREEN}Batch processed and saved locally.${RESET}`);
 
       // 3. Auto Push
       if (isGitRepo() && remoteExists() && hasDataChanges()) {
         console.log(`\n${BOLD}Automatically committing and pushing updates...${RESET}`);
         try {
           commitAndPush(totalAdded);
-          console.log(`${GREEN}✓ Data synchronized with origin${RESET}`);
+          console.log(`${GREEN}Data synchronized with origin${RESET}`);
         } catch (err) {
-          console.log(`${RED}✗ Push failed: ${String(err).split('\n')[0]}${RESET}`);
+          console.log(`${RED}Push failed: ${String(err).split('\n')[0]}${RESET}`);
         }
       }
     }
@@ -228,7 +228,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
 async function showStats(): Promise<void> {
   banner();
-  console.log(`${BOLD}${BLUE}📊 STATISTICS${RESET}`);
+  console.log(`${BOLD}${BLUE}STATISTICS${RESET}`);
   divider();
 
   const store = loadFindings();
@@ -292,7 +292,7 @@ async function showStats(): Promise<void> {
 
 async function viewFindings(): Promise<void> {
   banner();
-  console.log(`${BOLD}${MAGENTA}📄 VIEW FINDINGS${RESET}`);
+  console.log(`${BOLD}${MAGENTA}VIEW FINDINGS${RESET}`);
   divider();
 
   const store = loadFindings();
@@ -340,7 +340,7 @@ async function viewFindings(): Promise<void> {
 
 async function resetState(): Promise<void> {
   banner();
-  console.log(`${BOLD}${YELLOW}⚠ RESET CATEGORY INDEX${RESET}`);
+  console.log(`${BOLD}${YELLOW}RESET CATEGORY INDEX${RESET}`);
   divider();
 
   const state = loadState();
@@ -355,7 +355,7 @@ async function resetState(): Promise<void> {
   if (confirm.toLowerCase() === 'y') {
     state.categoryIndex = 0;
     saveState(state);
-    console.log(`${GREEN}✓ Category index reset to 0${RESET}`);
+    console.log(`${GREEN}Category index reset to 0${RESET}`);
   } else {
     console.log(`${DIM}Cancelled.${RESET}`);
   }
@@ -367,7 +367,7 @@ async function resetState(): Promise<void> {
 
 async function setupCron(): Promise<void> {
   banner();
-  console.log(`${BOLD}${BLUE}⏰ WEEKLY CRON JOB${RESET}`);
+  console.log(`${BOLD}${BLUE}WEEKLY CRON JOB${RESET}`);
   divider();
 
   const scriptPath = join(REPO_ROOT, 'scripts', 'setup-cron.sh');
@@ -387,7 +387,7 @@ async function setupCron(): Promise<void> {
       const { execSync } = await import('child_process');
       execSync(`bash "${scriptPath}"`, { cwd: REPO_ROOT, stdio: 'inherit' });
     } catch (err) {
-      console.log(`${RED}✗ Cron setup failed: ${String(err).split('\n')[0]}${RESET}`);
+      console.log(`${RED}Cron setup failed: ${String(err).split('\n')[0]}${RESET}`);
     }
   }
 
