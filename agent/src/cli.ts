@@ -52,7 +52,7 @@ function question(prompt: string): Promise<string> {
 function banner(): void {
   console.clear();
   console.log(`${BOLD}${RED}╔═══════════════════════════════════════════╗${RESET}`);
-  console.log(`${BOLD}${RED}║      🧱  WALL OF SHAME  🧱              ║${RESET}`);
+  console.log(`${BOLD}${RED}║            WALL OF SHAME                  ║${RESET}`);
   console.log(`${BOLD}${RED}║   Automated Harmful Content Tracker      ║${RESET}`);
   console.log(`${BOLD}${RED}╚═══════════════════════════════════════════╝${RESET}`);
   console.log();
@@ -442,7 +442,7 @@ async function main() {
           await setupCron();
           break;
         case '7':
-          console.log(`\n${GREEN}Goodbye! 🧱${RESET}\n`);
+          console.log(`\n${GREEN}Goodbye!${RESET}\n`);
           rl.close();
           process.exit(0);
         default:
@@ -458,3 +458,4 @@ async function main() {
 }
 
 main();
+);
