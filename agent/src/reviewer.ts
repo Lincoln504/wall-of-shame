@@ -60,12 +60,17 @@ export async function runReview(
     cwd,
     agentDir,
     additionalExtensionPaths: [PI_RESEARCH_HOME],
-    noExtensions: true,
+    noExtensions: false, // Must be false to load the research extension
+    noSkills: true,
+    noPromptTemplates: true,
+    noThemes: true,
+    noContextFiles: true,
   } as any);
   await resourceLoader.reload();
 
   const authStorage = AuthStorage.create(join(agentDir, 'auth.json'));
   const modelRegistry = ModelRegistry.create(authStorage);
+  const settingsManager = SettingsManager.create(agentDir);
   const model = modelRegistry.find(OPENROUTER_PROVIDER, DEEPSEEK_MODEL_ID);
   
   if (!model) throw new Error('Reviewer model not found');
@@ -76,10 +81,22 @@ export async function runReview(
     resourceLoader,
     authStorage,
     modelRegistry,
-    settingsManager: SettingsManager.create(agentDir),
+    settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
   });
+
+  // Provide UI context for headless extension operation
+  session.extensionRunner.setUIContext({
+    notify: (msg: string, type: string) => log(`  [reviewer] notification: [${type}] ${msg}`),
+    setWidget: (id: string, creator: any) => {
+      if (creator) log(`  [reviewer] extension widget active: ${id}`);
+    },
+    setStatus: (msg: string) => log(`  [reviewer] status: ${msg}`),
+    setWorkingIndicator: (msg: string) => log(`  [reviewer] working: ${msg}`),
+    confirm: async () => true,
+    select: async (_title: string, options: any[]) => options[0]?.value,
+  } as any);
 
   const prompt = REVIEW_PROMPT.replace('<FINDINGS_JSON>', JSON.stringify(findings, null, 2));
   

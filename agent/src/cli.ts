@@ -179,6 +179,13 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
           const reviewed = await runReview(item.findings, logFn);
           const added = await addFindings(store, state, reviewed, item.categoryKey, logFn);
           totalAdded += added.length;
+
+          // Also mark all ORIGINAL discoveries as seen
+          for (const raw of item.findings) {
+            if (raw.url && !state.seenUrls.includes(raw.url)) {
+              state.seenUrls.push(raw.url);
+            }
+          }
         } catch (err) {
           console.log(`  ${RED}Review failed for ${item.categoryKey}: ${String(err).split('\n')[0]}${RESET}`);
           const added = await addFindings(store, state, item.findings, item.categoryKey);

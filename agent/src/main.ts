@@ -101,6 +101,14 @@ async function main() {
           const reviewedFindings = await runReview(item.findings, log);
           const added = await addFindings(store, state, reviewedFindings, item.categoryKey, log);
           totalAdded += added.length;
+
+          // Crucially: also mark all ORIGINAL findings as seen, even if rejected,
+          // so we don't spend credits discovering them again next time.
+          for (const raw of item.findings) {
+            if (raw.url && !state.seenUrls.includes(raw.url)) {
+              state.seenUrls.push(raw.url);
+            }
+          }
         } catch (err) {
           log(`  [warn] review failed for ${item.categoryKey}: ${String(err)}`);
           // Fallback: try to add the unreviewed ones
