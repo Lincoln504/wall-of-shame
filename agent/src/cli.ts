@@ -9,7 +9,8 @@
  *   4. View findings (recent or by category)
  *   5. Reset state (category index back to 0)
  *   6. Setup weekly cron job
- *   7. Exit
+ *   7. Deep Database Audit (Verify all entries)
+ *   8. Exit
  *
  * Usage:
  *   cd agent && npx tsx src/cli.ts
@@ -79,8 +80,33 @@ function printMenu(): void {
   console.log(`  ${CYAN}4${RESET})  View findings`);
   console.log(`  ${CYAN}5${RESET})  Reset category index to 0`);
   console.log(`  ${CYAN}6${RESET})  Setup weekly cron job`);
-  console.log(`  ${CYAN}7${RESET})  Exit`);
+  console.log(`  ${CYAN}7${RESET})  ${BOLD}${MAGENTA}Deep Database Audit${RESET} (Verify all entries)`);
+  console.log(`  ${CYAN}8${RESET})  Exit`);
   console.log();
+}
+
+// ── Option 7: Deep Audit ──────────────────────────────────────────────────────
+
+async function triggerDeepAudit(): Promise<void> {
+  banner();
+  console.log(`${BOLD}${MAGENTA}🔍 DEEP DATABASE AUDIT${RESET}`);
+  divider();
+
+  console.log(`  This subagent will deeply investigate ALL existing entries.`);
+  console.log(`  It will use ${CYAN}pi-research${RESET} to browse each URL and verify`);
+  console.log(`  that the content is still up-to-date and accurate.`);
+  console.log();
+  console.log(`${RED}WARNING:${RESET} This will make many API calls and take significant time.`);
+  console.log();
+
+  const confirm = await question(`Proceed with audit?${YELLOW} (y/N)${RESET}: `);
+  if (confirm.toLowerCase() === 'y') {
+    const { runDeepAudit } = await import('./auditor.js');
+    const logFn = (msg: string) => process.stdout.write(`${msg}\n`);
+    await runDeepAudit(5, logFn);
+  }
+
+  await pressEnter();
 }
 
 // ── Option 1 & 2: Run research ────────────────────────────────────────────────
@@ -420,7 +446,7 @@ async function main() {
 
       printMenu();
 
-      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-7]: `)).trim();
+      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-8]: `)).trim();
 
       switch (choice) {
         case '1':
@@ -442,6 +468,9 @@ async function main() {
           await setupCron();
           break;
         case '7':
+          await triggerDeepAudit();
+          break;
+        case '8':
           console.log(`\n${GREEN}Goodbye! 🧱${RESET}\n`);
           rl.close();
           process.exit(0);
