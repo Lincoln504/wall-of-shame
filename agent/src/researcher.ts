@@ -27,7 +27,10 @@ const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 const EXTRACTION_PROMPT = `Now analyze the research results above and extract findings.
 
-CRITICAL: Only include URLs that were actually visited and confirmed to contain the described content during this research session. Do NOT construct, guess, or infer URLs — if you did not browse to a URL and read it, omit it entirely. Also omit URLs from these domains — they are behind bot-protection or hard paywalls that make URLs unverifiable: wsj.com, ft.com, bloomberg.com, economist.com, cato.org.
+CRITICAL GROUNDING RULES:
+1. FAITHFUL REPRESENTATION: You must summarize the article's actual core argument as the author intended it, without distortion or straw-man framing. Do not attribute arguments to the piece that it does not explicitly make.
+2. NO HALLUCINATED CONTEXT: Do NOT bring in external statistics, Supreme Court cases, or legal precedents unless they are specifically mentioned in the article. If you need to provide counter-evidence, clearly label it as "Context/Counter-evidence" and do not imply it is in the article.
+3. QUOTE REQUIREMENT: Every finding must include at least one direct, verbatim quote from the article.
 
 Return ONLY a raw JSON object (no markdown, no code blocks, no preamble):
 {
@@ -37,9 +40,9 @@ Return ONLY a raw JSON object (no markdown, no code blocks, no preamble):
       "url": "https://...",
       "title": "exact article title as it appeared on the page",
       "domain": "example.com",
-      "summary": "2-3 sentences describing the specific argument the piece makes, including the exact framing or claim it advances — not a generic description of the topic",
+      "summary": "- Faithfully summarize the article's 3-5 core points in a hyphenated bulleted list.\n- State the author's primary intended conclusion neutrally.\n- NO judgment or critical framing here.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "Cite at least one specific claim, statistic, or phrase from the article and explain precisely why it is false, misleading, or manipulative. Name the rhetorical or logical technique being used (e.g. cherry-picking, false equivalence, omission, slippery slope, appeal to tradition). State what evidence or context the piece ignores. Explain the real-world harm: who is targeted, what policy or behavior it justifies, and what documented counter-evidence exists.",
+      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political or logical critique that directly addresses that claim or its underlying assumptions. 3. Identify the rhetorical technique (e.g. straw man, ecological fallacy). 4. If using external context (e.g. CBO data, Brennan Center), clearly label it as 'External Context' and explain how it invalidates the author's specific logic.]",
       "severity": "low|medium|high"
     }
   ]
@@ -50,13 +53,10 @@ Severity guide:
 - medium: uses misleading framing or omission that distorts public understanding
 - low: relies on dog-whistles or subtle bias without outright fabrication
 
-CRITICAL PERSPECTIVE TEST — before including any entry, ask: does this piece itself advance a harmful or misleading argument, or is it merely reporting on / criticizing someone else's harmful argument? Include only the former. Examples of what NOT to include:
-- A news article reporting that a politician said something racist (that is journalism about racism, not a racist argument)
-- An investigative piece exposing corporate astroturfing (that is criticism of manipulation, not manipulation)
-- A neutral court ruling summary or event recap (that is news, not advocacy)
+CRITICAL PERSPECTIVE TEST — before including any entry, ask: does this piece itself advance a harmful or misleading argument, or is it merely reporting on / criticizing someone else's harmful argument? Include only the former.
 A piece qualifies only if its own framing, argument, or omissions are the problem — not the subject it covers.
 
-Be selective: only include genuinely harmful content. Empty findings array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage, general advocacy page, category listing, or "about" page. The URL must lead directly to the specific content being criticized.`;
+Be selective: only include genuinely harmful content. Empty findings array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage or category listing.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
   return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
@@ -96,18 +96,6 @@ export async function runResearch(
 
   const cwd = process.cwd();
   const agentDir = join(homedir(), '.pi', 'agent');
-
-  // Load existing findings URLs to avoid duplicates
-  const findingsPath = join(cwd, 'agent/data/findings.json');
-  let existingUrls: string[] = [];
-  if (existsSync(findingsPath)) {
-    try {
-      const data = JSON.parse(readFileSync(findingsPath, 'utf-8'));
-      existingUrls = (data.findings || []).map((f: any) => f.url);
-    } catch (err) {
-      log(`  [warn] failed to read existing findings: ${String(err)}`);
-    }
-  }
 
   log(`  [pi] loading extension: ${PI_RESEARCH_EXTENSION}`);
 
@@ -193,111 +181,69 @@ export async function runResearch(
       throw new Error('Research command not found. Extension failed to load?');
     }
 
-    // Instruct the tool to avoid existing URLs and use grep to check findings.json
-    const exclusionList = existingUrls.length > 0 
-      ? `\n\nALREADY IN LIST (DO NOT RE-RESEARCH OR INCLUDE):\n${existingUrls.slice(0, 50).join('\n')}${existingUrls.length > 50 ? '\n...and others' : ''}`
-      : '';
-
     // Calculate forbidden queries (used in the last 7 days)
     const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const history = queryHistory || {};
-    const forbidden = Object.entries(history)
-      .filter(([_, lastSearched]) => now - new Date(lastSearched).getTime() < ONE_WEEK_MS)
+    const forbidden = Object.entries(queryHistory || {})
+      .filter(([_, lastAt]) => now - new Date(lastAt).getTime() < ONE_WEEK_MS)
       .map(([q, _]) => q);
 
     const avoidList = forbidden.length > 0
-      ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou may search for similar concepts, but use DIFFERENT phrasing.`
+      ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use SIGNIFICANTLY DIFFERENT phrasing and explore new angles.`
       : '';
+
+    const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const currentYear = new Date().getFullYear();
+
+    const researchStrategy = `
+    SEARCH STRATEGY — Be an investigative researcher. Do NOT just use the seed concepts; use them to generate 10-15 highly varied and creative search queries:
+
+1. VARY PHRASING: Use synonyms, industry jargon vs. academic terms, and loaded vs. neutral language.
+2. VARY SOURCE TYPES: Target a mix of mainstream media (op-eds, commentary, major news outlets), niche ideological blogs, "alternative" news sites, and industry association PR. Mainstream sources are often the source of 'low' severity findings (subtle bias, misleading framing).
+3. VARY TIMEFRAMES: 
+   - Evergreen: Search for core ideological arguments without date constraints.
+   - RECENT/UP-TO-DATE: Specifically include the current year (${currentYear}) or the previous year (${currentYear - 1}) in many queries to surface fresh content and breaking news framing.
+   - Use search operators like "past month" or "past year" if your tool supports them.
+4. VARY ANGLES: Explore different facets of the category (e.g., different industries or specific policies).
+5. CROSS-REFERENCE: Use findings from one search to inform the next.
+
+PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful. Do NOT flag a page merely because its subject matter is bad. A news article reporting on a harmful act is not itself harmful. An investigative piece exposing corporate manipulation is not itself manipulative. Ask: is this piece advocating for, normalizing, or misleadingly framing the bad thing — or is it reporting on / criticizing it? Only the former belongs in findings.`;
+
+    const researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
+
+    // Execute the command directly via the handler
+    await researchCommand.handler(researchQueryStr, session.extensionRunner.createCommandContext());
+
+    // Step 2: Extraction
+    log(`  [pi] extracting findings...`);
+    const extractionPrompt = buildExtractionPrompt(categoryKey);
+    // Use prompt() which is the supported way to send messages in AgentSession
+    await session.prompt(extractionPrompt);
     
-    const researchQuery = `Research task: ${query}${exclusionList}${avoidList}
+    // The subscriber above has been collecting the fullOutput
+    const text = fullOutput;
 
-SEARCH STRATEGY — use many varied queries across all of these dimensions:
-- Try multiple different keyword phrasings of the same concept (e.g. "worker flexibility" AND "independent contractor rights" AND "gig economy freedom" AND "AB5 repeal")
-- Mix query types: opinion/op-ed searches, news searches, academic-adjacent searches, corporate PR searches, think-tank report searches
-- Try both loaded and neutral-sounding search terms to surface content that may not announce its bias in the title
-- Search by publication type: mainstream newspaper opinion sections, business press, libertarian/conservative outlets, industry association sites, government agency sites
-- Search by named organizations known to produce content in this area
-- Search by specific claims or talking points known to appear in this category
-- Try 8–12 distinct search queries minimum before concluding the research phase
-- For each candidate page found, scrape and read the content before deciding whether it qualifies — do not judge solely by title or URL
-
-PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful. Do NOT flag a page merely because its subject matter is bad. A news article reporting on a harmful act is not itself harmful. An investigative piece exposing corporate manipulation is not itself manipulative. Ask: is this piece advocating for, normalizing, or misleadingly framing the bad thing — or is it reporting on / criticizing it? Only the former belongs in findings.
-
-Note: Use the 'grep' tool to check agent/data/findings.json if you are unsure if a finding is already present.`;
-    
-    // Commands in the SDK are traditionally invoked via session.prompt('/command args')
-    // which handles adding the command to session history. We'll use session.prompt
-    // but ensured we have a good UI context above.
-    await session.prompt(`/research ${researchQuery}`);
-
-    // Step 2: Send extraction prompt so the LLM analyzes the research
-    // results (now in context from step 1) and outputs structured JSON.
-    log(`  [pi] sending extraction prompt...`);
-    await session.prompt(buildExtractionPrompt(categoryKey));
-  } finally {
     unsub();
-    session.dispose();
-  }
 
-  process.stdout.write('\n');
-  return extractResearchResult(fullOutput);
-}
-
-// ── JSON extraction ───────────────────────────────────────────────────────────
-
-export function extractResearchResult(output: string): ResearchResult {
-  // Strip markdown code fences if present
-  const stripped = output.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
-
-  // 1. Try to find the new format: { "queries": [...], "findings": [...] }
-  const startIdx = stripped.indexOf('{');
-  const endIdx = stripped.lastIndexOf('}');
-  
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    let result: { findings: import('./findings.js').RawFinding[]; queries: string[] };
     try {
-      const jsonStr = stripped.slice(startIdx, endIdx + 1);
-      const parsed = JSON.parse(jsonStr);
-      
-      // Check if it's the new format
-      if (parsed && (Array.isArray(parsed.queries) || Array.isArray(parsed.findings))) {
-        const queries = Array.isArray(parsed.queries) ? parsed.queries.filter((q: any) => typeof q === 'string') : [];
-        const findings = Array.isArray(parsed.findings) ? parsed.findings.filter(
-          (item: any): item is RawFinding =>
-            typeof item === 'object' &&
-            item !== null &&
-            typeof item.url === 'string' &&
-            item.url.startsWith('http'),
-        ) : [];
-
-        return { findings, queries };
-      }
-    } catch {
-      // ignore and try fallback
+      // Find the first { and last } to extract JSON from potential markdown/preamble
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start === -1 || end === -1) throw new Error('No JSON object found in response');
+      const jsonText = text.slice(start, end + 1);
+      result = JSON.parse(jsonText);
+    } catch (err) {
+      log(`  [pi] FAILED to parse extraction JSON. Raw response: ${text.slice(0, 500)}...`);
+      throw new Error(`JSON extraction failed: ${String(err)}`);
     }
-  }
 
-  // 2. Fallback for old format (just an array) or malformed JSON
-  const arrayStart = stripped.indexOf('[');
-  const arrayEnd = stripped.lastIndexOf(']');
-  if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
-    try {
-      const parsed = JSON.parse(stripped.slice(arrayStart, arrayEnd + 1));
-      if (Array.isArray(parsed)) {
-        return {
-          findings: parsed.filter(
-            (item: any): item is RawFinding =>
-              typeof item === 'object' &&
-              item !== null &&
-              typeof item.url === 'string' &&
-              item.url.startsWith('http'),
-          ),
-          queries: []
-        };
-      }
-    } catch {}
+    return {
+      findings: result.findings || [],
+      queries: result.queries || [],
+    };
+  } catch (err) {
+    unsub();
+    throw err;
   }
-
-  return { findings: [], queries: [] };
 }
-

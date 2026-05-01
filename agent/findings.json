@@ -1,0 +1,86 @@
+{
+  "queries": [
+    "CSIS 2026 National Defense Strategy analysis readiness gap defense spending think tank funding",
+    "Atlantic Council Experts React US Israel attack Iran what's next war escalation",
+    "NYT 20 Years On I Don't Regret Supporting the Iraq War op-ed 2023",
+    "AEI Learning too much from Iraq op-ed Iraq war revisionism surge",
+    "CENTCOM US military remains committed to minimizing civilian casualties precision guided munitions April 2025",
+    "Fox News Americans still support peace through strength December 2024 op-ed Deb Fischer",
+    "TIME magazine Iran War May Give Defense Contractors $200 Billion Windfall March 2026",
+    "Washington Institute for Near East Policy Iran's Regime Has Already Lost Its Most Potent Weapon pressure escalation"
+  ],
+  "findings": [
+    {
+      "url": "https://www.csis.org/analysis/2026-national-defense-strategy-numbers-radical-changes-moderate-changes-and-some",
+      "title": "The 2026 National Defense Strategy by the Numbers: Radical Changes, Moderate Changes, and Some Continuities",
+      "domain": "csis.org",
+      "summary": "CSIS analysis framing the 2026 National Defense Strategy as requiring 'radical changes' and increased defense spending to address a 'readiness gap' for great-power competition with China, treating military escalation and expanded budgets as the natural policy response without examining diplomatic alternatives or questioning threat perception assumptions.",
+      "category": "war",
+      "whyBad": "Uses 'readiness gap' framing to manufacture urgency for increased defense spending while CSIS receives millions in funding from major defense contractors (Lockheed Martin, Northrop Grumman, General Dynamics, RTX, Boeing) whose stocks rise on war and increased procurement — a material conflict of interest undisclosed in the analysis. The piece treats military buildup as the only viable response to China, ignoring the $8 trillion+ cost of post-9/11 wars and the documented counterproductivity of military-first approaches. The rhetorical technique is manufactured crisis: presenting the 'readiness gap' as objective fact without independent cost-benefit analysis or examination of whether current threat assessments are accurate.",
+      "severity": "medium"
+    },
+    {
+      "url": "https://www.atlanticcouncil.org/dispatches/experts-react-the-us-and-israel-just-unleashed-a-major-attack-on-iran-whats-next/",
+      "title": "Experts react: The US and Israel just unleashed a major attack on Iran — what's next?",
+      "domain": "atlanticcouncil.org",
+      "summary": "Treats the U.S.-Israeli joint military campaign against Iran (Operation Epic Fury, launched February 28, 2026 killing Supreme Leader Khamenei) as a fait accompli requiring strategic expert management — 'initiating a major war with a nation of 93 million people' — rather than questioning the legality, legitimacy, or human consequences of the strikes.",
+      "category": "war",
+      "whyBad": "Normalizes the opening of a major new war by framing it as a management problem for experts ('what's next?') rather than interrogating whether the strikes constitute a war of aggression under international law. Uses the rhetorical technique of fait accompli — treating the war as already happening and therefore beyond moral questioning, reducing analysis to operational management. The Atlantic Council received $20.8 million from foreign governments and substantial defense contractor funding, but the piece does not disclose these relationships or institutional interests in continued escalation. Ignores the precedent of 300,000+ Iraqi civilian deaths from the 2003 invasion and that the U.S. has no legal authorization for strikes on Iran.",
+      "severity": "high"
+    },
+    {
+      "url": "https://www.nytimes.com/2023/03/21/opinion/20-years-on-i-dont-regret-supporting-the-iraq-war.html",
+      "title": "20 Years On, I Don't Regret Supporting the Iraq War",
+      "domain": "nytimes.com",
+      "summary": "Argues that supporting the 2003 U.S. invasion of Iraq was a defensible position, claiming 'the problem in Iraq wasn't simply a matter of faulty decisions' but 'faulty systems,' and concludes the core lesson is that 'we shouldn't trust ourselves to try it again' — deflecting responsibility from the war's architects.",
+      "category": "war",
+      "whyBad": "Minimizes the estimated 300,000+ Iraqi civilian deaths, the destruction of Iraqi society, 9 million refugees and displaced people, and documented war crimes including Abu Ghraib and the Fallujah chemical weapons attack. Uses the rhetorical technique of systems deflection: blaming abstract 'faulty systems' rather than identifiable decision-makers who promoted knowingly false WMD claims. Ignores that the invasion was a crime of aggression under the Nuremberg Principles and that the core justification was knowingly false (no WMDs were found). FAIR documented the NYT 'continued to dedicate itself to a waffling narrative' that 'writes out most of history.' Public opinion by 2019 showed 62% of Americans believed the war was not worth fighting.",
+      "severity": "high"
+    },
+    {
+      "url": "https://www.aei.org/op-eds/learning-too-much-from-iraq/",
+      "title": "Learning Too Much from Iraq",
+      "domain": "aei.org",
+      "summary": "Argues the U.S. has 'overlearned' from Iraq's failures and that the invasion decision was not 'strategic folly or reckless hubris,' blaming failure on 'the management of the war' across multiple administrations rather than the invasion itself being illegitimate.",
+      "category": "war",
+      "whyBad": "Employs Iraq war revisionism: blaming catastrophic outcomes on insufficient commitment ('the management of the war was a series of blunders') rather than confronting that the invasion was a crime of aggression based on knowingly false WMD claims. This 'wrong lessons' narrative directly enables future military interventions by suggesting the U.S. merely needs better execution next time. AEI simultaneously organized an 'Iraq War Series' panel described by Responsible Statecraft as an 'Iraq War cheerleader reunion' arguing against viewing the war through the 'jaundiced lens of hindsight.' The rhetorical technique is false framing: setting up 'wrong lessons' vs 'right lessons' while excluding the possibility that the invasion itself was the fundamental error.",
+      "severity": "high"
+    },
+    {
+      "url": "https://centcomcitadel.com/en_GB/articles/ssc/features/2025/04/11/feature-01",
+      "title": "US military remains committed to minimizing civilian casualties",
+      "domain": "centcomcitadel.com",
+      "summary": "Official CENTCOM feature article claiming the U.S. military minimizes civilian casualties through 'advanced precision-guided munitions that can strike targets while minimizing harm to civilians or causing collateral damage,' portraying the institutional civilian harm prevention framework as effective.",
+      "category": "war",
+      "whyBad": "Directly contradicted by independent documentation: The Bureau of Investigative Journalism documented ~4,026 deaths from U.S. drone strikes (2004-2018) including 969 civilians and 207 children. Just 17 days after this article was published (April 28, 2025), a CENTCOM airstrike in Saada, Yemen using GBU-39 precision-guided bombs killed at least 68 African migrants at a detention center — which Amnesty International called an 'indiscriminate attack' and possible war crime. CENTCOM simultaneously reduced its civilian harm investigation team from 10 staff to 1. The rhetorical technique is sanitization: using 'precision' language to create the impression of surgical, clean warfare while omitting documented civilian death tolls and the systematic dismantling of accountability infrastructure.",
+      "severity": "high"
+    },
+    {
+      "url": "https://www.foxnews.com/opinion/americans-still-support-peace-through-strength",
+      "title": "Americans still support peace through strength",
+      "domain": "foxnews.com",
+      "summary": "Argues that Americans support the Reagan-era 'peace through strength' doctrine requiring U.S. global leadership, military investment, and alliance support, citing the Reagan National Defense Survey to claim a public mandate for military expansion.",
+      "category": "war",
+      "whyBad": "Uses 'peace through strength' rhetoric — a historically loaded phrase associated with massive military buildups and unilateral interventionism — to advocate for military expansion without examining the documented failures of this approach (the $8 trillion post-9/11 wars that killed hundreds of thousands and destabilized multiple countries). Treats military superiority as the only path to security, omitting diplomatic alternatives. The rhetorical technique is appeal to authority/tradition: invoking Reagan as an unquestioned icon to foreclose debate on the merits of the policy. The op-ed was cross-posted on U.S. Senator Deb Fischer's official Senate website, giving think-tank framing the imprimatur of official government communications without disclosing its advocacy origin.",
+      "severity": "medium"
+    },
+    {
+      "url": "https://time.com/article/2026/03/19/trump-iran-war-set-to-boost-profits-for-these-defense-contractors/",
+      "title": "Iran War May Give Defense Contractors $200 Billion Windfall",
+      "domain": "time.com",
+      "summary": "Reports that the U.S. war with Iran could deliver $200 billion in new business to Lockheed Martin, RTX, Northrop Grumman, Boeing, General Dynamics, and L3Harris, tracking stock surges and contract awards as the Pentagon submitted a $200 billion supplemental funding request.",
+      "category": "war",
+      "whyBad": "Frames a major war — with tens of thousands of casualties, 15+ U.S. service members killed, regional destabilization across 11 nations — primarily as an economic market event with financial 'winners.' The rhetorical technique is false equivalency through financialization: treating a humanitarian catastrophe as a business story about stock performance and contract values. By centering defense contractor profits and omitting civilian deaths, the piece implicitly normalizes war-as-market-opportunity. While reporting a factual economic consequence, the framing choice — lead with corporate windfalls, omit human costs from the headline and thesis — shapes reader perception of war as having legitimate beneficiaries rather than being a catastrophe to be prevented.",
+      "severity": "medium"
+    },
+    {
+      "url": "https://www.washingtoninstitute.org/policy-analysis/irans-regime-has-already-lost-its-most-potent-weapon",
+      "title": "Iran's Regime Has Already Lost Its Most Potent Weapon",
+      "domain": "washingtoninstitute.org",
+      "summary": "Argues Iran's clerical regime has lost 'fear' as its primary survival instrument and that 'Washington should apply additional pressure on Iran's rulers and offer support to its people,' treating military and economic escalation as the appropriate response to regime vulnerability.",
+      "category": "war",
+      "whyBad": "Advocates escalating U.S. pressure (sanctions, military strikes, support for opposition forces) on Iran without reckoning with the catastrophic historical record of U.S.-backed regime change: Iran 1953 (coup that installed the Shah, leading to 25 years of repression), Iraq 2003 (300,000+ dead, state collapse, ISIS), Libya 2011 (state failure, slave markets, civil war). Uses the rhetorical technique of historical amnesia: treating each regime change opportunity as unique while ignoring the consistent pattern of failed interventions that produce humanitarian catastrophe and strengthen hardliners. The piece acknowledges 81% of Iranians oppose the regime but advocates external pressure that — as prior interventions demonstrate — typically empowers the most repressive elements and punishes civilian populations through sanctions and bombing.",
+      "severity": "high"
+    }
+  ]
+}

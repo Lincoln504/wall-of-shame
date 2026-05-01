@@ -15,45 +15,11 @@ const SEVERITY_COLOR: Record<string, string> = {
   low: '#fbc02d',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  union_busting: 'Anti-Labor',
-  trickle_down: 'Trickle-Down',
-  billionaire_worship: 'Billionaire Worship',
-  gig_exploitation: 'Gig Exploitation',
-  poverty_blaming: 'Poverty Blaming',
-  child_labor: 'Child Labor',
-  race_science: 'Race Pseudoscience',
-  colorblind_racism: 'Colorblind Racism',
-  great_replacement: 'Replacement Theory',
-  confederate_apologia: 'Confederate Apologia',
-  redpill_misogyny: 'Misogyny / Redpill',
-  pay_gap_denial: 'Pay Gap Denial',
-  trans_panic: 'Trans Panic',
-  conversion_therapy: 'Conversion Therapy',
-  climate_denial: 'Climate Denial',
-  greenwashing: 'Greenwashing',
-  vaccine_disinfo: 'Vaccine Disinfo',
-  alt_medicine_scams: 'Alt-Medicine Scams',
-  voter_suppression: 'Voter Suppression',
-  autocrat_admiration: 'Autocrat Admiration',
-  surveillance_normalization: 'Surveillance',
-  police_apologia: 'Police Apologia',
-  prison_labor: 'Prison Labor',
-  false_equivalence: 'False Equivalence',
-  think_tank_astroturfing: 'Astroturfing',
-  social_media_addiction_defense: 'Social Media Harms',
-  ai_ethics_dismissal: 'AI Ethics Dismissal',
-  colonialism_revisionism: 'Colonialism Revisionism',
-  indigenous_rights_denial: 'Indigenous Rights Denial',
-  christian_nationalism: 'Christian Nationalism',
-  ableism: 'Ableism',
-  meritocracy_myth: 'Meritocracy Myth',
-  dark_money_normalization: 'Dark Money',
-  islamophobia: 'Islamophobia',
-};
-
 function categoryLabel(key: string): string {
-  return CATEGORY_LABELS[key] ?? key.replace(/_/g, ' ');
+  return key
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function downloadFile(content: string, fileName: string, contentType: string) {

@@ -61,18 +61,17 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet agent/data/findings.json; then
+          if git diff --quiet agent/data/; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit findings
+      - name: Commit data
         if: steps.changes.outputs.changed == 'true' && inputs.dry_run != 'true'
         run: |
           git config user.name "wall-of-shame-bot"
           git config user.email "bot@wall-of-shame"
-          COUNT=$(node -e "const f=require('./agent/data/findings.json'); console.log(f.totalFindings)")
-          git add agent/data/findings.json
-          git commit -m "findings: automated research run — ${COUNT} total entries"
+          git add agent/data/
+          git commit -m "research: automated run $(date +'%Y-%m-%d')"
           git push

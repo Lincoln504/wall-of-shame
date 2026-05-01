@@ -9,8 +9,7 @@
  *   4. View findings (recent or by category)
  *   5. Reset state (category index back to 0)
  *   6. Setup weekly cron job
- *   7. Commit & push existing findings
- *   8. Exit
+ *   7. Exit
  *
  * Usage:
  *   cd agent && npx tsx src/cli.ts
@@ -19,7 +18,6 @@
 import { createInterface } from 'readline';
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, loadState, saveState } from './findings.js';
-import { hasUncommittedChanges, commitAndPush, isGitRepo, remoteExists } from './git.js';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -80,8 +78,7 @@ function printMenu(): void {
   console.log(`  ${CYAN}4${RESET})  View findings`);
   console.log(`  ${CYAN}5${RESET})  Reset category index to 0`);
   console.log(`  ${CYAN}6${RESET})  Setup weekly cron job`);
-  console.log(`  ${CYAN}7${RESET})  Commit & push existing findings`);
-  console.log(`  ${CYAN}8${RESET})  Exit`);
+  console.log(`  ${CYAN}7${RESET})  Exit`);
   console.log();
 }
 
@@ -156,6 +153,12 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         }
 
         totalAdded += added.length;
+        
+        // Advance category index individually
+        state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+        (await import('./findings.js')).saveState(state);
+        (await import('./findings.js')).saveFindings(store);
+        
         anySucceeded = true;
       } catch (err) {
         process.stdout.write(`${RED}ERROR${RESET}\n`);
@@ -163,13 +166,6 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         totalErrors++;
       }
     }
-
-    // Advance category index only if at least one category succeeded
-    if (anySucceeded) {
-      state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
-    }
-    (await import('./findings.js')).saveFindings(store);
-    (await import('./findings.js')).saveState(state);
   }
 
   divider();
@@ -182,19 +178,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   if (!dryRun) {
     console.log(`  New items: ${GREEN}+${totalAdded}${RESET}`);
     console.log(`  Total:     ${CYAN}${store.findings.length}${RESET} findings`);
-
-    if (totalAdded > 0) {
-      console.log();
-      const push = await question(`Commit & push ${totalAdded} new findings?${YELLOW} (y/N)${RESET}: `);
-      if (push.toLowerCase() === 'y') {
-        try {
-          commitAndPush(totalAdded);
-          console.log(`${GREEN}✓ Pushed to origin${RESET}`);
-        } catch (err) {
-          console.log(`${RED}✗ Push failed: ${String(err).split('\n')[0]}${RESET}`);
-        }
-      }
-    }
+    console.log(`\n${DIM}Findings saved locally.${RESET}`);
   }
 }
 
@@ -257,21 +241,6 @@ async function showStats(): Promise<void> {
       console.log(`    ${DIM}${String(count).padStart(3)}${RESET}  ${domain}`);
     }
     console.log();
-  }
-
-  // Git status
-  console.log(`  ${BOLD}Git status:${RESET}`);
-  const repo = isGitRepo();
-  console.log(`    Git repo:        ${repo ? GREEN + '✓ yes' : RED + '✗ no'}${RESET}`);
-  if (repo) {
-    const remote = remoteExists();
-    console.log(`    Remote (origin): ${remote ? GREEN + '✓ yes' : YELLOW + '✗ no'}${RESET}`);
-    try {
-      const status = hasUncommittedChanges();
-      console.log(`    Uncommitted:     ${status ? YELLOW + 'yes' : GREEN + 'clean'}${RESET}`);
-    } catch {
-      // ignore
-    }
   }
 
   await pressEnter();
@@ -383,50 +352,6 @@ async function setupCron(): Promise<void> {
   await pressEnter();
 }
 
-// ── Option 7: Commit & push ───────────────────────────────────────────────────
-
-async function commitAndPushExisting(): Promise<void> {
-  banner();
-  console.log(`${BOLD}${GREEN}⬆ COMMIT & PUSH FINDINGS${RESET}`);
-  divider();
-
-  if (!isGitRepo()) {
-    console.log(`${RED}Not inside a git repo. Cannot commit.${RESET}`);
-    await pressEnter();
-    return;
-  }
-
-  if (!remoteExists()) {
-    console.log(`${YELLOW}No "origin" remote configured. Cannot push.${RESET}`);
-    await pressEnter();
-    return;
-  }
-
-  const hasChanges = hasUncommittedChanges();
-  if (!hasChanges) {
-    console.log(`${DIM}No uncommitted changes to findings.json.${RESET}`);
-    await pressEnter();
-    return;
-  }
-
-  const store = loadFindings();
-  console.log(`  Findings to commit: ${CYAN}${store.totalFindings}${RESET} total entries`);
-  console.log();
-
-  const confirm = await question(`Commit & push?${YELLOW} (y/N)${RESET}: `);
-  if (confirm.toLowerCase() === 'y') {
-    const count = store.totalFindings; // approximate
-    try {
-      commitAndPush(count);
-      console.log(`${GREEN}✓ Committed and pushed to origin${RESET}`);
-    } catch (err) {
-      console.log(`${RED}✗ Failed: ${String(err).split('\n')[0]}${RESET}`);
-    }
-  }
-
-  await pressEnter();
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function pressEnter(): Promise<void> {
@@ -444,18 +369,16 @@ async function main() {
       // Quick status bar
       const store = loadFindings();
       const state = loadState();
-      const hasChanges = (() => { try { return hasUncommittedChanges(); } catch { return false; } })();
       const batch = getBatch(state.categoryIndex, 3);
 
       console.log(`  ${BOLD}Status:${RESET}  ${CYAN}${store.findings.length}${RESET} findings`);
       console.log(`           ${CYAN}${state.categoryIndex}${RESET} / ${CATEGORY_COUNT} categories done`);
       console.log(`           Next up: ${DIM}${batch.slice(0, 3).map(c => c.name).join(', ')}${RESET}`);
-      if (hasChanges) console.log(`           ${YELLOW}⚠ Uncommitted changes${RESET}`);
       console.log();
 
       printMenu();
 
-      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-8]: `)).trim();
+      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-7]: `)).trim();
 
       switch (choice) {
         case '1':
@@ -477,9 +400,6 @@ async function main() {
           await setupCron();
           break;
         case '7':
-          await commitAndPushExisting();
-          break;
-        case '8':
           console.log(`\n${GREEN}Goodbye! 🧱${RESET}\n`);
           rl.close();
           process.exit(0);

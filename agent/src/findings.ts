@@ -93,10 +93,8 @@ export function loadState(): RunState {
 
 export function saveState(state: RunState): void {
   state.lastRun = new Date().toISOString();
-  // cap seenUrls at 5000 to avoid unbounded growth
-  if (state.seenUrls.length > 5000) {
-    state.seenUrls = state.seenUrls.slice(-5000);
-  }
+  // No longer capping seenUrls at 5000 - we need full history for deduplication
+  // unless the file size becomes a major issue (unlikely for many thousands of URLs).
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(STATE_PATH, JSON.stringify(state, null, 2), 'utf-8');
 }

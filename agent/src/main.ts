@@ -18,7 +18,6 @@
 import { getBatch, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, saveFindings, loadState, saveState, addFindings } from './findings.js';
 import { runResearch } from './researcher.js';
-import { hasUncommittedChanges, commitAndPush, isGitRepo, remoteExists } from './git.js';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -39,15 +38,6 @@ async function main() {
   log('wall-of-shame agent starting');
   log(`categories: ${CATEGORY_COUNT}  |  batch size: ${batchSize}  |  dry-run: ${dryRun}`);
   hr();
-
-  // Check git setup
-  if (!dryRun) {
-    if (!isGitRepo()) {
-      log('WARN: not inside a git repo — skipping commit/push');
-    } else if (!remoteExists()) {
-      log('WARN: no "origin" remote — skipping push');
-    }
-  }
 
   const store = loadFindings();
   const state = loadState();
@@ -83,46 +73,24 @@ async function main() {
           state.queryHistory[q] = now;
         }
         
+        const added = await addFindings(store, state, raws, cat.key, log);
+        log(`  new (deduplicated): ${added.length}`);
+        totalAdded += added.length;
+
+        // Advance state individually per successful category
+        state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
         anySucceeded = true;
       } catch (err) {
         log(`ERROR during research for ${cat.key}: ${String(err)}`);
-        raws = [];
+        log(`Category ${cat.key} failed - will be retried next run.`);
       }
-
-      log(`  raw findings from pi: ${raws.length}`);
-
-      const added = await addFindings(store, state, raws, cat.key, log);
-      log(`  new (deduplicated): ${added.length}`);
-      totalAdded += added.length;
 
       hr();
     }
 
-    // Only advance category index if at least one category succeeded
-    if (anySucceeded) {
-      state.categoryIndex = (state.categoryIndex + batchSize) % CATEGORY_COUNT;
-    }
-
     saveFindings(store);
     saveState(state);
-    log(`saved findings.json — total: ${store.findings.length}  (+${totalAdded} this run)`);
-
-    if (totalAdded > 0) {
-      if (isGitRepo() && remoteExists()) {
-        log(`committing and pushing ${totalAdded} new findings...`);
-        try {
-          commitAndPush(totalAdded);
-          log('pushed — GitHub Actions will rebuild the site');
-        } catch (err) {
-          log(`WARN: git push failed: ${String(err)}`);
-          log('findings.json was saved locally — push manually when ready');
-        }
-      } else {
-        log('skipped git push (no repo or no remote)');
-      }
-    } else {
-      log('no new findings this run — nothing to commit');
-    }
+    log(`saved data locally — total: ${store.findings.length}  (+${totalAdded} this run)`);
   }
 
   hr();
