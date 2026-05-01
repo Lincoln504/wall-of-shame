@@ -18,7 +18,6 @@
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, saveFindings, loadState, saveState, addFindings } from './findings.js';
 import { runResearch } from './researcher.js';
-import { runReview } from './reviewer.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
@@ -56,83 +55,56 @@ async function main() {
     }
     hr();
   } else {
-    const discoveryBatch: { findings: import('./findings.js').RawFinding[], categoryKey: string }[] = [];
-
-    // 1. Discovery Phase
+    // Process categories one-by-one to ensure state index only advances for success
     for (let i = 0; i < batchSize; i++) {
       const cat = CATEGORIES[state.categoryIndex];
       if (!cat) break;
 
-      log(`[${i + 1}/${batchSize}] discovering: ${cat.name}`);
+      log(`[${i + 1}/${batchSize}] researching: ${cat.name}`);
 
       try {
         const catHistory = state.queryHistory[cat.key] || {};
         const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
+        const raws = result.findings;
         
-        if (result.findings.length > 0) {
-          discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
-        }
-        
-        // Update query history immediately
+        // Update query history with current timestamp
         const now = new Date().toISOString();
         if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
           state.queryHistory[cat.key]![q] = now;
         }
+        
+        const added = await addFindings(store, state, raws, cat.key, log);
+        log(`  new (deduplicated): ${added.length}`);
+        totalAdded += added.length;
 
-        // Increment state index - we've successfully researched this category
+        // ONLY advance category index on success
         state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+        
+        // Save state immediately after each successful category
+        saveFindings(store);
         saveState(state);
       } catch (err) {
         log(`ERROR during research for ${cat.key}: ${String(err)}`);
         log(`Category ${cat.key} failed - it will remain at index ${state.categoryIndex} for the next run.`);
-        // Stop batch on failure to maintain serial progress
+        // We stop the batch on first failure to keep state simple and linear
         break;
       }
+
       hr();
     }
 
-    // 2. Review & Save Phase
-    if (discoveryBatch.length > 0) {
-      log(`starting batch review for ${discoveryBatch.reduce((acc, b) => acc + b.findings.length, 0)} discoveries...`);
-      
-      for (const item of discoveryBatch) {
-        try {
-          const reviewedFindings = await runReview(item.findings, log);
-          const added = await addFindings(store, state, reviewedFindings, item.categoryKey, log);
-          totalAdded += added.length;
+    log(`Batch complete — total: ${store.findings.length}  (+${totalAdded} this run)`);
 
-          // Crucially: also mark all ORIGINAL findings as seen, even if rejected,
-          // so we don't spend credits discovering them again next time.
-          for (const raw of item.findings) {
-            if (raw.url && !state.seenUrls.includes(raw.url)) {
-              state.seenUrls.push(raw.url);
-            }
-          }
-        } catch (err) {
-          log(`  [warn] review failed for ${item.categoryKey}: ${String(err)}`);
-          // Fallback: try to add the unreviewed ones
-          const added = await addFindings(store, state, item.findings, item.categoryKey, log);
-          totalAdded += added.length;
-        }
+    // Auto Push
+    if (isGitRepo() && remoteExists() && hasDataChanges()) {
+      log('automatically committing and pushing results...');
+      try {
+        commitAndPush(totalAdded);
+        log('pushed — site will update shortly');
+      } catch (err) {
+        log(`WARN: git push failed: ${String(err)}`);
       }
-
-      saveFindings(store);
-      saveState(state);
-      log(`saved data locally — total: ${store.findings.length} (+${totalAdded} this run)`);
-
-      // 3. Auto Push
-      if (isGitRepo() && remoteExists() && hasDataChanges()) {
-        log('automatically committing and pushing batch results...');
-        try {
-          commitAndPush(totalAdded);
-          log('pushed — site will update shortly');
-        } catch (err) {
-          log(`WARN: git push failed: ${String(err)}`);
-        }
-      }
-    } else {
-      log('no new findings discovered in this batch.');
     }
   }
 
