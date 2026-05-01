@@ -34,6 +34,11 @@ CRITICAL QUALITY BAR:
 We only include pieces that ADVANCE or NORMALIZE harm. 
 If in doubt, be critical and remove the entry.
 
+SEVERITY GUIDELINES:
+- LOW: Contestable or problematic arguments that have legitimate constitutional or legal grounding, minor rhetorical excesses, or positions that are not inherently harmful but use questionable framing. This includes good-faith advocacy on controversial topics, policy disagreements, or positions supported by established legal precedents.
+- MEDIUM: Arguments that actively mislead, use fallacious reasoning, or advance harmful narratives without being overtly malicious. This includes cherry-picking data, false equivalence, or framing that privileges harmful outcomes over democratic values.
+- HIGH: Clear disinformation, overt hate speech, or systematic attempts to undermine democratic institutions, human rights, or evidence-based governance.
+
 Return ONLY a raw JSON array of the reviewed/verified findings (no markdown, no preamble):
 [
   {
