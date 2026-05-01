@@ -7,6 +7,10 @@ on:
       - 'agent/data/findings.json'
       - 'site/**'
       - '.github/workflows/deploy.yml'
+  workflow_run:
+    workflows: ["Run Research Agent"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -21,6 +25,10 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Only run if triggered by push/dispatch OR a SUCCESSFUL research run
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
