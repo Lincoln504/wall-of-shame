@@ -17,7 +17,8 @@
 
 import { createInterface } from 'readline';
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
-import { loadFindings, loadState, saveState } from './findings.js';
+import { loadFindings, loadState, saveState, saveFindings, addFindings } from './findings.js';
+import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -129,44 +130,75 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
     console.log(`\n${YELLOW}To actually run research, select option 1 instead.${RESET}\n`);
     totalAdded = 0;
   } else {
+    const discoveryBatch: { findings: import('./findings.js').RawFinding[], categoryKey: string }[] = [];
+
+    // 1. Discovery Phase
     for (let i = 0; i < batchSize; i++) {
       const cat = CATEGORIES[state.categoryIndex];
       if (!cat) break;
 
-      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Researching: ${cat.name} ... `);
+      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Discovering: ${cat.name} ... `);
 
       try {
-        // Dynamic import to avoid loading pi SDK at startup
         const { runResearch } = await import('./researcher.js');
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
         const catHistory = state.queryHistory[cat.key] || {};
         const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, logFn);
-        const raws = result.findings;
-
-        process.stdout.write(`${GREEN}${raws.length} raw findings${RESET}\n`);
-
-        const added = await (await import('./findings.js')).addFindings(store, state, raws, cat.key, logFn);
-        process.stdout.write(`  ${GREEN}+${added.length} new${RESET} (deduplicated)\n`);
         
-        // Update query history with current timestamp
+        if (result.findings.length > 0) {
+          discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
+        }
+
+        process.stdout.write(`${GREEN}${result.findings.length} findings${RESET}\n`);
+        
         const now = new Date().toISOString();
         if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
           state.queryHistory[cat.key]![q] = now;
         }
 
-        totalAdded += added.length;
-        
-        // Advance category index individually
         state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-        (await import('./findings.js')).saveState(state);
-        (await import('./findings.js')).saveFindings(store);
+        saveState(state);
       } catch (err) {
         process.stdout.write(`${RED}ERROR${RESET}\n`);
         process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
-        console.log(`\n${YELLOW}Stopping batch due to error. Category index remains at ${state.categoryIndex}.${RESET}`);
+        console.log(`\n${YELLOW}Stopping discovery due to error. Category index remains at ${state.categoryIndex}.${RESET}`);
         totalErrors++;
         break;
+      }
+    }
+
+    // 2. Review & Save Phase
+    if (discoveryBatch.length > 0) {
+      console.log(`\n${BOLD}Starting batch review...${RESET}`);
+      const { runReview } = await import('./reviewer.js');
+      
+      for (const item of discoveryBatch) {
+        try {
+          const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
+          const reviewed = await runReview(item.findings, logFn);
+          const added = await addFindings(store, state, reviewed, item.categoryKey, logFn);
+          totalAdded += added.length;
+        } catch (err) {
+          console.log(`  ${RED}Review failed for ${item.categoryKey}: ${String(err).split('\n')[0]}${RESET}`);
+          const added = await addFindings(store, state, item.findings, item.categoryKey);
+          totalAdded += added.length;
+        }
+      }
+
+      saveFindings(store);
+      saveState(state);
+      console.log(`\n${GREEN}✓ Batch processed and saved locally.${RESET}`);
+
+      // 3. Auto Push
+      if (isGitRepo() && remoteExists() && hasDataChanges()) {
+        console.log(`\n${BOLD}Automatically committing and pushing updates...${RESET}`);
+        try {
+          commitAndPush(totalAdded);
+          console.log(`${GREEN}✓ Data synchronized with origin${RESET}`);
+        } catch (err) {
+          console.log(`${RED}✗ Push failed: ${String(err).split('\n')[0]}${RESET}`);
+        }
       }
     }
   }
@@ -181,7 +213,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   if (!dryRun) {
     console.log(`  New items: ${GREEN}+${totalAdded}${RESET}`);
     console.log(`  Total:     ${CYAN}${store.findings.length}${RESET} findings`);
-    console.log(`\n${DIM}Findings saved locally.${RESET}`);
+    console.log(`\n${DIM}Findings saved and pushed.${RESET}`);
   }
 }
 
