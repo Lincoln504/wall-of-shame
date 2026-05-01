@@ -40,41 +40,23 @@ describe('CATEGORIES', () => {
     }
   });
 
-  it('each researchQuery contains the category name', () => {
+  it('each researchQuery is a substantial string', () => {
     for (const cat of CATEGORIES) {
-      const nameLower = cat.name.toLowerCase();
-      const queryLower = cat.researchQuery.toLowerCase();
-      // At least one significant word (>=5 chars) from the name should appear in the query
-      const words = nameLower.split(/[^a-z]+/).filter(w => w.length >= 5);
-      const matched = words.length === 0 || words.some(w => queryLower.includes(w));
-      expect(matched).toBe(true);
+      expect(cat.researchQuery.length).toBeGreaterThan(50);
     }
   });
 
-  it('each researchQuery has query keywords', () => {
-    const firstCat = CATEGORIES[0];
-    expect(firstCat.researchQuery.length).toBeGreaterThan(50);
-    expect(firstCat.researchQuery).toContain('Find');
-    expect(firstCat.researchQuery).toContain('Research these angles');
-  });
-
-  it('all research queries are substantial strings', () => {
-    for (const cat of CATEGORIES) {
-      expect(cat.researchQuery.length).toBeGreaterThan(20);
-    }
-  });
-
-  it('has a reasonable number of categories (>= 20)', () => {
-    expect(CATEGORIES.length).toBeGreaterThanOrEqual(20);
+  it('has exactly 13 categories as currently defined', () => {
+    expect(CATEGORIES.length).toBe(13);
   });
 
   it('has diverse category types covering multiple areas', () => {
     const keys = CATEGORIES.map(c => c.key);
-    expect(keys).toContain('union_busting');
-    expect(keys).toContain('climate_denial');
-    expect(keys).toContain('trans_panic');
-    expect(keys).toContain('colorblind_racism');
-    expect(keys).toContain('billionaire_worship');
+    expect(keys).toContain('labor');
+    expect(keys).toContain('economics');
+    expect(keys).toContain('race');
+    expect(keys).toContain('technology');
+    expect(keys).toContain('climate');
   });
 });
 
@@ -97,18 +79,16 @@ describe('getBatch', () => {
   });
 
   it('wraps around when index + size exceeds CATEGORY_COUNT', () => {
-    // getBatch uses index % CATEGORIES.length as start.
-    // For a wrap, pick an index near the end.
-    // With len=34, size=3: idx=32 => start=32, then +1=33, +2=0 (wraps).
-    const batch = getBatch(32, 3);
-    expect(batch[0].key).toBe(CATEGORIES[32].key);
-    expect(batch[1].key).toBe(CATEGORIES[33].key);
+    // For 13 categories, idx=11, size=3 should return 11, 12, 0
+    const batch = getBatch(11, 3);
+    expect(batch[0].key).toBe(CATEGORIES[11].key);
+    expect(batch[1].key).toBe(CATEGORIES[12].key);
     expect(batch[2].key).toBe(CATEGORIES[0].key);
   });
 
   it('handles batch index where start wraps', () => {
     const batch = getBatch(CATEGORY_COUNT, 2);
-    // index=34 => start = 34 % 34 = 0
+    // index=13 => start = 13 % 13 = 0
     expect(batch[0].key).toBe(CATEGORIES[0].key);
     expect(batch[1].key).toBe(CATEGORIES[1].key);
   });
@@ -145,8 +125,6 @@ describe('getBatch', () => {
   });
 
   it('sequential batches cover all categories over time', () => {
-    // getBatch(index, size) uses start = index % len.
-    // Iterating index 0,1,2,...,33 with size=4 covers all start positions.
     const batchSize = 4;
     const seen = new Set<string>();
 

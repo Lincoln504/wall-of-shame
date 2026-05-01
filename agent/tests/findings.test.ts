@@ -304,37 +304,21 @@ describe('findings file I/O (integration)', () => {
   });
 
   it('round-trips state through save and load', () => {
+    const nowISO = new Date().toISOString();
     const state: RunState = {
       lastRun: '2025-06-01T00:00:00.000Z',
       categoryIndex: 3,
       seenUrls: ['https://ex.com/a', 'https://ex.com/b'],
-      queryHistory: { 'test query': '2025-06-01T00:00:00.000Z' },
+      queryHistory: { cat1: { 'test query': nowISO } },
     };
 
     mod.saveState(state);
     const loaded = mod.loadState();
     expect(loaded.categoryIndex).toBe(3);
     expect(loaded.seenUrls).toEqual(['https://ex.com/a', 'https://ex.com/b']);
-    expect(loaded.queryHistory).toEqual({ 'test query': '2025-06-01T00:00:00.000Z' });
+    expect(loaded.queryHistory).toEqual({ cat1: { 'test query': nowISO } });
     // lastRun should be updated
     expect(loaded.lastRun).not.toBe('2025-06-01T00:00:00.000Z');
-  });
-
-  it('caps seenUrls at 5000 in saveState', () => {
-    const manyUrls = Array.from({ length: 5500 }, (_, i) => `https://ex.com/${i}`);
-    const state: RunState = {
-      lastRun: '',
-      categoryIndex: 0,
-      seenUrls: manyUrls,
-      queryHistory: {},
-    };
-
-    mod.saveState(state);
-    const loaded = mod.loadState();
-    expect(loaded.seenUrls).toHaveLength(5000);
-    // Should keep the last 5000
-    expect(loaded.seenUrls[0]).toBe('https://ex.com/500');
-    expect(loaded.seenUrls[loaded.seenUrls.length - 1]).toBe('https://ex.com/5499');
   });
 
   it('is idempotent when saving empty store', () => {

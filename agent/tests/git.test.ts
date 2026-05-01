@@ -60,10 +60,10 @@ describe('git.ts (in real repo)', () => {
     expect(mod.isGitRepo()).toBe(true);
   });
 
-  it('hasUncommittedChanges returns boolean', async () => {
+  it('hasDataChanges returns boolean', async () => {
     const mod = await import('../src/git.js');
     // Should not throw
-    const result = mod.hasUncommittedChanges();
+    const result = mod.hasDataChanges();
     expect(typeof result).toBe('boolean');
   });
 
@@ -96,13 +96,13 @@ describe('git helpers (isolated temp repo)', () => {
     expect(mod.isGitRepo()).toBe(true);
   });
 
-  it('hasUncommittedChanges detects uncommitted findings.json changes', () => {
+  it('hasDataChanges detects uncommitted findings.json changes', () => {
     // Simulate a change to findings.json
     writeFileSync(repo.findingsPath, JSON.stringify({ test: true }), 'utf-8');
 
     // The real git.ts tracks agent/data/findings.json specifically.
     // Our temp repo has findings.json at the same relative path.
-    // The real module's hasUncommittedChanges runs:
+    // The real module's hasDataChanges runs:
     //   git('status --porcelain agent/data/findings.json')
     // from REPO_ROOT (wall-of-shame/).
     // Our temp structure matches: repo.root/agent/data/findings.json
@@ -124,7 +124,7 @@ describe('git helpers (isolated temp repo)', () => {
     expect(log).toContain(date);
   });
 
-  it('hasUncommittedChanges returns false on clean working tree', () => {
+  it('hasDataChanges returns false on clean working tree', () => {
     const status = git('status --porcelain agent/data/findings.json', repo.root);
     expect(status).toBe('');
   });
@@ -139,12 +139,12 @@ describe('git helpers (isolated temp repo)', () => {
 // ── Edge case tests using the real module ─────────────────────────────────────
 
 describe('git.ts edge cases', () => {
-  it('hasUncommittedChanges handles missing findings.json gracefully', async () => {
+  it('hasDataChanges handles missing findings.json gracefully', async () => {
     // findings.json may or may not exist in the real repo
     const mod = await import('../src/git.js');
     // Should return false if no changes, which is correct whether
     // the file exists or not
-    expect(typeof mod.hasUncommittedChanges()).toBe('boolean');
+    expect(typeof mod.hasDataChanges()).toBe('boolean');
   });
 
   it('isGitRepo outside a git repo returns false', () => {
