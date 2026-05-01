@@ -93,8 +93,18 @@ export function loadState(): RunState {
 
 export function saveState(state: RunState): void {
   state.lastRun = new Date().toISOString();
-  // No longer capping seenUrls at 5000 - we need full history for deduplication
-  // unless the file size becomes a major issue (unlikely for many thousands of URLs).
+
+  // Prune query history: remove items older than 30 days
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const prunedHistory: Record<string, string> = {};
+  for (const [query, lastAt] of Object.entries(state.queryHistory || {})) {
+    if (now - new Date(lastAt).getTime() < THIRTY_DAYS_MS) {
+      prunedHistory[query] = lastAt;
+    }
+  }
+  state.queryHistory = prunedHistory;
+
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(STATE_PATH, JSON.stringify(state, null, 2), 'utf-8');
 }

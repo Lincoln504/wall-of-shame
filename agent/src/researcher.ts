@@ -184,9 +184,14 @@ export async function runResearch(
     // Calculate forbidden queries (used in the last 7 days)
     const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const forbidden = Object.entries(queryHistory || {})
+    const forbiddenEntries = Object.entries(queryHistory || {})
       .filter(([_, lastAt]) => now - new Date(lastAt).getTime() < ONE_WEEK_MS)
-      .map(([q, _]) => q);
+      // Sort most recent first
+      .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime())
+      // Cap at 30 to avoid prompt character limits
+      .slice(0, 30);
+
+    const forbidden = forbiddenEntries.map(([q, _]) => q);
 
     const avoidList = forbidden.length > 0
       ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use SIGNIFICANTLY DIFFERENT phrasing and explore new angles.`
