@@ -458,4 +458,3 @@ async function main() {
 }
 
 main();
-);
