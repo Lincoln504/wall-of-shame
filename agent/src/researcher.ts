@@ -10,6 +10,7 @@ import {
   ModelRegistry,
 } from '@mariozechner/pi-coding-agent';
 import type { RawFinding } from './findings.js';
+import { safeParseJson } from './utils.js';
 
 // ── Model config ──────────────────────────────────────────────────────────────
 
@@ -188,8 +189,8 @@ export async function runResearch(
       .filter(([_, lastAt]) => now - new Date(lastAt).getTime() < ONE_WEEK_MS)
       // Sort most recent first
       .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime())
-      // Cap at 30 to avoid prompt character limits
-      .slice(0, 30);
+      // Cap at 15 to stay well within prompt character limits
+      .slice(0, 15);
 
     const forbidden = forbiddenEntries.map(([q, _]) => q);
 
@@ -214,7 +215,12 @@ export async function runResearch(
 
 PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful. Do NOT flag a page merely because its subject matter is bad. A news article reporting on a harmful act is not itself harmful. An investigative piece exposing corporate manipulation is not itself manipulative. Ask: is this piece advocating for, normalizing, or misleadingly framing the bad thing — or is it reporting on / criticizing it? Only the former belongs in findings.`;
 
-    const researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
+    let researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
+
+    // Hard cap at 11,500 characters to ensure extension execution (limit is 12k)
+    if (researchQueryStr.length > 11500) {
+      researchQueryStr = researchQueryStr.slice(0, 11500) + '... [TRUNCATED]';
+    }
 
     // Execute the command directly via the handler
     await researchCommand.handler(researchQueryStr, session.extensionRunner.createCommandContext());
@@ -232,40 +238,21 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
 
     let result: { findings: import('./findings.js').RawFinding[]; queries: string[] };
     try {
-      // Find the first { and last } to extract JSON from potential markdown/preamble
-      const start = text.indexOf('{');
-      const end = text.lastIndexOf('}');
-      if (start === -1 || end === -1) throw new Error('No JSON object found in response');
-      
-      let jsonText = text.slice(start, end + 1);
-      
-      // Clean up common model misformatting (e.g. trailing commas, markdown blocks inside JSON)
-      jsonText = jsonText
-        .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
-        .replace(/\\n/g, ' ')          // Replace actual newlines with spaces for safer parsing
-        .replace(/\s+/g, ' ');         // Collapse multiple spaces
-
-      try {
-        result = JSON.parse(jsonText);
-      } catch (parseErr) {
-        // Fallback: try to extract JUST the findings array if the whole object failed
-        log?.(`  [pi] Primary JSON parse failed, attempting secondary extraction...`);
-        const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
-        if (findingsMatch && findingsMatch[1]) {
-          try {
-            const findings = JSON.parse(findingsMatch[1].replace(/,\s*([}\]])/g, '$1'));
-            result = { findings, queries: [] };
-          } catch {
-            throw parseErr;
-          }
-        } else {
-          throw parseErr;
-        }
-      }
+      result = safeParseJson<{ findings: import('./findings.js').RawFinding[]; queries: string[] }>(text);
     } catch (err) {
       log(`  [pi] FAILED to parse extraction JSON. Raw response length: ${text.length}`);
-      log(`  [pi] Snippet: ${text.slice(0, 300)}...`);
-      throw new Error(`JSON extraction failed: ${String(err)}`);
+      // Fallback: try to extract JUST the findings array if the whole object failed
+      const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
+      if (findingsMatch && findingsMatch[1]) {
+        try {
+          const findings = safeParseJson<import('./findings.js').RawFinding[]>(findingsMatch[1]);
+          result = { findings, queries: [] };
+        } catch {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
     }
 
     return {
