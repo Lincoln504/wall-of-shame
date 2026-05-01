@@ -64,13 +64,15 @@ async function main() {
 
       let raws: import('./findings.js').RawFinding[];
       try {
-        const result = await runResearch(cat.researchQuery, cat.key, cat.name, state.queryHistory, log);
+        const catHistory = state.queryHistory[cat.key] || {};
+        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
         raws = result.findings;
         
         // Update query history with current timestamp
         const now = new Date().toISOString();
+        if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
-          state.queryHistory[q] = now;
+          state.queryHistory[cat.key]![q] = now;
         }
         
         const added = await addFindings(store, state, raws, cat.key, log);

@@ -81,10 +81,21 @@ export function loadState(): RunState {
   if (!existsSync(STATE_PATH)) return state;
   try {
     const loaded = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+    
+    // Migration: if loaded.queryHistory is flat (values are strings), move them to a 'legacy' bucket or clear them
+    // For simplicity and effectiveness, we'll clear them or try to guess.
+    // Actually, let's just ensure it's a nested object.
+    let queryHistory = loaded.queryHistory || {};
+    const firstVal = Object.values(queryHistory)[0];
+    if (firstVal && typeof firstVal === 'string') {
+      // It's the old flat format. Move it to a 'migrated' key so we don't lose data, but it's now category-aware.
+      queryHistory = { migrated_legacy: queryHistory };
+    }
+
     return {
       ...state,
       ...loaded,
-      queryHistory: loaded.queryHistory || {}
+      queryHistory
     };
   } catch {
     return state;
@@ -97,10 +108,19 @@ export function saveState(state: RunState): void {
   // Prune query history: remove items older than 30 days
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   const now = Date.now();
-  const prunedHistory: Record<string, string> = {};
-  for (const [query, lastAt] of Object.entries(state.queryHistory || {})) {
-    if (now - new Date(lastAt).getTime() < THIRTY_DAYS_MS) {
-      prunedHistory[query] = lastAt;
+  const prunedHistory: Record<string, Record<string, string>> = {};
+  
+  for (const [catKey, history] of Object.entries(state.queryHistory || {})) {
+    const catPruned: Record<string, string> = {};
+    let hasEntries = false;
+    for (const [query, lastAt] of Object.entries(history)) {
+      if (now - new Date(lastAt).getTime() < THIRTY_DAYS_MS) {
+        catPruned[query] = lastAt;
+        hasEntries = true;
+      }
+    }
+    if (hasEntries) {
+      prunedHistory[catKey] = catPruned;
     }
   }
   state.queryHistory = prunedHistory;

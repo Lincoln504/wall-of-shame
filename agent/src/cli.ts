@@ -138,7 +138,8 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         // Dynamic import to avoid loading pi SDK at startup
         const { runResearch } = await import('./researcher.js');
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
-        const result = await runResearch(cat.researchQuery, cat.key, cat.name, state.queryHistory, logFn);
+        const catHistory = state.queryHistory[cat.key] || {};
+        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, logFn);
         const raws = result.findings;
 
         process.stdout.write(`${GREEN}${raws.length} raw findings${RESET}\n`);
@@ -148,8 +149,9 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         
         // Update query history with current timestamp
         const now = new Date().toISOString();
+        if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
-          state.queryHistory[q] = now;
+          state.queryHistory[cat.key]![q] = now;
         }
 
         totalAdded += added.length;
