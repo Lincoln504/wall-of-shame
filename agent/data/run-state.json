@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T12:16:41.005Z",
-  "categoryIndex": 12,
+  "lastRun": "2026-05-05T12:22:06.950Z",
+  "categoryIndex": 0,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -113,6 +113,13 @@
     ],
     "disability": [
       "localnewsmatters.org/2024/02/22/serial-ada-plaintiffs-alter-tactics-and-venues-as-they-launch-new-litigation-in-state-courts"
+    ],
+    "war": [
+      "quincyinst.org/2025/01/08/whos-funding-dcs-pro-war-think-tanks",
+      "en.wikipedia.org/wiki/pentagon_military_analyst_program",
+      "taxpayer.net/wp-content/uploads/2024/10/oct-2024-political-footprint-of-the-military-industry.pdf",
+      "jacobin.com/2023/10/raytheon-general-dynamics-gaza-israel-war-military-industrial-complex",
+      "defensepriorities.org/wp-content/uploads/2024/03/defp_great_power_competition_as_an_anachronism.pdf"
     ]
   },
   "queryHistory": {
@@ -530,7 +537,12 @@
       "defense spending economic growth vs civilian infrastructure GDP returns": "2026-05-05T09:07:21.266Z",
       "1033 Program military equipment to police statistics": "2026-05-05T09:07:21.266Z",
       "ICE expansion budget projections 2029": "2026-05-05T09:07:21.266Z",
-      "National Endowment for Democracy regime change criticism": "2026-05-05T09:07:21.266Z"
+      "National Endowment for Democracy regime change criticism": "2026-05-05T09:07:21.266Z",
+      "Pentagon military analyst program propaganda": "2026-05-05T12:20:26.881Z",
+      "defense contractor lobbying spending": "2026-05-05T12:20:26.881Z",
+      "great power competition doctrine criticism": "2026-05-05T12:20:26.881Z",
+      "defense contractor executives war profits Israel Gaza": "2026-05-05T12:20:26.881Z",
+      "think tank funding defense industry": "2026-05-05T12:20:26.881Z"
     },
     "labor": {
       "Amazon anti-union consultant spending 2025": "2026-05-05T09:17:09.671Z",
