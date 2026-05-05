@@ -1,14 +1,16 @@
 import { homedir } from 'os';
 import { join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { 
+  runResearch as piRunResearch, 
+  shutdownManager,
+  resetConfig,
+} from '@lincoln504/pi-research';
 import {
-  createAgentSession,
-  DefaultResourceLoader,
-  SessionManager,
   SettingsManager,
   AuthStorage,
   ModelRegistry,
 } from '@mariozechner/pi-coding-agent';
+import { completeSimple } from '@mariozechner/pi-ai';
 import type { RawFinding } from './findings.js';
 import { safeParseJson } from './utils.js';
 
@@ -16,11 +18,6 @@ import { safeParseJson } from './utils.js';
 
 const OPENROUTER_PROVIDER = 'openrouter';
 const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
-
-// Allow override via PI_RESEARCH_HOME env var (used in CI)
-// Defaults to ~/Documents/pi-research for local development
-const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
-const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 // ── Extraction prompt template ────────────────────────────────────────────────
 // Sent to the LLM after /research completes so it can analyze results and
@@ -71,17 +68,13 @@ export interface ResearchResult {
 // ── Main entry point ──────────────────────────────────────────────────────────
 
 /**
- * Run research for a category.
+ * Run research for a category using the pi-research programmatic API.
  *
- * Sends `/research <query>` via the pi-research extension slash command to
- * perform the actual web research, then sends a second prompt instructing the
- * LLM to analyze the results and output a JSON array of findings.
- *
- * @param query     The research query (e.g. what articles to find, angles to explore)
+ * @param query        The research query (e.g. what articles to find, angles to explore)
  * @param categoryKey  The category key to embed in the extraction prompt
- * @param label     Human-readable label for logging
+ * @param label        Human-readable label for logging
  * @param queryHistory Recently used queries to avoid
- * @param log       Logging function
+ * @param log          Logging function
  */
 export async function runResearch(
   query: string,
@@ -94,158 +87,124 @@ export async function runResearch(
   process.env['PI_RESEARCH_SKIP_HEALTHCHECK'] = '1';
   process.env['PI_RESEARCH_BROWSER_HEADLESS'] = 'true';
   process.env['PI_RESEARCH_VERBOSE'] = '0';
+  process.env['PI_RESEARCH_RESEARCHER_TIMEOUT_MS'] = '600000'; // 10 minutes
 
-  const cwd = process.cwd();
   const agentDir = join(homedir(), '.pi', 'agent');
-
-  log(`  [pi] loading extension: ${PI_RESEARCH_EXTENSION}`);
-
-  const resourceLoader = new DefaultResourceLoader({
-    cwd,
-    agentDir,
-    additionalExtensionPaths: [PI_RESEARCH_HOME],
-    noExtensions: true,
-    noSkills: true,
-    noPromptTemplates: true,
-    noThemes: true,
-    noContextFiles: true,
-  } as ConstructorParameters<typeof DefaultResourceLoader>[0]);
-  await resourceLoader.reload();
-
   const authStorage = AuthStorage.create(join(agentDir, 'auth.json'));
   const modelRegistry = ModelRegistry.create(authStorage);
   const settingsManager = SettingsManager.create(agentDir);
 
-  // Resolve the DeepSeek model from the registry
+  // Resolve the model from the registry
   const model = modelRegistry.find(OPENROUTER_PROVIDER, DEEPSEEK_MODEL_ID);
   if (!model) {
     throw new Error(
-      `Model ${OPENROUTER_PROVIDER}/${DEEPSEEK_MODEL_ID} not found in registry. ` +
-      `Check ~/.pi/agent/models.json under the "${OPENROUTER_PROVIDER}" provider.`
+      `Model ${OPENROUTER_PROVIDER}/${DEEPSEEK_MODEL_ID} not found in registry.`
     );
   }
   log(`  [pi] using model: ${model.provider}/${model.id}`);
 
-  log(`  [pi] creating session for: ${label}`);
+  // Calculate forbidden queries (used in the last 7 days)
+  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const forbiddenEntries = Object.entries(queryHistory || {})
+    .filter(([_, lastAt]) => now - new Date(lastAt).getTime() < ONE_WEEK_MS)
+    .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime())
+    .slice(0, 15);
 
-  const { session } = await createAgentSession({
-    cwd,
-    agentDir,
-    resourceLoader,
-    authStorage,
-    modelRegistry,
-    settingsManager,
-    sessionManager: SessionManager.inMemory(),
-    model,
-  });
+  const forbidden = forbiddenEntries.map(([q, _]) => q);
+  const avoidList = forbidden.length > 0
+    ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use SIGNIFICANTLY DIFFERENT phrasing and explore new angles.`
+    : '';
 
-  // Provide a non-blocking UI context to prevent hangs in extensions that use UI calls
-  session.extensionRunner.setUIContext({
-    notify: (msg: string, type: string) => log(`  [pi] notification: [${type}] ${msg}`),
-    setWidget: (id: string, creator: any) => {
-      if (creator) log(`  [pi] extension widget active: ${id}`);
-    },
-    setStatus: (msg: string) => log(`  [pi] status: ${msg}`),
-    setWorkingIndicator: (msg: string) => log(`  [pi] working: ${msg}`),
-    confirm: async (title: string, msg: string) => {
-      log(`  [pi] auto-confirming extension dialog: ${title} - ${msg}`);
-      return true;
-    },
-    select: async (title: string, options: any[]) => {
-      log(`  [pi] auto-selecting first option for extension dialog: ${title}`);
-      return options[0]?.value;
-    },
-  } as any);
+  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const currentYear = new Date().getFullYear();
 
-  let fullOutput = '';
-  let toolCount = 0;
-
-  const unsub = session.subscribe((event) => {
-    if (
-      event.type === 'message_update' &&
-      (event as any).assistantMessageEvent?.type === 'text_delta'
-    ) {
-      const delta = (event as any).assistantMessageEvent.delta as string;
-      fullOutput += delta;
-      // Silence individual deltas for cleaner logs unless we're in extraction phase
-    } else if (event.type === 'tool_execution_start') {
-      toolCount++;
-      log(`  [pi] tool #${toolCount}: ${event.toolName}`);
-    }
-  });
-
-  try {
-    // Step 1: Run research via /research slash command.
-    log(`  [pi] starting research...`);
-    const researchCommand = session.extensionRunner.getCommand('research');
-    if (!researchCommand) {
-      throw new Error('Research command not found. Extension failed to load?');
-    }
-
-    // Calculate forbidden queries (used in the last 7 days)
-    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const forbiddenEntries = Object.entries(queryHistory || {})
-      .filter(([_, lastAt]) => now - new Date(lastAt).getTime() < ONE_WEEK_MS)
-      // Sort most recent first
-      .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime())
-      // Cap at 15 to stay well within prompt character limits
-      .slice(0, 15);
-
-    const forbidden = forbiddenEntries.map(([q, _]) => q);
-
-    const avoidList = forbidden.length > 0
-      ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use SIGNIFICANTLY DIFFERENT phrasing and explore new angles.`
-      : '';
-
-    const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const currentYear = new Date().getFullYear();
-
-    const researchStrategy = `
-    SEARCH STRATEGY — Be an investigative researcher. Do NOT just use the seed concepts; use them to generate 10-15 highly varied and creative search queries:
+  const researchStrategy = `
+SEARCH STRATEGY — Be an investigative researcher. Do NOT just use the seed concepts; use them to generate 10-15 highly varied and creative search queries:
 
 1. VARY PHRASING: Use synonyms, industry jargon vs. academic terms, and loaded vs. neutral language.
-2. VARY SOURCE TYPES: Target a mix of mainstream media (op-eds, commentary, major news outlets), niche ideological blogs, "alternative" news sites, and industry association PR. Mainstream sources are often the source of 'low' severity findings (subtle bias, misleading framing).
-3. VARY TIMEFRAMES: 
-   - Evergreen: Search for core ideological arguments without date constraints.
-   - RECENT/UP-TO-DATE: Specifically include the current year (${currentYear}) or the previous year (${currentYear - 1}) in many queries to surface fresh content and breaking news framing.
-   - Use search operators like "past month" or "past year" if your tool supports them.
-4. VARY ANGLES: Explore different facets of the category (e.g., different industries or specific policies).
+2. VARY SOURCE TYPES: Target a mix of mainstream media (op-eds, commentary, major news outlets), niche ideological blogs, "alternative" news sites, and industry association PR.
+3. VARY TIMEFRAMES: Include the current year (${currentYear}) or the previous year (${currentYear - 1}) in many queries.
+4. VARY ANGLES: Explore different facets of the category.
 5. CROSS-REFERENCE: Use findings from one search to inform the next.
 
-PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful. Do NOT flag a page merely because its subject matter is bad. A news article reporting on a harmful act is not itself harmful. An investigative piece exposing corporate manipulation is not itself manipulative. Ask: is this piece advocating for, normalizing, or misleadingly framing the bad thing — or is it reporting on / criticizing it? Only the former belongs in findings.`;
+PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.`;
 
-    let researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
+  let researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
 
-    // Hard cap at 11,500 characters to ensure extension execution (limit is 12k)
-    if (researchQueryStr.length > 11500) {
-      researchQueryStr = researchQueryStr.slice(0, 11500) + '... [TRUNCATED]';
+  const sessionId = `shame-${Date.now()}`;
+  const researchId = `research-${categoryKey}-${Date.now()}`;
+
+  const mockCtx: any = {
+    cwd: process.cwd(),
+    model,
+    modelRegistry,
+    settingsManager,
+    ui: {
+      notify: (msg: string) => log(`  [pi] ${msg}`),
+      setStatus: (msg: string) => log(`  [pi] status: ${msg}`),
     }
+  };
 
-    // Execute the command directly via the handler
-    await researchCommand.handler(researchQueryStr, session.extensionRunner.createCommandContext());
+  try {
+    log(`  [pi] starting research for: ${label}`);
+    
+    // Force a fresh config with our desired timeout for programmatic usage
+    resetConfig();
+    const config = {
+        RESEARCHER_TIMEOUT_MS: 600000, // 10 minutes
+        MAX_CONCURRENT_RESEARCHERS: 3,
+        RESEARCHER_MAX_RETRIES: 3,
+        RESEARCHER_MAX_RETRY_DELAY_MS: 5000,
+        DEFAULT_RESEARCH_DEPTH: 0,
+        MAX_SCRAPE_BATCHES: 3,
+        WORKER_THREADS: 4,
+        TUI_REFRESH_DEBOUNCE_MS: 10,
+        CONSOLE_RESTORE_DELAY_MS: 15000,
+    };
 
-    // Step 2: Extraction
+    const researchReport = await piRunResearch({
+      ctx: mockCtx,
+      query: researchQueryStr,
+      depth: 0, // Quick research for batch processing
+      model,
+      sessionId,
+      researchId,
+      config: config as any,
+      observer: {
+        onResearcherStart: (id, name) => log(`  [pi] researcher ${id} started: ${name}`),
+        onResearcherProgress: (id, msg) => { if (msg) log(`  [pi] researcher ${id}: ${msg}`); },
+        onSearchStart: (queries) => log(`  [pi] search burst: ${queries.length} queries`),
+        onSearchProgress: (links) => log(`  [pi] search: ${links} links found so far`),
+        onComplete: (synthesis) => log(`  [pi] research complete (${synthesis.length} chars)`),
+        onError: (err) => log(`  [pi] research error: ${err.message}`),
+      }
+    });
+
     log(`  [pi] extracting findings...`);
     const extractionPrompt = buildExtractionPrompt(categoryKey);
-    // Use prompt() which is the supported way to send messages in AgentSession
-    await session.prompt(extractionPrompt);
     
-    // The subscriber above has been collecting the fullOutput
-    const text = fullOutput;
+    const auth = await modelRegistry.getApiKeyAndHeaders(model);
+    if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);
 
-    unsub();
+    const extractionResult = await completeSimple(model, {
+      messages: [
+        { role: 'user', content: [{ type: 'text', text: `RESEARCH REPORT:\n\n${researchReport}` }], timestamp: Date.now() },
+        { role: 'user', content: [{ type: 'text', text: extractionPrompt }], timestamp: Date.now() }
+      ]
+    }, { apiKey: auth.apiKey, headers: auth.headers });
 
-    let result: { findings: import('./findings.js').RawFinding[]; queries: string[] };
+    const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text || "";
+
+    let result: { findings: RawFinding[]; queries: string[] };
     try {
-      result = safeParseJson<{ findings: import('./findings.js').RawFinding[]; queries: string[] }>(text);
+      result = safeParseJson<{ findings: RawFinding[]; queries: string[] }>(text);
     } catch (err) {
       log(`  [pi] FAILED to parse extraction JSON. Raw response length: ${text.length}`);
-      // Fallback: try to extract JUST the findings array if the whole object failed
       const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
       if (findingsMatch && findingsMatch[1]) {
         try {
-          const findings = safeParseJson<import('./findings.js').RawFinding[]>(findingsMatch[1]);
+          const findings = safeParseJson<RawFinding[]>(findingsMatch[1]);
           result = { findings, queries: [] };
         } catch {
           throw err;
@@ -260,7 +219,13 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
       queries: result.queries || [],
     };
   } catch (err) {
-    unsub();
     throw err;
   }
+}
+
+/**
+ * Clean up pi-research resources (e.g. browser pool).
+ */
+export async function shutdownResearch() {
+  await shutdownManager.runCleanup('agent shutdown');
 }

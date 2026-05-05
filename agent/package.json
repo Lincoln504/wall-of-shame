@@ -12,6 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@lincoln504/pi-research": "file:../../pi-research",
+    "@mariozechner/pi-ai": "^0.72.1",
     "@mariozechner/pi-coding-agent": "^0.70.2",
     "tsx": "^4.19.0"
   },

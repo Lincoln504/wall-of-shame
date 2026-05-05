@@ -443,6 +443,8 @@ async function main() {
           break;
         case '7':
           console.log(`\n${GREEN}Goodbye!${RESET}\n`);
+          const { shutdownResearch } = await import('./researcher.js');
+          await shutdownResearch();
           rl.close();
           process.exit(0);
         default:

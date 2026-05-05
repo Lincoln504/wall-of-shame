@@ -17,7 +17,7 @@
 
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, saveFindings, loadState, saveState, addFindings } from './findings.js';
-import { runResearch } from './researcher.js';
+import { runResearch, shutdownResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
 
@@ -36,107 +36,112 @@ const hr = () => console.log(`[${ts()}] ${'─'.repeat(60)}`);
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  hr();
-  log('wall-of-shame agent starting');
-  log(`categories: ${CATEGORY_COUNT}  |  batch size: ${batchSize}  |  dry-run: ${dryRun}`);
-  hr();
-
-  const store = loadFindings();
-  const state = loadState();
-  log(`existing findings: ${store.findings.length}`);
-  log(`resuming at category index: ${state.categoryIndex}`);
-
-  let totalAdded = 0;
-
-  if (dryRun) {
-    const batch = getBatch(state.categoryIndex, batchSize);
-    log('DRY-RUN: skipping research — no API calls will be made');
-    for (const cat of batch) {
-      log(`  would research: ${cat.name} (${cat.key})`);
-    }
+  try {
     hr();
-  } else {
-    const discoveryBatch: { findings: import('./findings.js').RawFinding[], categoryKey: string }[] = [];
+    log('wall-of-shame agent starting');
+    log(`categories: ${CATEGORY_COUNT} | batch size: ${batchSize} | dry-run: ${dryRun}`);
+    hr();
 
-    // 1. Discovery Phase
-    for (let i = 0; i < batchSize; i++) {
-      const cat = CATEGORIES[state.categoryIndex];
-      if (!cat) break;
+    const store = loadFindings();
+    const state = loadState();
+    log(`existing findings: ${store.findings.length}`);
+    log(`resuming at category index: ${state.categoryIndex}`);
 
-      log(`[${i + 1}/${batchSize}] discovering: ${cat.name}`);
+    let totalAdded = 0;
 
-      try {
-        const catHistory = state.queryHistory[cat.key] || {};
-        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
-        
-        if (result.findings.length > 0) {
-          discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
-        }
-        
-        // Update query history immediately
-        const now = new Date().toISOString();
-        if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
-        for (const q of result.queries) {
-          state.queryHistory[cat.key]![q] = now;
-        }
-
-        // Increment state index - we've successfully researched this category
-        state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-        saveState(state);
-      } catch (err) {
-        log(`ERROR during research for ${cat.key}: ${String(err)}`);
-        log(`Category ${cat.key} failed - it will remain at index ${state.categoryIndex} for the next run.`);
-        // Stop batch on failure to maintain serial progress
-        break;
+    if (dryRun) {
+      const batch = getBatch(state.categoryIndex, batchSize);
+      log('DRY-RUN: skipping research — no API calls will be made');
+      for (const cat of batch) {
+        log(`  would research: ${cat.name} (${cat.key})`);
       }
       hr();
-    }
-
-    // 2. Review & Save Phase
-    if (discoveryBatch.length > 0) {
-      log(`starting batch review for ${discoveryBatch.reduce((acc, b) => acc + b.findings.length, 0)} discoveries...`);
-      
-      for (const item of discoveryBatch) {
-        try {
-          const reviewedFindings = await runReview(item.findings, log);
-          const added = await addFindings(store, state, reviewedFindings, item.categoryKey, log);
-          totalAdded += added.length;
-
-          // Mark all ORIGINAL findings as seen
-          for (const raw of item.findings) {
-            if (raw.url && !state.seenUrls.includes(raw.url)) {
-              state.seenUrls.push(raw.url);
-            }
-          }
-        } catch (err) {
-          log(`  [warn] review failed for ${item.categoryKey}: ${String(err)}`);
-          // Fallback: try to add the unreviewed ones
-          const added = await addFindings(store, state, item.findings, item.categoryKey, log);
-          totalAdded += added.length;
-        }
-      }
-
-      saveFindings(store);
-      saveState(state);
-      log(`saved data locally — total: ${store.findings.length} (+${totalAdded} this run)`);
-
-      // 3. Auto Push
-      if (isGitRepo() && remoteExists() && hasDataChanges()) {
-        log('automatically committing and pushing batch results...');
-        try {
-          commitAndPush(totalAdded);
-          log('pushed — site will update shortly');
-        } catch (err) {
-          log(`WARN: git push failed: ${String(err)}`);
-        }
-      }
     } else {
-      log('no new findings discovered in this batch.');
-    }
-  }
+      const discoveryBatch: { findings: import('./findings.js').RawFinding[]; categoryKey: string }[] = [];
 
-  hr();
-  log(`done. next run will start at category index: ${state.categoryIndex}`);
+      // 1. Discovery Phase
+      for (let i = 0; i < batchSize; i++) {
+        const cat = CATEGORIES[state.categoryIndex];
+        if (!cat) break;
+
+        log(`[${i + 1}/${batchSize}] discovering: ${cat.name}`);
+
+        try {
+          const catHistory = state.queryHistory[cat.key] || {};
+          const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
+
+          if (result.findings.length > 0) {
+            discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
+          }
+
+          // Update query history immediately
+          const now = new Date().toISOString();
+          if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
+          for (const q of result.queries) {
+            state.queryHistory[cat.key]![q] = now;
+          }
+
+          // Increment state index - we've successfully researched this category
+          state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+          saveState(state);
+        } catch (err) {
+          log(`ERROR during research for ${cat.key}: ${String(err)}`);
+          log(`Category ${cat.key} failed - it will remain at index ${state.categoryIndex} for the next run.`);
+          // Stop batch on failure to maintain serial progress
+          break;
+        }
+        hr();
+      }
+
+      // 2. Review & Save Phase
+      if (discoveryBatch.length > 0) {
+        log(`starting batch review for ${discoveryBatch.reduce((acc, b) => acc + b.findings.length, 0)} discoveries...`);
+
+        for (const item of discoveryBatch) {
+          try {
+            const reviewedFindings = await runReview(item.findings, log);
+            const added = await addFindings(store, state, reviewedFindings, item.categoryKey, log);
+            totalAdded += added.length;
+
+            // Mark all ORIGINAL findings as seen
+            for (const raw of item.findings) {
+              if (raw.url && !state.seenUrls.includes(raw.url)) {
+                state.seenUrls.push(raw.url);
+              }
+            }
+          } catch (err) {
+            log(`  [warn] review failed for ${item.categoryKey}: ${String(err)}`);
+            // Fallback: try to add the unreviewed ones
+            const added = await addFindings(store, state, item.findings, item.categoryKey, log);
+            totalAdded += added.length;
+          }
+        }
+
+        saveFindings(store);
+        saveState(state);
+        log(`saved data locally — total: ${store.findings.length} (+${totalAdded} this run)`);
+
+        // 3. Auto Push
+        if (isGitRepo() && remoteExists() && hasDataChanges()) {
+          log('automatically committing and pushing batch results...');
+          try {
+            commitAndPush(totalAdded);
+            log('pushed — site will update shortly');
+          } catch (err) {
+            log(`WARN: git push failed: ${String(err)}`);
+          }
+        }
+      } else {
+        log('no new findings discovered in this batch.');
+      }
+    }
+
+    hr();
+    log(`done. next run will start at category index: ${state.categoryIndex}`);
+  } finally {
+    await shutdownResearch();
+    log('wall-of-shame agent shutdown complete');
+  }
 }
 
 main().catch((err) => {
