@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T15:57:16.979Z",
-  "categoryIndex": 9,
+  "lastRun": "2026-05-05T16:05:21.726Z",
+  "categoryIndex": 10,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -108,7 +108,14 @@
     "policing": [
       "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law",
       "city-journal.org/article/broken-windows-policing-public-health-safety",
-      "congress.gov/119/bills/hr503/bills-119hr503ih.pdf"
+      "congress.gov/119/bills/hr503/bills-119hr503ih.pdf",
+      "banks.senate.gov/news/press-releases/senator-jim-banks-introduces-the-qualified-immunity-act-of-2025",
+      "nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare",
+      "prisonpolicy.org/research/economics_of_incarceration",
+      "filtermag.org/fcc-ipcs-order-price-caps",
+      "apnews.com/article/prison-to-plate-inmate-labor-investigation-c6f0eb4747963283316e494eadf08c4e",
+      "boltsmag.org/california-prop-36-tough-on-crime-prison-reform",
+      "calmatters.org/justice/2025/09/gang-enhancements-three-strikes"
     ],
     "technology": [
       "reuters.com/sustainability/boards-policy-regulation/meta-buried-causal-evidence-social-media-harm-us-court-filings-allege-2025-11-23",
@@ -624,7 +631,14 @@
       "H.R. 503 Qualified Immunity Act of 2025": "2026-05-05T13:23:28.127Z",
       "Graham v. Connor force standard": "2026-05-05T13:23:28.127Z",
       "police drone surveillance ACLU": "2026-05-05T13:23:28.127Z",
-      "Laken Riley Act immigration detention": "2026-05-05T13:23:28.127Z"
+      "Laken Riley Act immigration detention": "2026-05-05T13:23:28.127Z",
+      "Qualified Immunity Act 2025": "2026-05-05T16:00:40.645Z",
+      "National Police Association qualified immunity lawfare": "2026-05-05T16:00:40.645Z",
+      "prison labor 13th amendment exploitation food brands": "2026-05-05T16:00:40.645Z",
+      "FCC prison phone rate increase October 2025": "2026-05-05T16:00:40.645Z",
+      "California Proposition 36 2024 tough on crime": "2026-05-05T16:00:40.645Z",
+      "California three strikes resentencing 2025": "2026-05-05T16:00:40.645Z",
+      "prison economy statistics costs wages 2026": "2026-05-05T16:00:40.645Z"
     },
     "technology": {
       "normalization of digital surveillance and dismissal of technological harms": "2026-05-05T08:40:07.973Z",

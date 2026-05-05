@@ -1,7 +1,31 @@
 {
-  "lastUpdated": "2026-05-05T15:28:59.428Z",
-  "totalFindings": 73,
+  "lastUpdated": "2026-05-05T16:05:21.725Z",
+  "totalFindings": 75,
   "findings": [
+    {
+      "id": "9bbeb6e2-16e2-4113-88aa-855fdb5bc282",
+      "url": "https://nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare/",
+      "title": "The National Police Association Supports New Legislation Introduced to Protect Officers from Lawfare",
+      "domain": "nationalpolice.org",
+      "summary": "The National Police Association endorses the Qualified Immunity Act, claiming that efforts to remove qualified immunity have caused a 'crisis' in police morale and staffing. It warns of a 'dangerous agenda' in states like Colorado and New Mexico that have weakened protections. The article cites recruitment difficulties and officer hesitation as key reasons for the bill.",
+      "category": "policing",
+      "whyBad": "1. The term 'lawfare' frames lawsuits against police as illegitimate attacks, implying that any legal challenge is an abuse of the system. 2. It blames staffing shortages on accountability reforms rather than on other factors, creating a false choice between protecting officers and public safety. 3. The article names Colorado and New Mexico as cautionary tales, using political fearmongering to push for federal codification of a controversial doctrine. 4. This rhetoric encourages a culture of impunity by presenting legal accountability as an existential threat to policing, rather than a necessary check on state power.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:05:21.724Z",
+      "researchQuery": "Focus: The defense of excessive state power and the normalization of exploitative carceral systems.\n    \n    Strategies to explore:\n    - VIOLENCE JUSTIFICATION: Using \"split-second\" excuses to make the use of excessive force by the state seem normal.\n    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.\n    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.\n    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.\n    - HARSHER SENTENCING: Pushing for mass incarceration and using \"law and order\" language to target specific communities.\n    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "ce5e42b3-d9b9-4c3b-b4f9-321392965559",
+      "url": "https://www.banks.senate.gov/news/press-releases/senator-jim-banks-introduces-the-qualified-immunity-act-of-2025/",
+      "title": "Senator Jim Banks Introduces the Qualified Immunity Act of 2025",
+      "domain": "banks.senate.gov",
+      "summary": "The press release announces the Qualified Immunity Act of 2025, which would codify the legal doctrine that shields police from civil lawsuits. Law enforcement groups quoted argue the bill is needed because officers make 'split-second decisions' and fear frivolous lawsuits. The bill has multiple Republican co-sponsors.",
+      "category": "policing",
+      "whyBad": "1. The press release repeatedly uses the 'split-second decision' frame to argue that officers should not be held liable even if they violate rights, as long as the law wasn't 'clearly established'. 2. This framing normalizes violence by suggesting that any accountability would paralyze officers, making them less effective. 3. The bill would make it nearly impossible for victims of police misconduct to win lawsuits, especially in cases involving new or evolving rights. 4. By codifying a judge-made doctrine, it entrenches a legal shield that has been widely criticized for blocking justice, presenting it as a necessary protection rather than a barrier to accountability.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:05:20.879Z",
+      "researchQuery": "Focus: The defense of excessive state power and the normalization of exploitative carceral systems.\n    \n    Strategies to explore:\n    - VIOLENCE JUSTIFICATION: Using \"split-second\" excuses to make the use of excessive force by the state seem normal.\n    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.\n    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.\n    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.\n    - HARSHER SENTENCING: Pushing for mass incarceration and using \"law and order\" language to target specific communities.\n    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "811d5393-b224-4d1b-80a6-1a90020eca09",
       "url": "https://www.whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office/",
