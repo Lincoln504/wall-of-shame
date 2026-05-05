@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T16:21:51.241Z",
-  "totalFindings": 79,
+  "lastUpdated": "2026-05-05T16:29:36.436Z",
+  "totalFindings": 80,
   "findings": [
+    {
+      "id": "1e55f5dd-b975-4f5a-abca-6d7c25eb8413",
+      "url": "https://www.realcleardefense.com/articles/2025/06/03/peace_through_strength_starts_with_reforming_the_pentagon_1114091.html",
+      "title": "Peace Through Strength Starts with Reforming the Pentagon",
+      "domain": "realcleardefense.com",
+      "summary": "- The article argues that reducing Pentagon inefficiencies and investing in new military technologies is essential for 'peace through strength'.\n- The author, an Anduril executive, calls for removing regulatory barriers that prevent non-traditional defense companies from quickly selling weapons.\n- She highlights Anduril's use of private capital to develop weapons without upfront taxpayer funding.\n- The intended conclusion is that less oversight and faster procurement are necessary to keep up with adversaries.\n- The article frames deregulation as a reform that will enhance national security.",
+      "category": "war",
+      "whyBad": "The article uses the 'peace through strength' slogan to frame the removal of government oversight on weapons procurement as a vital national security reform. This framing hides the fact that deregulation allows private defense companies to bypass democratic checks and taxpayer protections. By presenting less accountability as 'efficiency,' the piece normalizes the expansion of the arms industry and justifies a system that prioritizes corporate profit and rapid weaponization over public scrutiny and peace.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:29:36.436Z",
+      "researchQuery": "Focus: The effort to make military violence seem normal and the capture of government policy by the arms industry.\n    \n    Strategies to explore:\n    - PUSHING FOR WAR: Advocating for more fighting and \"regime change\" while hiding the role of the companies that profit from it.\n    - CLEANING UP HARM: Using technical language (like \"precision strike\") to hide the reality of civilian deaths.\n    - HIDING ATROCITIES: Dismissing reports of war crimes as \"fake\" or unavoidable results of war.\n    - WAR AS JOBS: Presenting the sale of weapons as a \"jobs program\" or a way to keep the world \"stable.\"\n    - DOMESTIC MILITARISM: Bringing military gear and tactics into local policing and government.\n    - INEVITABLE CONFLICT: Framing global fights as \"unavoidable\" to justify spending forever on the military.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "294fe1d0-58de-4b00-95e9-9bf3336404f7",
       "url": "https://waysandmeans.house.gov/2025/09/25/newt-gingrich-op-ed-reform-of-social-security-disability-benefits-could-help-move-countless-americans-toward-greater-sense-of-their-own-capabilities/",
