@@ -1,7 +1,43 @@
 {
-  "lastUpdated": "2026-05-05T13:45:57.519Z",
-  "totalFindings": 67,
+  "lastUpdated": "2026-05-05T13:50:14.733Z",
+  "totalFindings": 70,
   "findings": [
+    {
+      "id": "39b4292e-3cf0-4780-bbef-9ae80fac15f6",
+      "url": "https://www.city-journal.org/article/new-york-city-budget-carter-case-education-spending",
+      "title": "New York's Budget-Busting Special-Ed Problem",
+      "domain": "city-journal.org",
+      "summary": "An article that characterizes the cost of providing mandated special education services in New York City as a 'budget-busting drain' on taxpayers.",
+      "category": "Education/Civil Rights",
+      "whyBad": "The article reframes the civil rights of students with disabilities as a purely economic problem, using terms like 'budget-busting' and 'drain' to describe the cost of legal compliance. By focusing on the high cost of settlements rather than the school districts' failure to provide mandatory services, the piece shifts the blame from the institutions to the students themselves. This frames the enforcement of special education rights as an unfair burden on taxpayers, which helps justify the systemic neglect of disabled students.",
+      "severity": "high",
+      "foundAt": "2026-05-05T13:50:14.733Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "50718dbe-7228-46cc-8449-0fa89d7a8c3c",
+      "url": "https://www.dol.gov/newsroom/releases/osec/osec20250829",
+      "title": "US Department of Labor announces proposal to combat unemployment fraud",
+      "domain": "dol.gov",
+      "summary": "A government announcement framing the use of unemployment and disability benefits as being plagued by 'rampant fraud' to justify stricter oversight and new regulations.",
+      "category": "Economic/Benefits Rights",
+      "whyBad": "This official release uses highly charged language like 'rampant fraud' and 'criminals' to frame disability benefits as being under constant attack by cheaters. By focusing heavily on extreme, individual cases of fraud, it creates a narrative of widespread abuse that justifies stricter, more invasive oversight. This tactic hides the much larger scale of systemic errors and overpayments made by the government, making it easier for the public to support policies that restrict access to benefits for people who genuinely need them.",
+      "severity": "high",
+      "foundAt": "2026-05-05T13:50:14.281Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "4343fdb4-cc03-452c-80e6-c4eaf8b02c90",
+      "url": "https://www.ecomback.com/annual-2024-ada-website-accessibility-lawsuit-report",
+      "title": "2024 ADA Website Compliance Lawsuit Annual Report",
+      "domain": "ecomback.com",
+      "summary": "A report on ADA website accessibility lawsuits that characterizes the legal actions as 'shakedowns' and questions the legitimacy of plaintiffs who seek to enforce accessibility compliance.",
+      "category": "Legal/Accessibility Rights",
+      "whyBad": "The report uses predatory language like 'shakedowns' and 'serial lawsuits' to reframe the enforcement of accessibility laws as an act of extortion. By questioning whether disabled plaintiffs are 'legitimate consumers' or just 'testers in disguise,' it shifts the blame from businesses failing to follow the law to the people demanding their rights. This framing justifies the continued exclusion of disabled people by making their pursuit of legal access look like a scam, effectively normalizing the denial of basic digital access.",
+      "severity": "medium",
+      "foundAt": "2026-05-05T13:50:14.155Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "dc3c89e5-b4bb-47ec-b380-a729c675fffc",
       "url": "https://www.congress.gov/119/bills/hr503/BILLS-119hr503ih.pdf",
