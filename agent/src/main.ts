@@ -65,6 +65,9 @@ async function main() {
 
         log(`[${i + 1}/${batchSize}] processing: ${cat.name}`);
 
+        // Advance index before any async work so a failure doesn't re-run this category
+        state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+
         try {
           // 1. Research
           const catHistory = state.queryHistory[cat.key] || {};
@@ -77,16 +80,13 @@ async function main() {
             state.queryHistory[cat.key]![q] = now;
           }
 
-          // Even if no findings, we advance the index for next time
-          state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-
           const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
 
           if (reviewInput) {
             const isRaw = typeof reviewInput === 'string';
             const logLabel = isRaw ? 'raw report' : `${result.findings.length} raw findings`;
             log(`  [pi] discovered ${logLabel}, starting review...`);
-            
+
             // 2. Review (also extracts if input is a raw report)
             const reviewedFindings = await runReview(reviewInput, log);
             const added = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
@@ -112,8 +112,9 @@ async function main() {
           }
         } catch (err) {
           log(`ERROR during processing for ${cat.key}: ${String(err)}`);
-          log(`Progress paused at category index ${state.categoryIndex}.`);
-          break;
+          log(`Skipping ${cat.key}, continuing with next category.`);
+          saveState(state);
+          totalAdded += 0;
         }
         hr();
       }

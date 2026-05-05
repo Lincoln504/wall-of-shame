@@ -139,22 +139,21 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
       process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} ... `);
 
+      // Advance index before any async work so a failure doesn't re-run this category
+      state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+
       try {
         // 1. Research
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
         const catHistory = state.queryHistory[cat.key] || {};
         const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, logFn);
-        
+
         // Update query history
         const now = new Date().toISOString();
         if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
           state.queryHistory[cat.key]![q] = now;
         }
-
-        // Advance index
-        const nextIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-        state.categoryIndex = nextIndex;
 
         const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
 
@@ -208,10 +207,9 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         if (err instanceof Error && err.stack) {
           console.error(`${DIM}${err.stack}${RESET}`);
         }
-        console.log(`\n${YELLOW}Stopping batch due to error. Category index is ${state.categoryIndex}.${RESET}`);
+        console.log(`\n${YELLOW}Skipping — continuing with next category.${RESET}`);
+        saveState(state);
         totalErrors++;
-        await pressEnter();
-        break;
       }
       divider();
     }

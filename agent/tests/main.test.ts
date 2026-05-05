@@ -154,8 +154,8 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
     expect(raws).toEqual([]);
   });
 
-  it('error in runResearch breaks the batch loop (no further categories processed)', () => {
-    // main.ts catches per-category errors and breaks — remaining categories are not processed
+  it('error in runResearch skips the failed category and continues the batch', () => {
+    // main.ts catches per-category errors and continues — all categories in the batch run
     const results: string[] = [];
 
     for (let i = 0; i < 3; i++) {
@@ -164,13 +164,13 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
         results.push(`Category ${i} succeeded`);
       } catch {
         results.push(`Category ${i} failed`);
-        break;
       }
     }
 
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(3);
     expect(results[0]).toBe('Category 0 succeeded');
     expect(results[1]).toBe('Category 1 failed');
+    expect(results[2]).toBe('Category 2 succeeded');
   });
 });
 
