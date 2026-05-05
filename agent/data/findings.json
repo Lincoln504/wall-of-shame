@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T08:41:24.877Z",
-  "totalFindings": 59,
+  "lastUpdated": "2026-05-05T09:49:12.748Z",
+  "totalFindings": 60,
   "findings": [
+    {
+      "id": "7c1b6e4e-9b6e-4808-9c1a-347ef09c0f81",
+      "url": "https://www.whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians/",
+      "title": "Voter ID Is Overwhelmingly Popular with Literally Everyone Except Democrat Politicians",
+      "domain": "whitehouse.gov",
+      "summary": "- Argues that voter ID laws have overwhelming bipartisan support, citing polls showing 83% of Americans favor requiring photo identification to vote and 84% favor requiring proof of citizenship when registering.\n- Defends the SAVE America Act as a necessary measure to prevent noncitizen voting and restore confidence in elections.\n- Characterizes opponents as “Radical Left Democrat politicians” who are out of step with the American public.\n- Concludes that the SAVE Act is a widely supported, common-sense election integrity measure.",
+      "category": "democracy",
+      "whyBad": "Analysis: [1. Quote: \"83% of Americans favor requiring photo identification to vote... 84% favor requiring proof of citizenship when registering.\" 2. Critique: The article uses a conflation tactic, citing broad, general support for the concept of voter ID to manufacture a mandate for the specific, restrictive provisions of the SAVE Act. It ignores evidence that noncitizen voting is virtually nonexistent and that the Act's requirements could disenfranchise millions of eligible citizens. The framing of opponents as “Radical Left Democrat politicians” is a diversionary tactic designed to avoid substantive policy debate. 3. Logical Fallacy: False appeal to popularity (argumentum ad populum) — the article erroneously equates general support for a broad principle with support for a specific, controversial implementation.]",
+      "severity": "high",
+      "foundAt": "2026-05-05T09:49:12.747Z",
+      "researchQuery": "Focus: The erosion of democratic participation and the normalization of authoritarian governance.\n    \n    Dimensions to explore:\n    - VOTER SUPPRESSION: \"Election integrity\" as a pretext for disenfranchisement, defending restrictive ID or ballot laws.\n    - AUTHORITARIAN ADMIRATION: Praising foreign autocrats, framing \"strongman\" leadership as superior to deliberation.\n    - DARK MONEY: Defending unlimited, anonymous spending as \"free speech,\" opposing transparency laws.\n    - JUDICIAL ACTIVISM: Defending the bypass of legislative/democratic processes through the courts.\n    - NORM EROSION: Normalizing the refusal to accept election results or the use of state power against opponents."
+    },
     {
       "id": "f1728670-f537-4613-9df2-0e47d938a8a2",
       "url": "https://www.nfib.com/news/news-take-action-stop-ada-shakedown-lawsuits/",

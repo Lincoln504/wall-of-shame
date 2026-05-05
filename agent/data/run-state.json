@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T09:41:39.432Z",
-  "categoryIndex": 8,
+  "lastRun": "2026-05-05T09:49:12.750Z",
+  "categoryIndex": 9,
   "seenUrls": {
     "global_legacy": [
       "https://www.heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -94,6 +94,9 @@
       "https://internetforgrowth.com/the-hidden-costs-of-data-privacy-laws-for-small-businesses",
       "https://www.nfib.com/news/news-take-action-stop-ada-shakedown-lawsuits",
       "https://www.washingtonpost.com/investigations/interactive/2025/veterans-affairs-disability-claims-fraud"
+    ],
+    "democracy": [
+      "https://www.whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians"
     ]
   },
   "queryHistory": {
