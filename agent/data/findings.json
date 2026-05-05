@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T09:49:12.748Z",
-  "totalFindings": 60,
+  "lastUpdated": "2026-05-05T11:02:33.890Z",
+  "totalFindings": 61,
   "findings": [
+    {
+      "id": "a502d9f2-375f-4ce7-ae54-302fce0df78b",
+      "url": "https://poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law/",
+      "title": "Qualified Immunity in Use of Force Cases: Guidance for Police — Part I: The Law",
+      "domain": "poracldf.org",
+      "summary": "- Argues police use of force must be judged from the perspective of an officer making split-second decisions.\n- Claims reasonableness includes allowing for tense, uncertain, and rapidly developing situations.\n- States that judges realize it is unfair to 'Monday-morning-quarterback' an officer's actions from safety.\n- Presents qualified immunity as necessary protection for officers doing dangerous work.",
+      "category": "policing",
+      "whyBad": "This article uses the 'Monday-morning-quarterback' metaphor to frame legal accountability as an unfair attack on police officers. By suggesting that reviewing an officer's actions is only possible from a place of 'comfort and safety,' it attempts to normalize the lack of consequences for excessive force and shifts the focus away from the rights of the victims.",
+      "severity": "high",
+      "foundAt": "2026-05-05T11:02:33.888Z",
+      "researchQuery": "Focus: The defense of excessive state power and the normalization of exploitative carceral systems.\n    \n    Strategies to explore:\n    - VIOLENCE JUSTIFICATION: Using \"split-second\" excuses to make the use of excessive force by the state seem normal.\n    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.\n    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.\n    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.\n    - HARSHER SENTENCING: Pushing for mass incarceration and using \"law and order\" language to target specific communities.\n    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "7c1b6e4e-9b6e-4808-9c1a-347ef09c0f81",
       "url": "https://www.whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians/",
