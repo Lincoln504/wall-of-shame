@@ -181,30 +181,51 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
       }
     });
 
+    log(`  [pi] research complete (${researchReport.length} chars)`);
+    
+    // Debug: save the raw research report
+    try {
+      const reportsDir = join(DATA_DIR, 'reports');
+      if (!existsSync(reportsDir)) mkdirSync(reportsDir, { recursive: true });
+      const reportFile = join(reportsDir, `${categoryKey}-${Date.now()}.md`);
+      writeFileSync(reportFile, researchReport, 'utf-8');
+      log(`  [debug] research report saved to: ${reportFile}`);
+    } catch (err) {
+      log(`  [warn] failed to save debug report: ${String(err)}`);
+    }
+
     log(`  [pi] extracting findings...`);
     const extractionPrompt = buildExtractionPrompt(categoryKey);
     
     const auth = await modelRegistry.getApiKeyAndHeaders(model);
     if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);
 
+    // Merge into a single message for better model compatibility (Gemma especially)
+    const combinedInput = `RESEARCH RESULTS:\n\n${researchReport}\n\n---\n\n${extractionPrompt}`;
+
     const extractionResult = await completeSimple(model, {
       messages: [
-        { role: 'user', content: [{ type: 'text', text: `RESEARCH REPORT:\n\n${researchReport}` }], timestamp: Date.now() },
-        { role: 'user', content: [{ type: 'text', text: extractionPrompt }], timestamp: Date.now() }
+        { role: 'user', content: [{ type: 'text', text: combinedInput }], timestamp: Date.now() }
       ]
     }, { apiKey: auth.apiKey, headers: auth.headers });
 
     const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text || "";
+    if (!text) {
+        log('  [pi] extraction failed: empty response from model');
+        return { findings: [], queries: [] };
+    }
 
     let result: { findings: RawFinding[]; queries: string[] };
     try {
       result = safeParseJson<{ findings: RawFinding[]; queries: string[] }>(text);
     } catch (err) {
       log(`  [pi] FAILED to parse extraction JSON. Raw response length: ${text.length}`);
+      // Attempt manual recovery of findings array if possible
       const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
       if (findingsMatch && findingsMatch[1]) {
         try {
           const findings = safeParseJson<RawFinding[]>(findingsMatch[1]);
+          log(`  [pi] recovered ${findings.length} findings from malformed JSON`);
           result = { findings, queries: [] };
         } catch {
           throw err;
