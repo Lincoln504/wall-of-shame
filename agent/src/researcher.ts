@@ -157,7 +157,7 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
         RESEARCHER_MAX_RETRIES: 3,
         RESEARCHER_MAX_RETRY_DELAY_MS: 5000,
         DEFAULT_RESEARCH_DEPTH: 0,
-        MAX_SCRAPE_BATCHES: 3,
+        MAX_SCRAPE_BATCHES: 2,
         WORKER_THREADS: 4,
         TUI_REFRESH_DEBOUNCE_MS: 10,
         CONSOLE_RESTORE_DELAY_MS: 15000,
