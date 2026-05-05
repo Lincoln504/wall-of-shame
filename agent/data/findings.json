@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T13:50:14.733Z",
-  "totalFindings": 70,
+  "lastUpdated": "2026-05-05T14:27:34.935Z",
+  "totalFindings": 71,
   "findings": [
+    {
+      "id": "10b02e2f-7bec-42ba-877a-5346519da43e",
+      "url": "https://reason.org/commentary/federal-independent-contractor-regulation-threatens-the-gig-economy/",
+      "title": "Federal Independent Contractor Regulation Threatens the Gig Economy",
+      "domain": "reason.org",
+      "summary": "This commentary argues that new Department of Labor rules for worker classification create legal uncertainty and threaten the growth of the gig economy. It suggests that these regulations would reduce the 'flexibility' and 'independence' that many workers value.",
+      "category": "Labor Protection Dismantling",
+      "whyBad": "This article uses the concepts of 'flexibility' and 'independence' to rebrand the removal of fundamental labor protections as a positive feature. It frames essential legal requirements—such as minimum wage, overtime pay, and recordkeeping—as 'burdens' or 'risks' that threaten economic innovation and create 'ambiguity.' By focusing on the perceived preference of workers for autonomy, the piece attempts to normalize a system where companies can avoid their legal responsibilities to employees. The intended effect is to make the systematic withdrawal of worker safeguards appear as a necessary way to protect a 'vibrant' economy, effectively masking the fact that this shift primarily benefits corporations by transferring economic risk onto vulnerable individuals.",
+      "severity": "high",
+      "foundAt": "2026-05-05T14:27:34.935Z",
+      "researchQuery": "Focus: The systematic dismantling of labor protections and the presentation of unfair management practices as normal or beneficial.\n    \n    Strategies to explore:\n    - CONTRACTUAL SHIFTING: Presenting employees as \"independent\" to remove benefits and basic rights.\n    - UNDERMINING UNIONS: Arguing that individual bargaining is better than collective power and presenting anti-union efforts as \"protecting\" worker choice.\n    - WAGE REDUCTION: Arguments for lower minimum standards or creating groups of workers with fewer rights.\n    - CHILD LABOR JUSTIFICATION: Presenting youth work as a \"character building\" opportunity to justify removing age and hour protections.\n    - BLAMING THE POOR: Language that treats economic hardship as a personal failure or \"dependency\" rather than a systemic issue.\n    - SAFETY AS BURDEN: Framing workplace safety rules as unnecessary \"red tape\" that hurts the economy.\n    - GENERAL NARRATIVE: Broadly presenting worker rights as an obstacle to progress or individual freedom.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "39b4292e-3cf0-4780-bbef-9ae80fac15f6",
       "url": "https://www.city-journal.org/article/new-york-city-budget-carter-case-education-spending",
