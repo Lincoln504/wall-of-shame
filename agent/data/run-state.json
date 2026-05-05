@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T11:02:33.891Z",
-  "categoryIndex": 10,
+  "lastRun": "2026-05-05T12:12:05.463Z",
+  "categoryIndex": 11,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -57,8 +57,8 @@
       "whitehouse.gov/fact-sheets/2025/03/fact-sheet-president-donald-j-trump-protects-the-integrity-of-american-elections",
       "heartland.org/publications/ranked-choice-voting-a-major-threat-to-free-fair-and-secure-elections",
       "heritage.org/election-integrity/report/ranked-choice-voting-bad-choice",
-      "americafirstpolicy.com/assets/uploads/files/Ranked_Choice_Voting_Updated_Fact_Sheet.pdf",
-      "publicinterestlegal.org/pilf-files/Safe-Spaces_Final.pdf",
+      "americafirstpolicy.com/assets/uploads/files/ranked_choice_voting_updated_fact_sheet.pdf",
+      "publicinterestlegal.org/pilf-files/safe-spaces_final.pdf",
       "honestelections.org/honest-elections-project-releases-2026-safeguarding-our-elections-report-and-new-model-bills-to-enhance-voter-integrity",
       "americanthinker.com/articles/2025/04/tax_cuts_and_tariffs_need_not_be_paid_for.html",
       "aei.org/op-eds/in-defense-of-billionaires",
@@ -67,7 +67,7 @@
       "itif.org/publications/2026/03/25/antitrust-undone-how-competition-enforcers-are-undermining-competition",
       "nationalreview.com/2025/10/restoring-columbus-to-his-rightful-place",
       "whitehouse.gov/presidential-actions/2025/01/ending-radical-indoctrination-in-k-12-schooling",
-      "whitehouse.gov/wp-content/uploads/2025/05/Defunding-the-Open-Border-Fact-Sheet.pdf",
+      "whitehouse.gov/wp-content/uploads/2025/05/defunding-the-open-border-fact-sheet.pdf",
       "whitehouse.gov/presidential-actions/2025/04/restoring-equality-of-opportunity-and-meritocracy",
       "independent.org/article/2025/07/16/1619-flawed-history",
       "whitehouse.gov/presidential-actions/2025/01/defending-women-from-gender-ideology-extremism-and-restoring-biological-truth-to-the-federal-government",
@@ -77,7 +77,7 @@
       "theamericanconservative.com/the-sam-francis-i-knew",
       "whitehouse.gov/presidential-actions/2025/01/protecting-the-american-people-against-invasion",
       "crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime",
-      "whitehouse.gov/presidential-actions/2025/07/ending-market-distorting-subsidies-for-unreliable-foreign%E2%80%91controlled-energy-sources",
+      "whitehouse.gov/presidential-actions/2025/07/ending-market-distorting-subsidies-for-unreliable-foreign%e2%80%91controlled-energy-sources",
       "epa.gov/system/files/documents/2025-06/12674-01-oar_carbon-pollution-standards-repeal-nrpm-proposal_20250611_clean_v3_0.pdf",
       "judicialwatch.org/election-integrity-update-five-million-names-cleaned-from-voter-rolls-thanks-to-judicial-watch",
       "heritage.org/election-integrity/report/vote-harvesting-recipe-intimidation-coercion-and-election-fraud",
@@ -86,7 +86,7 @@
       "goldwaterinstitute.org/the-victims-of-dark-money-disclosure-how-governmen",
       "aclj.org/election-law/stop-the-lawfare-fighting-back-against-the-lefts-global-assault-on-democracy",
       "adflegal.org/article/lawfare-when-the-process-is-the-punishment",
-      "judiciary.house.gov/sites/evo-subsites/republicans-judiciary.house.gov/files/evo-media-document/2024-07-09%20Lawfare%20-%20How%20the%20Manhattan%20District%20Attorneys%20Office%20and%20a%20New%20York%20State%20Judge%20Violated%20the%20Constitutional%20and%20Lega.pdf",
+      "judiciary.house.gov/sites/evo-subsites/republicans-judiciary.house.gov/files/evo-media-document/2024-07-09%20lawfare%20-%20how%20the%20manhattan%20district%20attorneys%20office%20and%20a%20new%20york%20state%20judge%20violated%20the%20constitutional%20and%20lega.pdf",
       "city-journal.org/article/artificial-intelligence-regulation-ai-futures-project",
       "spiked-online.com/2023/10/24/ai-hysteria-is-out-of-control",
       "niskanencenter.org/creeping-hysteria-artificial-intelligence",
@@ -100,6 +100,16 @@
     ],
     "policing": [
       "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law"
+    ],
+    "technology": [
+      "reuters.com/sustainability/boards-policy-regulation/meta-buried-causal-evidence-social-media-harm-us-court-filings-allege-2025-11-23",
+      "brennancenter.org/our-work/research-reports/predictive-policing-explained",
+      "brennancenter.org/our-work/research-reports/closing-data-broker-loophole",
+      "brief.montrealethics.ai/p/the-ai-ethics-brief-187-the-myth",
+      "eff.org/deeplinks/2025/08/data-brokers-are-ignoring-privacy-law-we-deserve-better",
+      "en.wikipedia.org/wiki/nothing_to_hide_argument",
+      "therecord.media/state-privacy-laws-big-tech-lobbying-report",
+      "campaignzero.org/the-private-companies-quietly-building-a-police-state"
     ]
   },
   "queryHistory": {
@@ -490,7 +500,20 @@
       "normalization of digital surveillance and dismissal of technological harms": "2026-05-05T08:40:07.973Z",
       "nothing to hide slogan accountability": "2026-05-05T08:40:07.973Z",
       "impact-based AI lending innovation or injustice": "2026-05-05T08:40:07.973Z",
-      "e/acc movement vs AI safety doomerism": "2026-05-05T08:40:07.973Z"
+      "e/acc movement vs AI safety doomerism": "2026-05-05T08:40:07.973Z",
+      "Big tech lobbying state privacy laws": "2026-05-05T11:58:30.730Z",
+      "big tech funding academic research suppression": "2026-05-05T11:58:30.730Z",
+      "social media youth mental health internal documents lawsuit": "2026-05-05T11:58:30.730Z",
+      "move fast and break things ethics criticism": "2026-05-05T11:58:30.730Z",
+      "tech industry influence on research": "2026-05-05T11:58:30.730Z",
+      "Meta Project Mercury social media harm court filings": "2026-05-05T12:10:14.078Z",
+      "predictive policing tech-washing explained": "2026-05-05T12:10:14.078Z",
+      "data broker loophole Fourth Amendment": "2026-05-05T12:10:14.078Z",
+      "Flock Safety surveillance network protests": "2026-05-05T12:10:14.078Z",
+      "data brokers ignoring privacy laws CCPA": "2026-05-05T12:10:14.078Z",
+      "nothing to hide argument surveillance fallacy": "2026-05-05T12:10:14.078Z",
+      "state privacy laws big tech lobbying failing grades": "2026-05-05T12:10:14.078Z",
+      "Campaign Zero biometric surveillance sold as foolproof": "2026-05-05T12:10:14.078Z"
     },
     "disability": {
       "ADA shakedown lawsuits NFIB": "2026-05-05T08:41:17.931Z",
