@@ -33,7 +33,8 @@ export type FindingsStore = Static<typeof FindingsStoreSchema>;
 export const RunStateSchema = Type.Object({
   lastRun: Type.String(),
   categoryIndex: Type.Number(),
-  seenUrls: Type.Array(Type.String()),
+  // categoryKey -> normalizedUrls[]
+  seenUrls: Type.Record(Type.String(), Type.Array(Type.String())),
   // categoryKey -> query -> lastSearchedAt (ISO string)
   queryHistory: Type.Record(Type.String(), Type.Record(Type.String(), Type.String())),
 });

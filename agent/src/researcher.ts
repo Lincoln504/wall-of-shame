@@ -20,7 +20,7 @@ import { safeParseJson, safeParseValidatedJson } from './utils.js';
 // ── Model config ──────────────────────────────────────────────────────────────
 
 const OPENROUTER_PROVIDER = 'openrouter';
-const MODEL_ID = 'google/gemma-4-26b-a4b-it';
+const MODEL_ID = 'deepseek/deepseek-v4-flash';
 
 // ── Extraction schemas ────────────────────────────────────────────────────────
 
@@ -40,41 +40,32 @@ const ExtractionResultSchema = Type.Object({
 });
 
 // ── Extraction prompt template ────────────────────────────────────────────────
-// Sent to the LLM after /research completes so it can analyze results and
-// produce structured JSON findings.
 
-const EXTRACTION_PROMPT = `Now analyze the research results above and extract findings.
+const EXTRACTION_PROMPT = `Analyze the research results and extract findings for the "Wall of Shame."
 
 CRITICAL GROUNDING RULES:
-1. FAITHFUL REPRESENTATION: You must summarize the article's actual core argument as the author intended it, without distortion or straw-man framing. Do not attribute arguments to the piece that it does not explicitly make.
-2. NO HALLUCINATED CONTEXT: Do NOT bring in external statistics, Supreme Court cases, or legal precedents unless they are specifically mentioned in the article. If you need to provide counter-evidence, clearly label it as "Context/Counter-evidence" and do not imply it is in the article.
+1. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
+2. NO HALLUCINATED CONTEXT: Do NOT bring in external statistics or legal precedents unless they are explicitly mentioned in the article.
 3. QUOTE REQUIREMENT: Every finding must include at least one direct, verbatim quote from the article.
+4. SELECTIVITY: Only include pieces where the author ADVOCATES for or NORMALIZES harmful policy/ideology. Omit neutral reporting.
 
-Return ONLY a raw JSON object (no markdown, no code blocks, no preamble):
+RETURN ONLY A RAW JSON OBJECT:
 {
-  "queries": ["the exact search strings you used during the /research phase"],
+  "queries": ["Extract the exact search queries used during research"],
   "findings": [
     {
       "url": "https://...",
-      "title": "exact article title as it appeared on the page",
-      "domain": "example.com",
-      "summary": "- Faithfully summarize the article's 3-5 core points in a hyphenated bulleted list.\n- State the author's primary intended conclusion neutrally.\n- NO judgment or critical framing here.",
+      "title": "Exact Title",
+      "domain": "...",
+      "summary": "- Neutrally summarize 3-5 core points.\n- State intended conclusion neutrally.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political or logical critique that directly addresses that claim or its underlying assumptions. 3. Identify the logical fallacy or manipulative technique (e.g. straw man, ecological fallacy). 4. If using external context (e.g. CBO data, Brennan Center), clearly label it as 'External Context' and explain how it invalidates the author's specific logic.]",
+      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political/logical critique of that claim. 3. Identify the logical fallacy or manipulative framing.]",
       "severity": "low|medium|high"
     }
   ]
 }
 
-Severity guide:
-- high: makes specific false or manipulative claims likely to directly inform harmful policy or behavior
-- medium: uses misleading framing or omission that distorts public understanding
-- low: relies on dog-whistles or subtle bias without outright fabrication
-
-CRITICAL PERSPECTIVE TEST — before including any entry, ask: does this piece itself advance a harmful or misleading argument, or is it merely reporting on / criticizing someone else's harmful argument? Include only the former.
-A piece qualifies only if its own framing, argument, or omissions are the problem — not the subject it covers.
-
-Be selective: only include genuinely harmful content. Empty findings array [] is valid if nothing qualifies. Max 8 entries. Each entry must be a specific article, op-ed, report, or blog post — not a homepage or category listing.`;
+If no articles qualify, return {"queries": [...], "findings": []}. Max 8 entries.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
   return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
@@ -89,12 +80,6 @@ export interface ResearchResult {
 
 /**
  * Run research for a category using the pi-research programmatic API.
- *
- * @param query        The research query (e.g. what articles to find, angles to explore)
- * @param categoryKey  The category key to embed in the extraction prompt
- * @param label        Human-readable label for logging
- * @param queryHistory Recently used queries to avoid
- * @param log          Logging function
  */
 export async function runResearch(
   query: string,
@@ -114,13 +99,12 @@ export async function runResearch(
   const modelRegistry = ModelRegistry.create(authStorage);
   const settingsManager = SettingsManager.create(agentDir);
 
-  // Resolve the model from the registry
+  // Resolve models from the registry
   const model = modelRegistry.find(OPENROUTER_PROVIDER, MODEL_ID);
   if (!model) {
-    throw new Error(
-      `Model ${OPENROUTER_PROVIDER}/${MODEL_ID} not found in registry.`
-    );
+    throw new Error(`Model ${OPENROUTER_PROVIDER}/${MODEL_ID} not found in registry.`);
   }
+
   log(`  [pi] using model: ${model.provider}/${model.id}`);
 
   // Calculate forbidden queries (used in the last 7 days)
@@ -177,7 +161,7 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
         RESEARCHER_MAX_RETRIES: 3,
         RESEARCHER_MAX_RETRY_DELAY_MS: 5000,
         DEFAULT_RESEARCH_DEPTH: 0,
-        MAX_SCRAPE_BATCHES: 2,
+        MAX_SCRAPE_BATCHES: 4,
         WORKER_THREADS: 4,
         TUI_REFRESH_DEBOUNCE_MS: 10,
         CONSOLE_RESTORE_DELAY_MS: 15000,
@@ -220,16 +204,32 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
     const auth = await modelRegistry.getApiKeyAndHeaders(model);
     if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);
 
-    // Merge into a single message for better model compatibility (Gemma especially)
-    const combinedInput = `RESEARCH RESULTS:\n\n${researchReport}\n\n---\n\n${extractionPrompt}`;
-
     const extractionResult = await completeSimple(model, {
+      systemPrompt: extractionPrompt,
       messages: [
-        { role: 'user', content: [{ type: 'text', text: combinedInput }], timestamp: Date.now() }
+        { 
+          role: 'user', 
+          content: [
+            { type: 'text', text: `RESEARCH DATA:\n\n${researchReport}` },
+          ], 
+          timestamp: Date.now() 
+        }
       ]
-    }, { apiKey: auth.apiKey, headers: auth.headers, reasoning: 'medium' });
+    }, { 
+      apiKey: auth.apiKey, 
+      headers: auth.headers,
+      onPayload: (payload: any) => {
+        // Explicitly disable thinking for DeepSeek
+        if (payload.reasoning) delete payload.reasoning;
+        if (payload.thinking) delete payload.thinking;
+        payload.include_reasoning = false;
+        return payload;
+      }
+    });
 
     const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text || "";
+    log(`  [debug] extraction raw response length: ${text.length}`);
+    if (text.length < 500) log(`  [debug] extraction raw response: ${text}`);
     if (!text) {
         log('  [pi] extraction failed: empty response from model');
         return { findings: [], queries: [] };

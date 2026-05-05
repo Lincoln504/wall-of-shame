@@ -60,7 +60,7 @@ function emptyStore(): FindingsStore {
 }
 
 function emptyState(): RunState {
-  return { lastRun: new Date().toISOString(), categoryIndex: 0, seenUrls: [], queryHistory: {} };
+  return { lastRun: new Date().toISOString(), categoryIndex: 0, seenUrls: {}, queryHistory: {} };
 }
 
 export function loadFindings(): FindingsStore {
@@ -88,12 +88,19 @@ export function loadState(): RunState {
     const raw = readFileSync(STATE_PATH, 'utf-8');
     const loaded = JSON.parse(raw);
     
-    // Migration: if loaded.queryHistory is flat (values are strings), move them to a 'legacy' bucket or clear them
+    // Migration: if loaded.queryHistory is flat (values are strings), move them to a 'legacy' bucket
     let queryHistory = loaded.queryHistory || {};
-    const firstVal = Object.values(queryHistory)[0];
-    if (firstVal && typeof firstVal === 'string') {
+    const firstQueryVal = Object.values(queryHistory)[0];
+    if (firstQueryVal && typeof firstQueryVal === 'string') {
       queryHistory = { migrated_legacy: queryHistory };
       loaded.queryHistory = queryHistory;
+    }
+
+    // Migration: if loaded.seenUrls is an array, move it to a 'global_legacy' key
+    let seenUrls = loaded.seenUrls || {};
+    if (Array.isArray(seenUrls)) {
+      seenUrls = { global_legacy: seenUrls };
+      loaded.seenUrls = seenUrls;
     }
 
     return safeParseValidatedJson(RunStateSchema, JSON.stringify(loaded));
@@ -106,8 +113,12 @@ export function loadState(): RunState {
 export function saveState(state: RunState): void {
   state.lastRun = new Date().toISOString();
 
-  // Normalize and deduplicate seenUrls
-  state.seenUrls = Array.from(new Set(state.seenUrls.map(u => normalizeUrl(u))));
+  // Normalize and deduplicate seenUrls per category
+  const cleanedSeen: Record<string, string[]> = {};
+  for (const [cat, urls] of Object.entries(state.seenUrls)) {
+    cleanedSeen[cat] = Array.from(new Set(urls.map(u => normalizeUrl(u))));
+  }
+  state.seenUrls = cleanedSeen;
 
   // Prune query history: remove items older than 30 days
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -155,14 +166,24 @@ function normalizeTitle(title: string): string {
 export async function addFindings(
   store: FindingsStore,
   state: RunState,
+  categoryKey: string,
   raws: RawFinding[],
   researchQuery: string,
   log?: (msg: string) => void,
   verify: (url: string) => Promise<boolean> = verifyUrl,
 ): Promise<Finding[]> {
-  const seenSet = new Set(state.seenUrls.map(u => normalizeUrl(u)));
-  const existingUrls = new Set(store.findings.map(f => normalizeUrl(f.url)));
-  const existingTitles = new Set(store.findings.map(f => normalizeTitle(f.title)));
+  // Deduplicate against findings IN THIS CATEGORY
+  const existingUrls = new Set(store.findings.filter(f => f.category === categoryKey).map(f => normalizeUrl(f.url)));
+  const existingTitles = new Set(store.findings.filter(f => f.category === categoryKey).map(f => normalizeTitle(f.title)));
+  
+  // Also check the per-category seen pool
+  const catSeen = state.seenUrls[categoryKey] || [];
+  const seenSet = new Set(catSeen.map(u => normalizeUrl(u)));
+  
+  if (!state.seenUrls[categoryKey]) {
+    state.seenUrls[categoryKey] = [];
+  }
+
   const added: Finding[] = [];
 
   for (const raw of raws) {
@@ -172,14 +193,14 @@ export async function addFindings(
     const normalizedTitle = normalizeTitle(raw.title || '');
 
     if (seenSet.has(normalizedUrl) || existingUrls.has(normalizedUrl)) {
-      log?.(`  [skip] URL already processed: ${raw.url}`);
+      log?.(`  [skip] URL already processed for this category: ${raw.url}`);
       continue;
     }
 
     if (normalizedTitle && existingTitles.has(normalizedTitle)) {
-      log?.(`  [skip] Title already exists: ${raw.title}`);
-      // Still mark URL as seen to avoid re-verifying this specific URL
-      state.seenUrls.push(normalizedUrl);
+      log?.(`  [skip] Title already exists in this category: ${raw.title}`);
+      // Still mark URL as seen to avoid re-verifying this specific URL for this category
+      state.seenUrls[categoryKey].push(normalizedUrl);
       seenSet.add(normalizedUrl);
       continue;
     }
@@ -187,8 +208,8 @@ export async function addFindings(
     const reachable = await verify(raw.url);
     if (!reachable) {
       log?.(`  [skip] URL unreachable (404/timeout): ${raw.url}`);
-      // Still mark as seen so we don't retry it next run
-      state.seenUrls.push(normalizedUrl);
+      // Still mark as seen so we don't retry it next run for this category
+      state.seenUrls[categoryKey].push(normalizedUrl);
       seenSet.add(normalizedUrl);
       continue;
     }
@@ -208,7 +229,7 @@ export async function addFindings(
     };
 
     store.findings.push(finding);
-    state.seenUrls.push(normalizedUrl);
+    state.seenUrls[categoryKey].push(normalizedUrl);
     existingUrls.add(normalizedUrl);
     existingTitles.add(normalizedTitle);
     added.push(finding);

@@ -254,7 +254,7 @@ describe('full main.ts lifecycle integration', () => {
         },
       ];
 
-      const added = await addFindings(store, state, mockRaws, cat.key, undefined, async () => true);
+      const added = await addFindings(store, state, cat.key, mockRaws, cat.researchQuery, undefined, async () => true);
       totalAdded += added.length;
     }
 
@@ -273,20 +273,20 @@ describe('full main.ts lifecycle integration', () => {
     expect(store2.findings.length).toBe(originalLength + totalAdded);
     expect(state2.categoryIndex).toBe((originalIndex + batchSize) % CATEGORY_COUNT);
 
-    // The integration test entries should be in seenUrls
-    for (const url of state2.seenUrls) {
-      if (url.startsWith('https://integration-test.com/')) {
-        expect(url).toBeTruthy();
-      }
+    // The integration test entries should be in seenUrls for their respective categories
+    for (const cat of batch) {
+      expect(state2.seenUrls[cat.key]).toContain(`https://integration-test.com/${cat.key}-1`);
     }
 
     // Cleanup: remove our test entries
     store2.findings = store2.findings.filter(
       (f: Finding) => !f.url.startsWith('https://integration-test.com/')
     );
-    state2.seenUrls = state2.seenUrls.filter(
-      (url: string) => !url.startsWith('https://integration-test.com/')
-    );
+    for (const cat of batch) {
+      state2.seenUrls[cat.key] = state2.seenUrls[cat.key].filter(
+        (url: string) => !url.startsWith('https://integration-test.com/')
+      );
+    }
     state2.categoryIndex = originalIndex;
     saveFindings(store2);
     saveState(state2);
@@ -296,7 +296,9 @@ describe('full main.ts lifecycle integration', () => {
     const state3 = loadState2();
     expect(store3.findings.length).toBe(originalLength);
     expect(state3.categoryIndex).toBe(originalIndex);
-    expect(state3.seenUrls.filter((u: string) => u.startsWith('https://integration-test.com/'))).toHaveLength(0);
+    for (const cat of batch) {
+       expect(state3.seenUrls[cat.key]?.filter((u: string) => u.startsWith('https://integration-test.com/')) || []).toHaveLength(0);
+    }
   });
 
   it('advances category index correctly and wraps around', () => {

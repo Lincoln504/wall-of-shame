@@ -20,7 +20,8 @@ describe('CLI data access', () => {
     expect(Array.isArray(store.findings)).toBe(true);
     expect(state).toBeDefined();
     expect(typeof state.categoryIndex).toBe('number');
-    expect(Array.isArray(state.seenUrls)).toBe(true);
+    expect(typeof state.seenUrls).toBe('object');
+    expect(Array.isArray(state.seenUrls)).toBe(false);
   });
 
   it('can compute next batch for menu preview', () => {

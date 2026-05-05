@@ -164,14 +164,15 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
           const reviewed = await runReview(result.findings, logFn);
 
           // 3. Save
-          const added = await addFindings(store, state, reviewed, cat.researchQuery, logFn);
+          const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
           totalAdded += added.length;
 
-          // Mark discoveries as seen
+          // Mark discoveries as seen for THIS category
+          if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
           for (const raw of result.findings) {
             const normalized = normalizeUrl(raw.url);
-            if (!state.seenUrls.includes(normalized)) {
-              state.seenUrls.push(normalized);
+            if (!state.seenUrls[cat.key].includes(normalized)) {
+              state.seenUrls[cat.key].push(normalized);
             }
           }
 

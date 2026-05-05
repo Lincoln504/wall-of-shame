@@ -85,7 +85,7 @@ export async function runReview(
     cwd,
     agentDir,
     additionalExtensionPaths: [PI_RESEARCH_HOME],
-    noExtensions: false,
+    noExtensions: true,
     noSkills: true,
     noPromptTemplates: true,
     noThemes: true,

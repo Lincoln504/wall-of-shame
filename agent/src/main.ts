@@ -85,16 +85,15 @@ async function main() {
             
             // 2. Review
             const reviewedFindings = await runReview(result.findings, log);
-
-            // 3. Save
-            const added = await addFindings(store, state, reviewedFindings, cat.researchQuery, log);
+            const added = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
             totalAdded += added.length;
 
-            // Mark ORIGINAL discoveries as seen
+            // Mark ORIGINAL discoveries as seen for THIS category so we don't re-review them
+            if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
             for (const raw of result.findings) {
               const normalized = normalizeUrl(raw.url);
-              if (!state.seenUrls.includes(normalized)) {
-                state.seenUrls.push(normalized);
+              if (!state.seenUrls[cat.key].includes(normalized)) {
+                state.seenUrls[cat.key].push(normalized);
               }
             }
 

@@ -93,8 +93,11 @@ async function runAudit(findings: any[]): Promise<{ approved: any[], removed: an
     cwd,
     agentDir,
     additionalExtensionPaths: [PI_RESEARCH_HOME],
-    noExtensions: false,
+    noExtensions: true,
     noSkills: true,
+    noPromptTemplates: true,
+    noThemes: true,
+    noContextFiles: true,
   } as any);
   await resourceLoader.reload();
 

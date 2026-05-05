@@ -11,6 +11,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } 
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import type { FindingsStore, RunState } from '../src/types.js';
 
 // ── We'll monkey-patch the module's internal paths before importing ──
 
@@ -66,8 +67,8 @@ describe('addFindings', () => {
   });
 
   it('adds new findings from raw input', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
     const raws = [
       {
         url: 'https://example.com/harmful',
@@ -80,7 +81,7 @@ describe('addFindings', () => {
       },
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test_category', raws, 'test_query', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0]).toMatchObject({
@@ -96,11 +97,11 @@ describe('addFindings', () => {
     expect(added[0].id).toBeDefined();
     expect(added[0].foundAt).toBeDefined();
     expect(store.findings).toHaveLength(1);
-    expect(state.seenUrls).toContain('https://example.com/harmful');
+    expect(state.seenUrls['test_category']).toContain('https://example.com/harmful');
   });
 
-  it('deduplicates by URL against both seenUrls and existing findings', async () => {
-    const store = {
+  it('deduplicates by URL against both seenUrls and existing findings (scoped to category)', async () => {
+    const store: FindingsStore = {
       lastUpdated: '',
       totalFindings: 1,
       findings: [
@@ -118,24 +119,56 @@ describe('addFindings', () => {
         },
       ],
     };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: ['https://example.com/seen'], queryHistory: {} };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: { test: ['https://example.com/seen'] }, queryHistory: {} };
     const raws = [
       { url: 'https://example.com/dup', title: 'Duplicate', summary: '', category: 'test', whyBad: '' },        // in findings
       { url: 'https://example.com/seen', title: 'Seen', summary: '', category: 'test', whyBad: '' },           // in seenUrls
       { url: 'https://example.com/new', title: 'New', summary: 'Fresh', category: 'test', whyBad: 'new harmful content' }, // new
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test', raws, 'test_query', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://example.com/new');
     expect(store.findings).toHaveLength(2); // existing 1 + new 1
-    expect(state.seenUrls).toHaveLength(2); // original seen, new added (dup not re-added)
+    expect(state.seenUrls['test']).toHaveLength(2); // original seen, new added (dup not re-added)
+  });
+
+  it('allows same URL in different categories', async () => {
+    const store: FindingsStore = {
+      lastUpdated: '',
+      totalFindings: 1,
+      findings: [
+        {
+          id: 'existing-id',
+          url: 'https://example.com/shared',
+          title: 'Existing in cat1',
+          domain: 'example.com',
+          summary: 'x',
+          category: 'cat1',
+          whyBad: 'x',
+          severity: 'medium' as const,
+          foundAt: '2025-01-01T00:00:00.000Z',
+          researchQuery: 'q',
+        },
+      ],
+    };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: { cat1: ['https://example.com/shared'] }, queryHistory: {} };
+    const raws = [
+      { url: 'https://example.com/shared', title: 'Shared', summary: 'y', category: 'cat2', whyBad: 'y' },
+    ];
+
+    const added = await mod.addFindings(store, state, 'cat2', raws, 'test_query', undefined, alwaysReachable);
+
+    expect(added).toHaveLength(1);
+    expect(added[0].category).toBe('cat2');
+    expect(store.findings).toHaveLength(2);
+    expect(state.seenUrls['cat2']).toContain('https://example.com/shared');
   });
 
   it('filters out items with invalid URLs', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
     const raws = [
       { url: '', title: 'Empty URL', summary: '', category: 'test', whyBad: '' },
       { url: 'not-a-url', title: 'Bad URL', summary: '', category: 'test', whyBad: '' },
@@ -143,22 +176,22 @@ describe('addFindings', () => {
       { url: 'https://valid.com/good', title: 'Valid', summary: 'yes', category: 'test', whyBad: 'reason' },
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test', raws, 'q', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://valid.com/good');
   });
 
   it('assigns default severity of medium when missing or invalid', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
     const raws = [
       { url: 'https://ex.com/a', title: 'No severity', summary: '', category: 't', whyBad: 'x' },
       { url: 'https://ex.com/b', title: 'Invalid severity', summary: '', category: 't', whyBad: 'x', severity: 'extreme' },
       { url: 'https://ex.com/c', title: 'Valid severity', summary: '', category: 't', whyBad: 'x', severity: 'low' },
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
 
     expect(added[0].severity).toBe('medium');
     expect(added[1].severity).toBe('medium');
@@ -166,14 +199,14 @@ describe('addFindings', () => {
   });
 
   it('sorts findings newest first after adding', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
 
     // Add first batch
     const raws1 = [
       { url: 'https://ex.com/oldest', title: 'Oldest', summary: '', category: 't', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, raws1, 'q1', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 't', raws1, 'q1', undefined, alwaysReachable);
 
     // Simulate time passing by using Date.now() — addFindings uses new Date().toISOString()
     // To guarantee different timestamps, we wait 10ms
@@ -182,7 +215,7 @@ describe('addFindings', () => {
     const raws2 = [
       { url: 'https://ex.com/newest', title: 'Newest', summary: '', category: 't', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, raws2, 'q2', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 't', raws2, 'q2', undefined, alwaysReachable);
 
     expect(store.findings).toHaveLength(2);
     expect(store.findings[0].url).toBe('https://ex.com/newest');
@@ -190,35 +223,35 @@ describe('addFindings', () => {
   });
 
   it('extracts domain from URL when domain is not provided', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
     const raws = [
       { url: 'https://www.somesite.com/article', title: 'No domain', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
 
     expect(added[0].domain).toBe('www.somesite.com');
   });
 
   it('handles empty raw array gracefully', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
 
-    const added = await mod.addFindings(store, state, [], 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', [], 'q', undefined, alwaysReachable);
     expect(added).toHaveLength(0);
     expect(store.findings).toHaveLength(0);
   });
 
   it('does not add duplicate URLs even if seen in same batch', async () => {
-    const store = { lastUpdated: '', totalFindings: 0, findings: [] };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: [], queryHistory: {} };
+    const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
     const raws = [
       { url: 'https://ex.com/dup-in-batch', title: 'First', summary: '', category: 't', whyBad: 'x' },
       { url: 'https://ex.com/dup-in-batch', title: 'Second (same URL)', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = await mod.addFindings(store, state, raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
     expect(added).toHaveLength(1);
     expect(store.findings).toHaveLength(1);
   });
@@ -294,7 +327,7 @@ describe('findings file I/O (integration)', () => {
   it('loads empty state when run-state.json is missing', () => {
     const state = mod.loadState();
     expect(state.categoryIndex).toBe(0);
-    expect(state.seenUrls).toEqual([]);
+    expect(state.seenUrls).toEqual({});
   });
 
   it('loads empty state when run-state.json is corrupted', () => {
@@ -308,17 +341,32 @@ describe('findings file I/O (integration)', () => {
     const state: RunState = {
       lastRun: '2025-06-01T00:00:00.000Z',
       categoryIndex: 3,
-      seenUrls: ['https://ex.com/a', 'https://ex.com/b'],
+      seenUrls: { global: ['https://ex.com/a', 'https://ex.com/b'] },
       queryHistory: { cat1: { 'test query': nowISO } },
     };
 
     mod.saveState(state);
     const loaded = mod.loadState();
     expect(loaded.categoryIndex).toBe(3);
-    expect(loaded.seenUrls).toEqual(['https://ex.com/a', 'https://ex.com/b']);
+    expect(loaded.seenUrls['global']).toEqual(['https://ex.com/a', 'https://ex.com/b']);
     expect(loaded.queryHistory).toEqual({ cat1: { 'test query': nowISO } });
     // lastRun should be updated
     expect(loaded.lastRun).not.toBe('2025-06-01T00:00:00.000Z');
+  });
+
+  it('migrates legacy flat seenUrls array to global_legacy key', () => {
+    const legacyState = {
+      lastRun: '2025-01-01T00:00:00.000Z',
+      categoryIndex: 0,
+      seenUrls: ['https://old.com/1', 'https://old.com/2'],
+      queryHistory: { 'old query': '2025-01-01T00:00:00.000Z' }
+    };
+    writeState(JSON.stringify(legacyState));
+
+    const loaded = mod.loadState();
+    expect(loaded.seenUrls['global_legacy']).toContain('https://old.com/1');
+    expect(loaded.queryHistory['migrated_legacy']).toBeDefined();
+    expect(loaded.queryHistory['migrated_legacy']['old query']).toBe('2025-01-01T00:00:00.000Z');
   });
 
   it('is idempotent when saving empty store', () => {
@@ -358,7 +406,7 @@ describe('findings full lifecycle (integration)', () => {
     const raws = [
       { url: 'https://ex.com/harmful', title: 'Harmful', summary: 'Bad stuff', category: 'cat1', whyBad: 'reason', severity: 'high' },
     ];
-    const added = await mod.addFindings(store, state, raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', undefined, alwaysReachable);
     expect(added).toHaveLength(1);
 
     mod.saveFindings(store);
@@ -369,7 +417,7 @@ describe('findings full lifecycle (integration)', () => {
     expect(store2.findings[0].url).toBe('https://ex.com/harmful');
 
     const state2 = mod.loadState();
-    expect(state2.seenUrls).toContain('https://ex.com/harmful');
+    expect(state2.seenUrls['cat1']).toContain('https://ex.com/harmful');
   });
 
   it('deduplication persists across load-save cycles', async () => {
@@ -379,7 +427,7 @@ describe('findings full lifecycle (integration)', () => {
     const raws1 = [
       { url: 'https://ex.com/dup-test', title: 'First run', summary: 'x', category: 'c', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, raws1, 'q1', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 'c', raws1, 'q1', undefined, alwaysReachable);
     mod.saveFindings(store);
     mod.saveState(state);
 
@@ -390,13 +438,10 @@ describe('findings full lifecycle (integration)', () => {
       { url: 'https://ex.com/dup-test', title: 'Second run (duplicate)', summary: 'x', category: 'c', whyBad: 'x' },
       { url: 'https://ex.com/new-item', title: 'New item', summary: 'y', category: 'c', whyBad: 'y' },
     ];
-    const added = await mod.addFindings(store2, state2, raws2, 'q2', undefined, alwaysReachable);
+    const added = await mod.addFindings(store2, state2, 'c', raws2, 'q2', undefined, alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://ex.com/new-item');
     expect(store2.findings).toHaveLength(2);
   });
 });
-
-// Type imports for test
-import type { FindingsStore, RunState } from '../src/types.js';
