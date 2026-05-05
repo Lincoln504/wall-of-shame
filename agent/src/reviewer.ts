@@ -42,12 +42,12 @@ MISSION CRITICAL: We only list content where the ARTICLE ITSELF is the bad actor
 YOUR WORKFLOW:
 1. For every finding in the input:
    a. Use the 'research' tool with 'depth: 0' and the URL as the query to surgically verify the content.
-   b. Confirm the title is exact and verify the domain.
-   c. Verify the claims and quotes in the researcher's summary/analysis are accurate.
-   d. EVALUATE ANALYSIS: Review the researcher's "whyBad" section. 
-      - If it already correctly identifies the core manipulative framing, logical fallacies, and distortion, you may KEEP IT AS-IS.
-      - If it is weak, inaccurate, or misses a key manipulative technique, you MUST EDIT it to be sharper and more accurate.
-   e. CRITICAL PERSPECTIVE TEST: Is the author's primary goal to inform, or to advocate/manipulate/mislead? Only approve if it clearly fails this test.
+   b. Verify the claims and quotes in the researcher's summary/analysis are accurate.
+   c. EVALUATE ANALYSIS: Review the researcher's "whyBad" section. 
+      - PRESERVE: If the analysis is already high-quality and identifies specific fallacies, keep it as-is.
+      - MODIFY: If it is weak or generic, rewrite it to be sharper and identify specific techniques (False Dichotomy, Loaded Language, etc.). DO NOT OVERSIMPLIFY.
+      - DISAPPROVE: If the article is not actually a "bad actor" (e.g., it is just reporting facts), OMIT the finding entirely.
+   d. CRITICAL PERSPECTIVE TEST: Is the author's primary goal to inform, or to advocate/manipulate/mislead? Only approve if it clearly fails this test.
 
 2. OUTPUT FORMAT:
 Return ONLY a raw JSON array of verified findings. If a finding fails verification or doesn't meet the quality bar, OMIT it entirely.
@@ -59,9 +59,9 @@ Each entry must follow this schema:
   "domain": "...",
   "summary": "...",
   "category": "...",
-  "whyBad": "[The verified or improved analysis. Keep original if high quality, otherwise rewrite to identify specific fallacies/techniques.]",
+  "whyBad": "[The verified or improved analysis. Preserve researcher detail if high quality; avoid oversimplification.]",
   "severity": "low|medium|high",
-  "verificationLog": "Surgically verified on [Date]. [Briefly note what you checked/changed, e.g. 'Researcher analysis was excellent, kept as-is' or 'Corrected misquoted text and sharpened the analysis.']"
+  "verificationLog": "Surgically verified on [Date]. [Note if analysis was preserved, modified, or why it was kept.]"
 }
 
 INPUT FINDINGS:
