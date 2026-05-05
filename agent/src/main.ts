@@ -20,7 +20,7 @@ import { loadFindings, saveFindings, loadState, saveState, addFindings } from '.
 import { runResearch, shutdownResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush, git } from './git.js';
-import { normalizeUrl } from '@lincoln504/pi-research';
+import { canonicalizeUrl } from './utils.js';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -91,9 +91,9 @@ async function main() {
             // Mark ORIGINAL discoveries as seen for THIS category so we don't re-review them
             if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
             for (const raw of result.findings) {
-              const normalized = normalizeUrl(raw.url);
-              if (!state.seenUrls[cat.key].includes(normalized)) {
-                state.seenUrls[cat.key].push(normalized);
+              const canonical = canonicalizeUrl(raw.url);
+              if (!state.seenUrls[cat.key].includes(canonical)) {
+                state.seenUrls[cat.key].push(canonical);
               }
             }
 

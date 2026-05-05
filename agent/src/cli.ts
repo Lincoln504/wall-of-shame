@@ -130,7 +130,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
     const { runReview } = await import('./reviewer.js');
     const { addFindings } = await import('./findings.js');
     const { git } = await import('./git.js');
-    const { normalizeUrl } = await import('@lincoln504/pi-research');
+    const { canonicalizeUrl } = await import('./utils.js');
 
     // Sequential Processing
     for (let i = 0; i < batchSize; i++) {
@@ -167,14 +167,15 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
           const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
           totalAdded += added.length;
 
-          // Mark discoveries as seen for THIS category
+          // Mark as seen so we don't re-process in future batches
           if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
           for (const raw of result.findings) {
-            const normalized = normalizeUrl(raw.url);
-            if (!state.seenUrls[cat.key].includes(normalized)) {
-              state.seenUrls[cat.key].push(normalized);
+            const canonical = canonicalizeUrl(raw.url);
+            if (!state.seenUrls[cat.key].includes(canonical)) {
+              state.seenUrls[cat.key].push(canonical);
             }
           }
+
 
           saveFindings(store);
           saveState(state);
