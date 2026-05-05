@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T13:05:44.689Z",
-  "categoryIndex": 6,
+  "lastRun": "2026-05-05T13:10:48.900Z",
+  "categoryIndex": 7,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -147,6 +147,16 @@
       "prri.org/research/mapping-christian-nationalism-across-the-50-states-insights-from-prris-2025-american-values-atlas",
       "thesocietypages.org/discoveries/2025/06/06/the-sticks-and-stones-of-christian-nationalist-rhetoric",
       "guttmacher.org/2025/12/state-policy-trends-2025-full-year-analysis"
+    ],
+    "climate": [
+      "blogs.law.columbia.edu/climatechange/2025/12/16/greenwashing-on-trial-the-paris-tribunal-finds-totalenergies-misled-consumers-with-its-carbon-neutrality-claims",
+      "ucs.org/sites/default/files/2025-05/decades-of-deceit-full-report.pdf",
+      "corporateaccountability.org/media/new-analysis-reveals-how-unsuccessful-the-vcm-2-0-reform-is-to-date-at-plugging-the-failures-of-the-voluntary-carbon-market-and-delivering-global-emissions-reductions",
+      "climateintegrity.org/uploads/media/big-oil-climate-ads-2025.pdf",
+      "fractracker.org/2025/03/fossil-fuel-subsidies-free-market-myth",
+      "desmog.com/2024/03/21/climate-the-movie-martin-durkin-co2-coalition-heartland-institute-cfact-climate-denial",
+      "bbc.com/news/blogs-trending-61495035",
+      "forbes.com/sites/feliciajackson/2025/05/14/big-oil-knew-big-oil-lied-fossil-fuels-long-strategy-of-deceit"
     ]
   },
   "queryHistory": {
@@ -617,6 +627,16 @@
       "corporate welfare federal budget Cato 181 billion": "2026-05-05T12:33:58.952Z",
       "stock buybacks defense Harvard Law Forum Pay Governance": "2026-05-05T12:33:58.952Z",
       "shareholder primacy effects workers Roosevelt Institute": "2026-05-05T12:33:58.952Z"
+    },
+    "climate": {
+      "TotalEnergies greenwashing Paris court ruling October 2025": "2026-05-05T13:09:28.344Z",
+      "fossil fuel industry deception campaign decades of deceit UCS": "2026-05-05T13:09:28.344Z",
+      "voluntary carbon market problematic credits 2024 analysis": "2026-05-05T13:09:28.344Z",
+      "big oil deceptive climate ads 2000 2025 center for climate integrity": "2026-05-05T13:09:28.344Z",
+      "fossil fuel subsidies Trump administration 2025 free market myth": "2026-05-05T13:09:28.344Z",
+      "Climate the Movie cold truth denial desmog": "2026-05-05T13:09:28.344Z",
+      "climate doomism social media BBC 2022": "2026-05-05T13:09:28.344Z",
+      "UCS Decades of Deceit report Forbes 2025": "2026-05-05T13:09:28.344Z"
     }
   }
 }
