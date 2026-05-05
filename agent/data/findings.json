@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T14:27:34.935Z",
-  "totalFindings": 71,
+  "lastUpdated": "2026-05-05T15:00:28.679Z",
+  "totalFindings": 72,
   "findings": [
+    {
+      "id": "01b6c535-7cbc-4edd-952d-973e171d0370",
+      "url": "https://www.aporiamagazine.com/p/the-positive-legacy-of-empire",
+      "title": "The Positive Legacy of Empire",
+      "domain": "aporiamagazine.com",
+      "summary": "The article argues that colonialism was beneficial for colonized countries, citing economic and democratic improvements. It claims that countries with longer colonial rule perform better economically and minimizes the impact of the Haitian Revolution, suggesting that some former colonies might benefit from outsourcing governance to more stable states.",
+      "category": "race",
+      "whyBad": "The article uses a 'net positive' framing to make colonialism appear beneficial. It achieves this by cherry-picking studies that link long-term colonial rule to economic growth, while ignoring the immense human suffering, resource theft, and cultural destruction involved. This tactic attempts to normalize imperialism by suggesting that colonial oppression was a necessary step for development, which serves to justify historical and systemic racism.",
+      "severity": "high",
+      "foundAt": "2026-05-05T15:00:28.678Z",
+      "researchQuery": "Focus: The denial of systemic racism and the attempt to make historical or current racial oppression seem acceptable or non-existent.\n    \n    Strategies to explore:\n    - EQUITY ATTACKS: Framing fairness-focused policies as \"reverse discrimination\" and using \"colorblind\" language to hide the reality of race-based outcomes.\n    - HISTORY CLEANUP: Presenting colonialism as a \"net positive,\" minimizing the horror of slavery or genocide, and ignoring the roots of current inequality.\n    - NATURALIZING GAPS: Using biased science or \"culture\" to explain why some groups have less, without mentioning the role of policy or history.\n    - ATTACKING PROTESTERS: Presenting civil rights movements as \"divisive\" or \"dangerous\" to justify shutting them down.\n    - XENOPHOBIC OVERLAP: Where arguments about \"racial purity\" meet fear-mongering about demographic change.\n    - TEACHING REVISIONISM: Systematic efforts to change what is taught in schools to hide the history of racial injustice.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "10b02e2f-7bec-42ba-877a-5346519da43e",
       "url": "https://reason.org/commentary/federal-independent-contractor-regulation-threatens-the-gig-economy/",

@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T14:51:19.899Z",
-  "categoryIndex": 2,
+  "lastRun": "2026-05-05T15:00:28.680Z",
+  "categoryIndex": 3,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -175,7 +175,10 @@
       "bbc.com/news/blogs-trending-61495035",
       "forbes.com/sites/feliciajackson/2025/05/14/big-oil-knew-big-oil-lied-fossil-fuels-long-strategy-of-deceit"
     ],
-    "health": []
+    "health": [],
+    "race": [
+      "aporiamagazine.com/p/the-positive-legacy-of-empire"
+    ]
   },
   "queryHistory": {
     "migrated_legacy": {
@@ -713,6 +716,15 @@
       "Climate the Movie cold truth denial desmog": "2026-05-05T13:09:28.344Z",
       "climate doomism social media BBC 2022": "2026-05-05T13:09:28.344Z",
       "UCS Decades of Deceit report Forbes 2025": "2026-05-05T13:09:28.344Z"
+    },
+    "race": {
+      "colorblindness trap affirmative action nyt": "2026-05-05T14:57:13.610Z",
+      "Florida slavery skills benefit curriculum 2023": "2026-05-05T14:57:13.610Z",
+      "positive legacy of empire aporia": "2026-05-05T14:57:13.610Z",
+      "the bell curve problem scientific american": "2026-05-05T14:57:13.610Z",
+      "white genocide great replacement 2024 SPLC": "2026-05-05T14:57:13.610Z",
+      "anti-CRT legislation tracking UCLA": "2026-05-05T14:57:13.610Z",
+      "defund the police movement framing": "2026-05-05T14:57:13.610Z"
     }
   }
 }
