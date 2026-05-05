@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T15:14:43.480Z",
-  "totalFindings": 72,
+  "lastUpdated": "2026-05-05T15:24:05.656Z",
+  "totalFindings": 73,
   "findings": [
+    {
+      "id": "811d5393-b224-4d1b-80a6-1a90020eca09",
+      "url": "https://www.whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office/",
+      "title": "Establishment of the White House Faith Office",
+      "domain": "whitehouse.gov",
+      "summary": "- Creates a White House Faith Office to give religious groups more access to federal funding and policy.\n- Directs agencies to train staff on 'religious liberty exceptions, accommodations, or exemptions' that let faith groups opt out of rules.\n- Orders the office to work with the Attorney General to find ways to 'reduce burdens on the free exercise of religion' in government programs.\n- The office is also tasked with 'combatting anti-Christian bias' and promoting foster care and adoption through faith groups.",
+      "category": "religion",
+      "whyBad": "This executive order uses the language of 'religious freedom' to justify a massive shift in government priority toward Christian organizations. By framing the protection of religious privilege as a defense against 'anti-Christian bias,' it creates a false sense of victimhood to justify giving churches special access to taxpayer funds and the power to bypass secular laws. This effectively normalizes the use of government resources to promote a specific faith, eroding the separation of church and state and opening the door for state-funded discrimination in areas like education, hiring, and social services.",
+      "severity": "high",
+      "foundAt": "2026-05-05T15:24:05.656Z",
+      "researchQuery": "Focus: Attempts to give specific religious views a privileged place in government and public life.\n    \n    Strategies to explore:\n    - RELIGIOUS REVISIONISM: Presenting the nation as \"fundamentally religious\" to justify using doctrine as law.\n    - WEAPONIZING EXEMPTIONS: Using \"religious freedom\" as an excuse to ignore civil rights, labor, or health laws.\n    - DOCTRINE AS LAW: Using scripture to justify taking away rights from others (like reproductive or LGBTQ+ rights).\n    - CLASSROOM CAPTURE: Pushing specific religious teachings into public schools and using public money for religious purposes.\n    - MARGINALIZING MINORITIES: Presenting a diverse society as a form of \"persecution\" against the majority religion.\n    - ERODING SEPARATION: Efforts to break down the wall between religious power and government authority.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "01b6c535-7cbc-4edd-952d-973e171d0370",
       "url": "https://www.aporiamagazine.com/p/the-positive-legacy-of-empire",
