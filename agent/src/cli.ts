@@ -90,8 +90,8 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   divider();
 
   // Ask for batch size
-  const sizeInput = await question(`${DIM}Batch size (default 3):${RESET} `);
-  const batchSize = Math.min(Math.max(parseInt(sizeInput, 10) || 3, 1), 10);
+  const sizeInput = await question(`${DIM}Batch size (default 3, max 50):${RESET} `);
+  const batchSize = Math.min(Math.max(parseInt(sizeInput, 10) || 3, 1), 50);
 
   console.log();
   const store = loadFindings();
