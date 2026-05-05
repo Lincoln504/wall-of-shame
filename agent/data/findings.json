@@ -1,7 +1,55 @@
 {
-  "lastUpdated": "2026-05-05T16:15:48.972Z",
-  "totalFindings": 75,
+  "lastUpdated": "2026-05-05T16:21:51.241Z",
+  "totalFindings": 79,
   "findings": [
+    {
+      "id": "294fe1d0-58de-4b00-95e9-9bf3336404f7",
+      "url": "https://waysandmeans.house.gov/2025/09/25/newt-gingrich-op-ed-reform-of-social-security-disability-benefits-could-help-move-countless-americans-toward-greater-sense-of-their-own-capabilities/",
+      "title": "Newt Gingrich Op-Ed: Reform of Social Security Disability Benefits Could Help Move Countless Americans Toward Greater Sense of Their Own Capabilities",
+      "domain": "waysandmeans.house.gov",
+      "summary": "An op-ed arguing that current Social Security Disability Insurance (SSDI) policies create a 'trap' of dependency and that benefits should be reformed to force more people into the workforce.",
+      "category": "disability",
+      "whyBad": "The article frames disability benefits as a source of 'dependency' rather than a vital survival lifeline for those unable to work. It uses a 'meritocratic' frame that suggests the problem is the benefit structure itself, rather than the lack of accessible jobs or systemic discrimination in the workplace. By portraying the current system as a hurdle to 'capability,' it provides a political justification for cutting essential support and ignores the reality of many people who are physically or mentally unable to work regardless of policy reform.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:21:51.241Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "3b7a308e-a619-4d11-97f0-6a0f18ab4a02",
+      "url": "https://www.edweek.org/leadership/special-education-is-getting-more-expensive-forcing-schools-to-make-cuts-elsewhere/2023/04",
+      "title": "Special Education Is Getting More Expensive, Forcing Schools to Make Cuts Elsewhere",
+      "domain": "edweek.org",
+      "summary": "A report on how rising costs for special education services are creating budget shortfalls and forcing school districts to reduce funding for other programs.",
+      "category": "disability",
+      "whyBad": "While based on factual budgetary data, the article uses a 'zero-sum game' frame. By presenting special education as a cost that 'forces' cuts elsewhere, it implicitly casts students with disabilities as a financial burden on the rest of the student body. This framing ignores the systemic failure of the government to provide promised funding and instead creates a narrative of scarcity that can fuel resentment against disabled students and justify cutting their necessary support services.",
+      "severity": "medium",
+      "foundAt": "2026-05-05T16:21:51.086Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "688e89fa-5621-42dc-a85f-bdf7b5c5ba4f",
+      "url": "https://www.michaelbest.com/insights/the-proliferation-of-frivolous-ada-website-compliance-lawsuits-a-defense-perspec-102jv24/",
+      "title": "The Proliferation of ‘Frivolous’ ADA Website Compliance Lawsuits: A Defense Perspective",
+      "domain": "michaelbest.com",
+      "summary": "A legal perspective piece arguing that ADA website compliance lawsuits have become 'frivolous' and 'predatory,' aimed at forcing quick settlements from businesses.",
+      "category": "disability",
+      "whyBad": "The article frames the enforcement of digital accessibility as an abuse of the law rather than a necessary response to exclusion. It characterizes the pursuit of civil rights as 'financial exploitation,' which shifts the focus from the harm of exclusion (disabled people being unable to use the internet) to the inconvenience of litigation for businesses. This helps justify business resistance to accessibility standards by portraying the victims as opportunistic exploiters.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:21:50.169Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "617590a7-7949-47ce-a6c3-09384df6f752",
+      "url": "https://www.theacorn.com/articles/ada-lawsuits-called-legal-extortion-become-increasingly-common/",
+      "title": "ADA lawsuits called ‘legal extortion’ become increasingly common",
+      "domain": "theacorn.com",
+      "summary": "The article claims that Americans with Disabilities Act (ADA) accessibility lawsuits are being used as 'shakedowns' and 'legal extortion' against small business owners. It focuses on the financial burden of these lawsuits rather than the underlying accessibility issues.",
+      "category": "disability",
+      "whyBad": "The article uses a 'victim-blaming' frame by focusing entirely on the financial stress of business owners while ignoring the reason the lawsuits exist: non-compliance with civil rights laws. By labeling legal enforcement as 'extortion,' it characterizes disabled people seeking access as criminals or predators. This normalizes the idea that accessibility is an optional luxury rather than a legal requirement, and it provides a rhetorical shield for businesses to avoid making necessary improvements.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:21:49.957Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "9bbeb6e2-16e2-4113-88aa-855fdb5bc282",
       "url": "https://nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare/",
