@@ -1,7 +1,31 @@
 {
-  "lastUpdated": "2026-05-05T16:29:36.436Z",
-  "totalFindings": 80,
+  "lastUpdated": "2026-05-05T16:36:11.812Z",
+  "totalFindings": 82,
   "findings": [
+    {
+      "id": "8bec93d1-da61-4c11-8a4b-a7539e5a3cd8",
+      "url": "https://www.osha.gov/deregulatory-rulemaking",
+      "title": "Deregulatory Rulemaking | Occupational Safety and Health Administration",
+      "domain": "osha.gov",
+      "summary": "The official OSHA webpage outlines various deregulation initiatives intended to 'streamline regulatory obligations' and 'foster economic growth.' These include rescinding lighting standards and removing protections for migrant workers and healthcare workers.",
+      "category": "labor",
+      "whyBad": "The agency uses economic language to justify the removal of safety standards, framing them as 'outdated or redundant' costs that hinder 'economic growth.' This normalizes the stripping of protections by treating worker safety as an economic variable to be optimized rather than a fundamental right. By prioritizing 'streamlining' and 'prosperity,' the framing makes the increased risk of workplace accidents and deaths appear to be a necessary part of a healthy economy.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:36:11.812Z",
+      "researchQuery": "Focus: The systematic dismantling of labor protections and the presentation of unfair management practices as normal or beneficial.\n    \n    Strategies to explore:\n    - CONTRACTUAL SHIFTING: Presenting employees as \"independent\" to remove benefits and basic rights.\n    - UNDERMINING UNIONS: Arguing that individual bargaining is better than collective power and presenting anti-union efforts as \"protecting\" worker choice.\n    - WAGE REDUCTION: Arguments for lower minimum standards or creating groups of workers with fewer rights.\n    - CHILD LABOR JUSTIFICATION: Presenting youth work as a \"character building\" opportunity to justify removing age and hour protections.\n    - BLAMING THE POOR: Language that treats economic hardship as a personal failure or \"dependency\" rather than a systemic issue.\n    - SAFETY AS BURDEN: Framing workplace safety rules as unnecessary \"red tape\" that hurts the economy.\n    - GENERAL NARRATIVE: Broadly presenting worker rights as an obstacle to progress or individual freedom.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "2d3d1499-8ec3-4e10-858d-fcb10329ddb2",
+      "url": "https://www.fisherphillips.com/en/insights/insights/osha-key-player-in-dol-deregulation-wave",
+      "title": "OSHA Key Player in DOL Deregulation Wave",
+      "domain": "fisherphillips.com",
+      "summary": "This article discusses a wave of OSHA deregulation aimed at reducing 'regulatory burdens' and providing 'more flexibility.' It covers proposals to rescind construction lighting rules, remove COVID-19 protections, and eliminate enforcement for migrant farmworkers.",
+      "category": "labor",
+      "whyBad": "The piece uses euphemisms like 'flexibility' and 'reducing compliance costs' to describe the removal of life-saving safety protections. This framing shifts the focus from worker safety to business efficiency, normalizing the idea that safety regulations are obstacles to be cleared. By presenting these changes as 'deregulation' rather than the removal of hazard protections, it masks the increased risk of injury and death for workers in sectors like construction and agriculture.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:36:11.461Z",
+      "researchQuery": "Focus: The systematic dismantling of labor protections and the presentation of unfair management practices as normal or beneficial.\n    \n    Strategies to explore:\n    - CONTRACTUAL SHIFTING: Presenting employees as \"independent\" to remove benefits and basic rights.\n    - UNDERMINING UNIONS: Arguing that individual bargaining is better than collective power and presenting anti-union efforts as \"protecting\" worker choice.\n    - WAGE REDUCTION: Arguments for lower minimum standards or creating groups of workers with fewer rights.\n    - CHILD LABOR JUSTIFICATION: Presenting youth work as a \"character building\" opportunity to justify removing age and hour protections.\n    - BLAMING THE POOR: Language that treats economic hardship as a personal failure or \"dependency\" rather than a systemic issue.\n    - SAFETY AS BURDEN: Framing workplace safety rules as unnecessary \"red tape\" that hurts the economy.\n    - GENERAL NARRATIVE: Broadly presenting worker rights as an obstacle to progress or individual freedom.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "1e55f5dd-b975-4f5a-abca-6d7c25eb8413",
       "url": "https://www.realcleardefense.com/articles/2025/06/03/peace_through_strength_starts_with_reforming_the_pentagon_1114091.html",
