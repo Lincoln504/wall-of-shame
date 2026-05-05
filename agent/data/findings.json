@@ -1,7 +1,31 @@
 {
-  "lastUpdated": "2026-05-05T13:19:28.112Z",
-  "totalFindings": 65,
+  "lastUpdated": "2026-05-05T13:25:53.253Z",
+  "totalFindings": 67,
   "findings": [
+    {
+      "id": "dc3c89e5-b4bb-47ec-b380-a729c675fffc",
+      "url": "https://www.congress.gov/119/bills/hr503/BILLS-119hr503ih.pdf",
+      "title": "H.R. 503: Qualified Immunity Act of 2025",
+      "domain": "congress.gov",
+      "summary": "- Bill introduced January 2025 to codify the qualified immunity defense into statute for Section 1983 lawsuits.\n- States that officers shall not be found liable unless the right was 'clearly established' at the time and that every reasonable officer would have understood the conduct was unlawful.\n- Also shields government agencies from liability if the officer is not liable.\n- Findings claim immunity is meant 'for all but the plainly incompetent or those who knowingly violate the law.'",
+      "category": "policing",
+      "whyBad": "This bill attempts to make it legally impossible to hold police officers accountable for a wide range of misconduct. It uses language like 'plainly incompetent' to suggest that only the most obvious or intentional bad behavior should be punished. This effectively shields officers who cause harm through recklessness or negligence, as long as their actions haven't been specifically blocked by a previous court case. By turning these protections into permanent law, the bill uses the excuse of protecting 'reasonable' officers to create a massive barrier that prevents victims of police violence from ever receiving justice.",
+      "severity": "high",
+      "foundAt": "2026-05-05T13:25:53.253Z",
+      "researchQuery": "Focus: The defense of excessive state power and the normalization of exploitative carceral systems.\n    \n    Strategies to explore:\n    - VIOLENCE JUSTIFICATION: Using \"split-second\" excuses to make the use of excessive force by the state seem normal.\n    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.\n    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.\n    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.\n    - HARSHER SENTENCING: Pushing for mass incarceration and using \"law and order\" language to target specific communities.\n    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "75fbb1c2-def8-43b2-aa4d-a9d33a1a9a6a",
+      "url": "https://www.city-journal.org/article/broken-windows-policing-public-health-safety",
+      "title": "Broken-Windows Policing as Public-Health and Safety",
+      "domain": "city-journal.org",
+      "summary": "- Argues broken windows policing should be seen as a 'public-health intervention' that modifies environments and protects vulnerable people.\n- Dismisses critics as 'unfair' and claims enforcement of disorder can control crime without significant unintended consequences if done correctly.\n- Cites a 56-study review showing 26% crime reduction in treated areas, but acknowledges that indiscriminate aggressive strategies are not effective.\n- Blames misinterpretation of Wilson and Kelling's original theory for past harms, not the theory itself.",
+      "category": "policing",
+      "whyBad": "This article attempts to make aggressive policing look like a helpful medical service by calling it a 'public-health intervention.' This word choice makes police crackdowns sound like they are for the community's well-being, which helps hide the reality that these tactics often disproportionately target Black and Latino residents. It also brushes off decades of evidence showing that these policies lead to racial profiling by claiming the problem is just people 'misunderstanding' the theory, rather than the theory itself being the issue. By framing policing as a matter of health, the author makes it harder for communities to resist police overreach without appearing to be against public safety.",
+      "severity": "high",
+      "foundAt": "2026-05-05T13:25:53.077Z",
+      "researchQuery": "Focus: The defense of excessive state power and the normalization of exploitative carceral systems.\n    \n    Strategies to explore:\n    - VIOLENCE JUSTIFICATION: Using \"split-second\" excuses to make the use of excessive force by the state seem normal.\n    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.\n    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.\n    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.\n    - HARSHER SENTENCING: Pushing for mass incarceration and using \"law and order\" language to target specific communities.\n    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "b85cf267-a2a5-437f-9ffd-c05efec4a747",
       "url": "https://corpgov.law.harvard.edu/2023/07/16/share-buybacks-and-executive-compensation-assessing-key-criticisms/",

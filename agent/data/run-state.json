@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T13:19:28.113Z",
-  "categoryIndex": 9,
+  "lastRun": "2026-05-05T13:25:53.256Z",
+  "categoryIndex": 10,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -106,7 +106,9 @@
       "election-integrity.org/post/map-new-voter-id-laws-impact-29m-americans-since-2020"
     ],
     "policing": [
-      "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law"
+      "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law",
+      "city-journal.org/article/broken-windows-policing-public-health-safety",
+      "congress.gov/119/bills/hr503/bills-119hr503ih.pdf"
     ],
     "technology": [
       "reuters.com/sustainability/boards-policy-regulation/meta-buried-causal-evidence-social-media-harm-us-court-filings-allege-2025-11-23",
@@ -564,7 +566,15 @@
       "prison labor 13th amendment loophole": "2026-05-05T10:59:51.071Z",
       "bail reform crime studies no evidence": "2026-05-05T10:59:51.071Z",
       "facial recognition police surveillance benefits": "2026-05-05T10:59:51.071Z",
-      "House Judiciary Committee report violent crime progressive left": "2026-05-05T10:59:51.071Z"
+      "House Judiciary Committee report violent crime progressive left": "2026-05-05T10:59:51.071Z",
+      "qualified immunity reform stalls 2025": "2026-05-05T13:23:28.127Z",
+      "broken windows policing public health intervention": "2026-05-05T13:23:28.127Z",
+      "private prison bed mandates corporate profits": "2026-05-05T13:23:28.127Z",
+      "GEO Group CoreCivic lobbying DHS": "2026-05-05T13:23:28.127Z",
+      "H.R. 503 Qualified Immunity Act of 2025": "2026-05-05T13:23:28.127Z",
+      "Graham v. Connor force standard": "2026-05-05T13:23:28.127Z",
+      "police drone surveillance ACLU": "2026-05-05T13:23:28.127Z",
+      "Laken Riley Act immigration detention": "2026-05-05T13:23:28.127Z"
     },
     "technology": {
       "normalization of digital surveillance and dismissal of technological harms": "2026-05-05T08:40:07.973Z",
