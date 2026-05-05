@@ -1,5 +1,5 @@
 {
-  "lastRun": "2026-05-05T09:49:12.750Z",
+  "lastRun": "2026-05-05T10:01:38.309Z",
   "categoryIndex": 9,
   "seenUrls": {
     "global_legacy": [
@@ -511,6 +511,9 @@
       "Project 2025 reproductive rights gender equity": "2026-05-05T09:26:15.030Z",
       "conversion therapy bans Supreme Court 2026": "2026-05-05T09:26:15.030Z",
       "gender pay gap denial rhetoric of choice": "2026-05-05T09:26:15.030Z"
+    },
+    "verification_test": {
+      "git_test_1777975298309": "2026-05-05T10:01:38.309Z"
     }
   }
 }
