@@ -1,7 +1,31 @@
 {
-  "lastUpdated": "2026-05-05T16:42:54.765Z",
-  "totalFindings": 83,
+  "lastUpdated": "2026-05-05T16:53:03.482Z",
+  "totalFindings": 85,
   "findings": [
+    {
+      "id": "a73b2048-93c4-457d-b768-254c63db8759",
+      "url": "https://www.americafirstpolicy.com/issues/research-report-reversing-the-woke-takeover-of-higher-education-strategies-to-dismantle-campus-dei",
+      "title": "Reversing the Woke Takeover of Higher Education: Strategies to Dismantle Campus DEI",
+      "domain": "americafirstpolicy.com",
+      "summary": "A report from the America First Policy Institute that outlines strategies to dismantle Diversity, Equity, and Inclusion (DEI) programs in universities, framing them as a threat to meritocracy and American values.",
+      "category": "race",
+      "whyBad": "The report uses aggressive, politically charged language like 'woke takeover' to paint diversity and inclusion efforts as an attack on traditional American meritocracy. By falsely equating DEI programs with controversial ideologies, it provides a strategic blueprint to justify stripping away resources and protections for marginalized students.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:53:03.481Z",
+      "researchQuery": "Focus: The denial of systemic racism and the attempt to make historical or current racial oppression seem acceptable or non-existent.\n    \n    Strategies to explore:\n    - EQUITY ATTACKS: Framing fairness-focused policies as \"reverse discrimination\" and using \"colorblind\" language to hide the reality of race-based outcomes.\n    - HISTORY CLEANUP: Presenting colonialism as a \"net positive,\" minimizing the horror of slavery or genocide, and ignoring the roots of current inequality.\n    - NATURALIZING GAPS: Using biased science or \"culture\" to explain why some groups have less, without mentioning the role of policy or history.\n    - ATTACKING PROTESTERS: Presenting civil rights movements as \"divisive\" or \"dangerous\" to justify shutting them down.\n    - XENOPHOBIC OVERLAP: Where arguments about \"racial purity\" meet fear-mongering about demographic change.\n    - TEACHING REVISIONISM: Systematic efforts to change what is taught in schools to hide the history of racial injustice.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
+    {
+      "id": "8fd3ef2e-f1e8-431f-9ab3-b3abff52c2db",
+      "url": "https://www.fldoe.org/core/fileparse.php/20653/urlt/6-4.pdf",
+      "title": "Florida's 2023 Social Studies Standards",
+      "domain": "fldoe.org",
+      "summary": "The official K-12 curriculum for Florida includes benchmarks that suggest enslaved people developed skills, such as blacksmithing or music, which could be used for their 'personal benefit.'",
+      "category": "race",
+      "whyBad": "The curriculum uses 'skill-building' language to suggest that enslaved people gained personal advantages through their forced labor. This framing sanitizes the reality of slavery by presenting it as a form of vocational training, which helps to downplay the extreme violence, coercion, and human rights abuses inherent to the system.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:53:03.350Z",
+      "researchQuery": "Focus: The denial of systemic racism and the attempt to make historical or current racial oppression seem acceptable or non-existent.\n    \n    Strategies to explore:\n    - EQUITY ATTACKS: Framing fairness-focused policies as \"reverse discrimination\" and using \"colorblind\" language to hide the reality of race-based outcomes.\n    - HISTORY CLEANUP: Presenting colonialism as a \"net positive,\" minimizing the horror of slavery or genocide, and ignoring the roots of current inequality.\n    - NATURALIZING GAPS: Using biased science or \"culture\" to explain why some groups have less, without mentioning the role of policy or history.\n    - ATTACKING PROTESTERS: Presenting civil rights movements as \"divisive\" or \"dangerous\" to justify shutting them down.\n    - XENOPHOBIC OVERLAP: Where arguments about \"racial purity\" meet fear-mongering about demographic change.\n    - TEACHING REVISIONISM: Systematic efforts to change what is taught in schools to hide the history of racial injustice.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "90c06dca-4e72-49b3-9e34-185bf546c1a1",
       "url": "https://www.husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses/",
