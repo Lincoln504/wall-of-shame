@@ -107,21 +107,11 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
   }
   console.log();
 
-  if (dryRun) {
-    const confirm = await question(`${YELLOW}Sketch what would be researched? (y/N)${RESET} `);
-    if (confirm.toLowerCase() !== 'y') return;
-  } else {
-    const confirm = await question(`${RED}Run research?${RESET} This costs API credits! (y/N): `);
-    if (confirm.toLowerCase() !== 'y') return;
-  }
-
-  divider();
   const startTime = Date.now();
   let totalAdded = 0;
   let totalErrors = 0;
 
   if (dryRun) {
-    // Dry-run: just show what would be done — no API calls
     console.log(`\n${YELLOW}This is a dry-run — nothing will be researched or saved.${RESET}`);
     console.log(`${DIM}The following categories would be processed:${RESET}`);
     for (const cat of batch) {
@@ -130,83 +120,92 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
     console.log(`\n${YELLOW}To actually run research, select option 1 instead.${RESET}\n`);
     totalAdded = 0;
   } else {
-    const discoveryBatch: { findings: import('./findings.js').RawFinding[], categoryKey: string }[] = [];
+    const confirm = await question(`${RED}Run research?${RESET} This costs API credits! (y/N): `);
+    if (confirm.toLowerCase() !== 'y') return;
 
-    // 1. Discovery Phase
+    divider();
+    const startTimeReal = Date.now();
+
+    const { runResearch } = await import('./researcher.js');
+    const { runReview } = await import('./reviewer.js');
+    const { addFindings } = await import('./findings.js');
+    const { git } = await import('./git.js');
+
+    // Sequential Processing
     for (let i = 0; i < batchSize; i++) {
       const cat = CATEGORIES[state.categoryIndex];
       if (!cat) break;
 
-      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Discovering: ${cat.name} ... `);
+      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} ... `);
 
       try {
-        const { runResearch } = await import('./researcher.js');
+        // 1. Research
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
         const catHistory = state.queryHistory[cat.key] || {};
         const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, logFn);
         
-        if (result.findings.length > 0) {
-          discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
-        }
-
-        process.stdout.write(`${GREEN}${result.findings.length} findings${RESET}\n`);
-        
+        // Update query history
         const now = new Date().toISOString();
         if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
         for (const q of result.queries) {
           state.queryHistory[cat.key]![q] = now;
         }
 
-        state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-        saveState(state);
-      } catch (err) {
-        process.stdout.write(`${RED}ERROR${RESET}\n`);
-        process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
-        console.log(`\n${YELLOW}Stopping discovery due to error. Category index remains at ${state.categoryIndex}.${RESET}`);
-        totalErrors++;
-        break;
-      }
-    }
+        // Advance index
+        const nextIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+        state.categoryIndex = nextIndex;
 
-    // 2. Review & Save Phase
-    if (discoveryBatch.length > 0) {
-      console.log(`\n${BOLD}Starting batch review...${RESET}`);
-      const { runReview } = await import('./reviewer.js');
-      
-      for (const item of discoveryBatch) {
-        try {
-          const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
-          const reviewed = await runReview(item.findings, logFn);
-          const added = await (await import('./findings.js')).addFindings(store, state, reviewed, item.categoryKey, logFn);
+        if (result.findings.length > 0) {
+          process.stdout.write(`${GREEN}${result.findings.length} findings found${RESET}\n`);
+          console.log(`  ${BOLD}Starting review...${RESET}`);
+
+          // 2. Review
+          const reviewed = await runReview(result.findings, logFn);
+
+          // 3. Save
+          const added = await addFindings(store, state, reviewed, cat.researchQuery, logFn);
           totalAdded += added.length;
 
-          // Also mark all ORIGINAL discoveries as seen
-          for (const raw of item.findings) {
+          // Mark discoveries as seen
+          for (const raw of result.findings) {
             if (raw.url && !state.seenUrls.includes(raw.url)) {
               state.seenUrls.push(raw.url);
             }
           }
-        } catch (err) {
-          console.log(`  ${RED}Review failed for ${item.categoryKey}: ${String(err).split('\n')[0]}${RESET}`);
-          const added = await (await import('./findings.js')).addFindings(store, state, item.findings, item.categoryKey);
-          totalAdded += added.length;
-        }
-      }
 
-      saveFindings(store);
-      saveState(state);
-      console.log(`\n${GREEN}Batch processed and saved locally.${RESET}`);
+          saveFindings(store);
+          saveState(state);
 
-      // 3. Auto Push
-      if (isGitRepo() && remoteExists() && hasDataChanges()) {
-        console.log(`\n${BOLD}Automatically committing and pushing updates...${RESET}`);
-        try {
-          commitAndPush(totalAdded);
-          console.log(`${GREEN}Data synchronized with origin${RESET}`);
-        } catch (err) {
-          console.log(`${RED}Push failed: ${String(err).split('\n')[0]}${RESET}`);
+          if (added.length > 0) {
+            console.log(`  ${GREEN}Added ${added.length} findings, pushing...${RESET}`);
+            if (isGitRepo() && remoteExists() && hasDataChanges()) {
+              commitAndPush(added.length, cat.name);
+            }
+          } else {
+            console.log(`  ${DIM}No new findings after review.${RESET}`);
+            if (isGitRepo() && remoteExists() && hasDataChanges()) {
+              git('add agent/data/run-state.json');
+              git('commit -m "chore: update run-state for ' + cat.key + ' (no findings)"');
+              git('push');
+            }
+          }
+        } else {
+          process.stdout.write(`${DIM}no discoveries${RESET}\n`);
+          saveState(state);
+          if (isGitRepo() && remoteExists() && hasDataChanges()) {
+            git('add agent/data/run-state.json');
+            git('commit -m "chore: update run-state for ' + cat.key + ' (no discoveries)"');
+            git('push');
+          }
         }
+      } catch (err) {
+        process.stdout.write(`${RED}ERROR${RESET}\n`);
+        process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
+        console.log(`\n${YELLOW}Stopping batch due to error. Category index is ${state.categoryIndex}.${RESET}`);
+        totalErrors++;
+        break;
       }
+      divider();
     }
   }
 

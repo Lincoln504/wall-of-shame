@@ -12,7 +12,7 @@ import {
 import { safeParseJson } from './utils.js';
 
 const OPENROUTER_PROVIDER = 'openrouter';
-const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
+const MODEL_ID = 'google/gemma-4-26b-a4b-it';
 const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
 
 const AUDIT_PROMPT = `You are a Senior Adversarial Auditor for the "Wall of Shame" database.
@@ -100,7 +100,7 @@ async function runAudit(findings: any[]): Promise<{ approved: any[], removed: an
   const authStorage = AuthStorage.create(join(agentDir, 'auth.json'));
   const modelRegistry = ModelRegistry.create(authStorage);
   const settingsManager = SettingsManager.create(agentDir);
-  const model = modelRegistry.find(OPENROUTER_PROVIDER, DEEPSEEK_MODEL_ID);
+  const model = modelRegistry.find(OPENROUTER_PROVIDER, MODEL_ID);
   
   if (!model) throw new Error('Model not found');
 

@@ -31,10 +31,11 @@ export function hasDataChanges(): boolean {
 /**
  * Stage, commit, and push findings and state
  */
-export function commitAndPush(addedCount: number): void {
+export function commitAndPush(addedCount: number, categoryLabel?: string): void {
   const date = new Date().toISOString().slice(0, 10);
+  const catSuffix = categoryLabel ? ` [${categoryLabel}]` : '';
   git('add agent/data/');
-  git(`commit -m "research: automated run ${date} (+${addedCount} new)"`);
+  git(`commit -m "research: automated run ${date}${catSuffix} (+${addedCount} new)"`);
   git('push');
 }
 

@@ -17,7 +17,7 @@ import { safeParseJson } from './utils.js';
 // ── Model config ──────────────────────────────────────────────────────────────
 
 const OPENROUTER_PROVIDER = 'openrouter';
-const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
+const MODEL_ID = 'google/gemma-4-26b-a4b-it';
 
 // ── Extraction prompt template ────────────────────────────────────────────────
 // Sent to the LLM after /research completes so it can analyze results and
@@ -95,10 +95,10 @@ export async function runResearch(
   const settingsManager = SettingsManager.create(agentDir);
 
   // Resolve the model from the registry
-  const model = modelRegistry.find(OPENROUTER_PROVIDER, DEEPSEEK_MODEL_ID);
+  const model = modelRegistry.find(OPENROUTER_PROVIDER, MODEL_ID);
   if (!model) {
     throw new Error(
-      `Model ${OPENROUTER_PROVIDER}/${DEEPSEEK_MODEL_ID} not found in registry.`
+      `Model ${OPENROUTER_PROVIDER}/${MODEL_ID} not found in registry.`
     );
   }
   log(`  [pi] using model: ${model.provider}/${model.id}`);

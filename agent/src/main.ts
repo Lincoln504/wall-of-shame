@@ -12,14 +12,14 @@
  *   OpenRouter API key is read from ~/.pi/agent/auth.json (openrouter.api_key)
  *   or the ANTHROPIC_API_KEY fallback if you reconfigure the model.
  *
- * Model: deepseek/deepseek-v4-flash via OpenRouter (configured in ~/.pi/agent/)
+ * Model: google/gemma-4-26b-a4b-it via OpenRouter (configured in ~/.pi/agent/)
  */
 
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, saveFindings, loadState, saveState, addFindings } from './findings.js';
 import { runResearch, shutdownResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
-import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
+import { isGitRepo, remoteExists, hasDataChanges, commitAndPush, git } from './git.js';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -57,82 +57,76 @@ async function main() {
       }
       hr();
     } else {
-      const discoveryBatch: { findings: import('./findings.js').RawFinding[]; categoryKey: string }[] = [];
-
-      // 1. Discovery Phase
+      // Phase: Sequential Discovery & Review
       for (let i = 0; i < batchSize; i++) {
         const cat = CATEGORIES[state.categoryIndex];
         if (!cat) break;
 
-        log(`[${i + 1}/${batchSize}] discovering: ${cat.name}`);
+        log(`[${i + 1}/${batchSize}] processing: ${cat.name}`);
 
         try {
+          // 1. Research
           const catHistory = state.queryHistory[cat.key] || {};
           const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
 
-          if (result.findings.length > 0) {
-            discoveryBatch.push({ findings: result.findings, categoryKey: cat.key });
-          }
-
-          // Update query history immediately
+          // Update query history
           const now = new Date().toISOString();
           if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
           for (const q of result.queries) {
             state.queryHistory[cat.key]![q] = now;
           }
 
-          // Increment state index - we've successfully researched this category
+          // Even if no findings, we advance the index for next time
           state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
-          saveState(state);
-        } catch (err) {
-          log(`ERROR during research for ${cat.key}: ${String(err)}`);
-          log(`Category ${cat.key} failed - it will remain at index ${state.categoryIndex} for the next run.`);
-          // Stop batch on failure to maintain serial progress
-          break;
-        }
-        hr();
-      }
 
-      // 2. Review & Save Phase
-      if (discoveryBatch.length > 0) {
-        log(`starting batch review for ${discoveryBatch.reduce((acc, b) => acc + b.findings.length, 0)} discoveries...`);
+          if (result.findings.length > 0) {
+            log(`  [pi] discovered ${result.findings.length} raw findings, starting review...`);
+            
+            // 2. Review
+            const reviewedFindings = await runReview(result.findings, log);
 
-        for (const item of discoveryBatch) {
-          try {
-            const reviewedFindings = await runReview(item.findings, log);
-            const added = await addFindings(store, state, reviewedFindings, item.categoryKey, log);
+            // 3. Save
+            const added = await addFindings(store, state, reviewedFindings, cat.researchQuery, log);
             totalAdded += added.length;
 
-            // Mark all ORIGINAL findings as seen
-            for (const raw of item.findings) {
+            // Mark ORIGINAL discoveries as seen
+            for (const raw of result.findings) {
               if (raw.url && !state.seenUrls.includes(raw.url)) {
                 state.seenUrls.push(raw.url);
               }
             }
-          } catch (err) {
-            log(`  [warn] review failed for ${item.categoryKey}: ${String(err)}`);
-            // Fallback: try to add the unreviewed ones
-            const added = await addFindings(store, state, item.findings, item.categoryKey, log);
-            totalAdded += added.length;
-          }
-        }
 
-        saveFindings(store);
-        saveState(state);
-        log(`saved data locally — total: ${store.findings.length} (+${totalAdded} this run)`);
+            saveFindings(store);
+            saveState(state);
 
-        // 3. Auto Push
-        if (isGitRepo() && remoteExists() && hasDataChanges()) {
-          log('automatically committing and pushing batch results...');
-          try {
-            commitAndPush(totalAdded);
-            log('pushed — site will update shortly');
-          } catch (err) {
-            log(`WARN: git push failed: ${String(err)}`);
+            if (added.length > 0) {
+              log(`  [git] added ${added.length} findings, pushing results...`);
+              if (isGitRepo() && remoteExists() && hasDataChanges()) {
+                commitAndPush(added.length, cat.name);
+              }
+            } else {
+              log(`  [info] no new/valid findings after review for ${cat.name}`);
+              if (isGitRepo() && remoteExists() && hasDataChanges()) {
+                git('add agent/data/run-state.json');
+                git('commit -m "chore: update run-state for ' + cat.key + ' (no findings)"');
+                git('push');
+              }
+            }
+          } else {
+            log(`  [info] no findings discovered for ${cat.name}`);
+            saveState(state);
+            if (isGitRepo() && remoteExists() && hasDataChanges()) {
+              git('add agent/data/run-state.json');
+              git('commit -m "chore: update run-state for ' + cat.key + ' (no discoveries)"');
+              git('push');
+            }
           }
+        } catch (err) {
+          log(`ERROR during processing for ${cat.key}: ${String(err)}`);
+          log(`Progress paused at category index ${state.categoryIndex}.`);
+          break;
         }
-      } else {
-        log('no new findings discovered in this batch.');
+        hr();
       }
     }
 
