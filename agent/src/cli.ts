@@ -130,6 +130,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
     const { runReview } = await import('./reviewer.js');
     const { addFindings } = await import('./findings.js');
     const { git } = await import('./git.js');
+    const { normalizeUrl } = await import('@lincoln504/pi-research');
 
     // Sequential Processing
     for (let i = 0; i < batchSize; i++) {
@@ -168,8 +169,9 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
           // Mark discoveries as seen
           for (const raw of result.findings) {
-            if (raw.url && !state.seenUrls.includes(raw.url)) {
-              state.seenUrls.push(raw.url);
+            const normalized = normalizeUrl(raw.url);
+            if (!state.seenUrls.includes(normalized)) {
+              state.seenUrls.push(normalized);
             }
           }
 

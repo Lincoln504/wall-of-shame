@@ -20,6 +20,7 @@ import { loadFindings, saveFindings, loadState, saveState, addFindings } from '.
 import { runResearch, shutdownResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush, git } from './git.js';
+import { normalizeUrl } from '@lincoln504/pi-research';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -91,8 +92,9 @@ async function main() {
 
             // Mark ORIGINAL discoveries as seen
             for (const raw of result.findings) {
-              if (raw.url && !state.seenUrls.includes(raw.url)) {
-                state.seenUrls.push(raw.url);
+              const normalized = normalizeUrl(raw.url);
+              if (!state.seenUrls.includes(normalized)) {
+                state.seenUrls.push(normalized);
               }
             }
 

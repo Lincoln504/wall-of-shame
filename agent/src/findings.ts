@@ -3,6 +3,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import type { Finding, FindingsStore, RunState } from './types.js';
+import { normalizeUrl } from '@lincoln504/pi-research';
 
 // Status codes that mean the URL exists even if we can't read the body.
 // 401 excluded: sites like WSJ return 401 for ALL bot requests (real or fake)
@@ -105,6 +106,9 @@ export function loadState(): RunState {
 export function saveState(state: RunState): void {
   state.lastRun = new Date().toISOString();
 
+  // Normalize and deduplicate seenUrls
+  state.seenUrls = Array.from(new Set(state.seenUrls.map(u => normalizeUrl(u))));
+
   // Prune query history: remove items older than 30 days
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   const now = Date.now();
@@ -140,6 +144,14 @@ export interface RawFinding {
   severity?: string;
 }
 
+/**
+ * Robust title normalization for deduplication.
+ * Removes all non-alphanumeric chars and lowercases.
+ */
+function normalizeTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 export async function addFindings(
   store: FindingsStore,
   state: RunState,
@@ -148,20 +160,36 @@ export async function addFindings(
   log?: (msg: string) => void,
   verify: (url: string) => Promise<boolean> = verifyUrl,
 ): Promise<Finding[]> {
-  const seenSet = new Set(state.seenUrls);
-  const existing = new Set(store.findings.map(f => f.url));
+  const seenSet = new Set(state.seenUrls.map(u => normalizeUrl(u)));
+  const existingUrls = new Set(store.findings.map(f => normalizeUrl(f.url)));
+  const existingTitles = new Set(store.findings.map(f => normalizeTitle(f.title)));
   const added: Finding[] = [];
 
   for (const raw of raws) {
     if (!raw.url || !raw.url.startsWith('http')) continue;
-    if (seenSet.has(raw.url) || existing.has(raw.url)) continue;
+    
+    const normalizedUrl = normalizeUrl(raw.url);
+    const normalizedTitle = normalizeTitle(raw.title || '');
+
+    if (seenSet.has(normalizedUrl) || existingUrls.has(normalizedUrl)) {
+      log?.(`  [skip] URL already processed: ${raw.url}`);
+      continue;
+    }
+
+    if (normalizedTitle && existingTitles.has(normalizedTitle)) {
+      log?.(`  [skip] Title already exists: ${raw.title}`);
+      // Still mark URL as seen to avoid re-verifying this specific URL
+      state.seenUrls.push(normalizedUrl);
+      seenSet.add(normalizedUrl);
+      continue;
+    }
 
     const reachable = await verify(raw.url);
     if (!reachable) {
       log?.(`  [skip] URL unreachable (404/timeout): ${raw.url}`);
       // Still mark as seen so we don't retry it next run
-      state.seenUrls.push(raw.url);
-      seenSet.add(raw.url);
+      state.seenUrls.push(normalizedUrl);
+      seenSet.add(normalizedUrl);
       continue;
     }
 
@@ -180,8 +208,9 @@ export async function addFindings(
     };
 
     store.findings.push(finding);
-    state.seenUrls.push(raw.url);
-    existing.add(raw.url);
+    state.seenUrls.push(normalizedUrl);
+    existingUrls.add(normalizedUrl);
+    existingTitles.add(normalizedTitle);
     added.push(finding);
   }
 
