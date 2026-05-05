@@ -45,7 +45,7 @@ YOUR WORKFLOW:
    b. Confirm the title is exact and verify the domain.
    c. Verify the claims and quotes in the researcher's summary/analysis are accurate.
    d. EVALUATE ANALYSIS: Review the researcher's "whyBad" section. 
-      - If it already correctly identifies the core rhetorical manipulation, logical fallacies, and framing, you may KEEP IT AS-IS.
+      - If it already correctly identifies the core manipulative framing, logical fallacies, and distortion, you may KEEP IT AS-IS.
       - If it is weak, inaccurate, or misses a key manipulative technique, you MUST EDIT it to be sharper and more accurate.
    e. CRITICAL PERSPECTIVE TEST: Is the author's primary goal to inform, or to advocate/manipulate/mislead? Only approve if it clearly fails this test.
 
@@ -59,9 +59,9 @@ Each entry must follow this schema:
   "domain": "...",
   "summary": "...",
   "category": "...",
-  "whyBad": "[The verified or improved rhetorical analysis. Keep original if high quality, otherwise rewrite to identify specific fallacies/techniques.]",
+  "whyBad": "[The verified or improved analysis. Keep original if high quality, otherwise rewrite to identify specific fallacies/techniques.]",
   "severity": "low|medium|high",
-  "verificationLog": "Surgically verified on [Date]. [Briefly note what you checked/changed, e.g. 'Researcher analysis was excellent, kept as-is' or 'Corrected misquoted text and sharpened the rhetorical analysis.']"
+  "verificationLog": "Surgically verified on [Date]. [Briefly note what you checked/changed, e.g. 'Researcher analysis was excellent, kept as-is' or 'Corrected misquoted text and sharpened the analysis.']"
 }
 
 INPUT FINDINGS:

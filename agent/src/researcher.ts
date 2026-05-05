@@ -60,7 +60,7 @@ Return ONLY a raw JSON object (no markdown, no code blocks, no preamble):
       "domain": "example.com",
       "summary": "- Faithfully summarize the article's 3-5 core points in a hyphenated bulleted list.\n- State the author's primary intended conclusion neutrally.\n- NO judgment or critical framing here.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political or logical critique that directly addresses that claim or its underlying assumptions. 3. Identify the rhetorical technique (e.g. straw man, ecological fallacy). 4. If using external context (e.g. CBO data, Brennan Center), clearly label it as 'External Context' and explain how it invalidates the author's specific logic.]",
+      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political or logical critique that directly addresses that claim or its underlying assumptions. 3. Identify the logical fallacy or manipulative technique (e.g. straw man, ecological fallacy). 4. If using external context (e.g. CBO data, Brennan Center), clearly label it as 'External Context' and explain how it invalidates the author's specific logic.]",
       "severity": "low|medium|high"
     }
   ]
