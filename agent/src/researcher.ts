@@ -49,6 +49,10 @@ CRITICAL GROUNDING RULES:
 3. QUOTE REQUIREMENT: Every finding must include at least one direct, verbatim quote from the article.
 4. SELECTIVITY: Only include pieces where the author ADVOCATES for or NORMALIZES harmful policy/ideology. Omit neutral reporting.
 
+DEDUPLICATION:
+Omit any findings for the following URLs (already in database):
+<SEEN_LINKS>
+
 RETURN ONLY A RAW JSON OBJECT:
 {
   "queries": ["Extract the exact search queries used during research"],
@@ -57,7 +61,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "url": "https://...",
       "title": "Exact Title",
       "domain": "...",
-      "summary": "- Neutrally summarize 3-5 core points.\n- State intended conclusion neutrally.",
+      "summary": "- Neutrally summarize 3-5 core points.\\n- State intended conclusion neutrally.",
       "category": "<CATEGORY_KEY>",
       "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political/logical critique of that claim. 3. Identify the logical fallacy or manipulative framing.]",
       "severity": "low|medium|high"
@@ -67,8 +71,11 @@ RETURN ONLY A RAW JSON OBJECT:
 
 If no articles qualify, return {"queries": [...], "findings": []}. Max 8 entries.`;
 
-function buildExtractionPrompt(categoryKey: string): string {
-  return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
+function buildExtractionPrompt(categoryKey: string, seenLinks: string[]): string {
+  const seenBlock = seenLinks.length > 0 ? seenLinks.map(l => `- ${l}`).join('\n') : 'None';
+  return EXTRACTION_PROMPT
+    .replaceAll('<CATEGORY_KEY>', categoryKey)
+    .replace('<SEEN_LINKS>', seenBlock);
 }
 
 export interface ResearchResult {
@@ -88,6 +95,8 @@ export async function runResearch(
   categoryKey: string,
   label: string,
   queryHistory: Record<string, string>,
+  findingsStore: any,
+  runState: any,
   log: (msg: string) => void,
 ): Promise<ResearchResult> {
   // env flags consumed by pi-research
@@ -154,6 +163,8 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
     model,
     modelRegistry,
     settingsManager,
+    findingsStore,
+    runState,
     ui: {
       notify: (msg: string) => log(`  [pi] ${msg}`),
       setStatus: (msg: string) => log(`  [pi] status: ${msg}`),
@@ -209,7 +220,12 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
     }
 
     log(`  [pi] extracting findings...`);
-    const extractionPrompt = buildExtractionPrompt(categoryKey);
+    // Get all seen URLs for this category from both store and state
+    const existingInStore = mockCtx.findingsStore?.findings?.filter((f: any) => f.category === categoryKey).map((f: any) => f.url) || [];
+    const seenInCategory = mockCtx.runState?.seenUrls?.[categoryKey] || [];
+    const allSeen = Array.from(new Set([...existingInStore, ...seenInCategory]));
+    
+    const extractionPrompt = buildExtractionPrompt(categoryKey, allSeen);
     
     const auth = await modelRegistry.getApiKeyAndHeaders(model);
     if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);

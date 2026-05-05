@@ -143,7 +143,7 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         // 1. Research
         const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
         const catHistory = state.queryHistory[cat.key] || {};
-        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, logFn);
+        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, logFn);
         
         // Update query history
         const now = new Date().toISOString();

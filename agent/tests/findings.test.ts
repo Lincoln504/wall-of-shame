@@ -97,7 +97,7 @@ describe('addFindings', () => {
     expect(added[0].id).toBeDefined();
     expect(added[0].foundAt).toBeDefined();
     expect(store.findings).toHaveLength(1);
-    expect(state.seenUrls['test_category']).toContain('https://example.com/harmful');
+    expect(state.seenUrls['test_category']).toContain('example.com/harmful');
   });
 
   it('deduplicates by URL against both seenUrls and existing findings (scoped to category)', async () => {
@@ -153,7 +153,7 @@ describe('addFindings', () => {
         },
       ],
     };
-    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: { cat1: ['https://example.com/shared'] }, queryHistory: {} };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: { cat1: ['example.com/shared'] }, queryHistory: {} };
     const raws = [
       { url: 'https://example.com/shared', title: 'Shared', summary: 'y', category: 'cat2', whyBad: 'y' },
     ];
@@ -163,7 +163,37 @@ describe('addFindings', () => {
     expect(added).toHaveLength(1);
     expect(added[0].category).toBe('cat2');
     expect(store.findings).toHaveLength(2);
-    expect(state.seenUrls['cat2']).toContain('https://example.com/shared');
+    expect(state.seenUrls['cat2']).toContain('example.com/shared');
+  });
+
+  it('robustly deduplicates adversarial URL variations (protocol, www, query params)', async () => {
+    const store: FindingsStore = {
+      lastUpdated: '',
+      totalFindings: 0,
+      findings: [
+        {
+          id: '1',
+          url: 'https://www.example.com/page?utm_source=test',
+          title: 'Existing',
+          domain: 'example.com',
+          summary: 'x',
+          category: 'cat1',
+          whyBad: 'x',
+          severity: 'high',
+          foundAt: '2025-01-01T00:00:00.000Z',
+          researchQuery: 'q',
+        },
+      ],
+    };
+    const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: { cat1: ['example.com/page?utm_source=test'] }, queryHistory: {} };
+    
+    const raws = [
+      // Different protocol, no www, different tracking param -> Should be blocked
+      { url: 'http://example.com/page?ref=social', title: 'Duplicate URL', summary: 'y', category: 'cat1', whyBad: 'y' },
+    ];
+
+    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', undefined, alwaysReachable);
+    expect(added).toHaveLength(0);
   });
 
   it('filters out items with invalid URLs', async () => {
@@ -348,7 +378,7 @@ describe('findings file I/O (integration)', () => {
     mod.saveState(state);
     const loaded = mod.loadState();
     expect(loaded.categoryIndex).toBe(3);
-    expect(loaded.seenUrls['global']).toEqual(['https://ex.com/a', 'https://ex.com/b']);
+    expect(loaded.seenUrls['global']).toEqual(['ex.com/a', 'ex.com/b']);
     expect(loaded.queryHistory).toEqual({ cat1: { 'test query': nowISO } });
     // lastRun should be updated
     expect(loaded.lastRun).not.toBe('2025-06-01T00:00:00.000Z');
@@ -417,7 +447,7 @@ describe('findings full lifecycle (integration)', () => {
     expect(store2.findings[0].url).toBe('https://ex.com/harmful');
 
     const state2 = mod.loadState();
-    expect(state2.seenUrls['cat1']).toContain('https://ex.com/harmful');
+    expect(state2.seenUrls['cat1']).toContain('ex.com/harmful');
   });
 
   it('deduplication persists across load-save cycles', async () => {

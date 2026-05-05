@@ -74,4 +74,5 @@ jobs:
           git config user.email "bot@wall-of-shame"
           git add agent/data/
           git commit -m "research: automated run $(date +'%Y-%m-%d')"
+          git pull --rebase origin main
           git push

@@ -68,7 +68,7 @@ async function main() {
         try {
           // 1. Research
           const catHistory = state.queryHistory[cat.key] || {};
-          const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, log);
+          const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, log);
 
           // Update query history
           const now = new Date().toISOString();

@@ -275,7 +275,7 @@ describe('full main.ts lifecycle integration', () => {
 
     // The integration test entries should be in seenUrls for their respective categories
     for (const cat of batch) {
-      expect(state2.seenUrls[cat.key]).toContain(`https://integration-test.com/${cat.key}-1`);
+      expect(state2.seenUrls[cat.key]).toContain(`integration-test.com/${cat.key}-1`);
     }
 
     // Cleanup: remove our test entries

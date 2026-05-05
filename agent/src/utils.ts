@@ -65,3 +65,53 @@ export function safeParseValidatedJson<T extends TSchema>(schema: T, text: strin
   const errorMsg = errors.map((e: any) => `${e.path || 'root'}: ${e.message}`).join(', ');
   throw new Error(`Schema validation failed: ${errorMsg}`);
 }
+
+/**
+ * Robust URL canonicalization for deduplication.
+ * - Removes protocol (http/https)
+ * - Removes 'www.' prefix
+ * - Removes trailing slashes
+ * - Strips common tracking parameters (utm_*, ref, source, etc.)
+ */
+export function canonicalizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    let host = parsed.hostname.toLowerCase();
+    if (host.startsWith('www.')) host = host.slice(4);
+    
+    let path = parsed.pathname;
+    if (path.endsWith('/')) path = path.slice(0, -1);
+    
+    // Strip common tracking/query parameters
+    const searchParams = new URLSearchParams(parsed.search);
+    const toDelete: string[] = [];
+    for (const key of searchParams.keys()) {
+      if (
+        key.startsWith('utm_') || 
+        ['ref', 'source', 'fbclid', 'gclid', 'msclkid', 'mc_cid', 'mc_eid'].includes(key.toLowerCase())
+      ) {
+        toDelete.push(key);
+      }
+    }
+    toDelete.forEach(key => searchParams.delete(key));
+    
+    const search = searchParams.toString();
+    return `${host}${path}${search ? '?' + search : ''}${parsed.hash}`;
+  } catch {
+    // Fallback for malformed URLs: just lowercase and trim
+    return url.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  }
+}
+
+/**
+ * Robust title normalization for deduplication.
+ * Removes non-alphanumeric chars, lowercases, and collapses whitespace.
+ */
+export function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Keep spaces initially
+    .replace(/\s+/g, ' ')       // Collapse whitespace
+    .trim()
+    .replace(/\s/g, '');        // Final removal of spaces
+}

@@ -4,8 +4,7 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import type { Finding, FindingsStore, RunState } from './types.js';
 import { FindingsStoreSchema, RunStateSchema } from './types.js';
-import { normalizeUrl } from '@lincoln504/pi-research';
-import { safeParseValidatedJson } from './utils.js';
+import { safeParseValidatedJson, canonicalizeUrl, normalizeTitle } from './utils.js';
 
 // Status codes that mean the URL exists even if we can't read the body.
 // 401 excluded: sites like WSJ return 401 for ALL bot requests (real or fake)
@@ -116,7 +115,7 @@ export function saveState(state: RunState): void {
   // Normalize and deduplicate seenUrls per category
   const cleanedSeen: Record<string, string[]> = {};
   for (const [cat, urls] of Object.entries(state.seenUrls)) {
-    cleanedSeen[cat] = Array.from(new Set(urls.map(u => normalizeUrl(u))));
+    cleanedSeen[cat] = Array.from(new Set(urls.map(u => canonicalizeUrl(u))));
   }
   state.seenUrls = cleanedSeen;
 
@@ -156,13 +155,8 @@ export interface RawFinding {
 }
 
 /**
- * Robust title normalization for deduplication.
- * Removes all non-alphanumeric chars and lowercases.
+ * Add raw findings to the store and state, applying deduplication and verification.
  */
-function normalizeTitle(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
 export async function addFindings(
   store: FindingsStore,
   state: RunState,
@@ -173,12 +167,12 @@ export async function addFindings(
   verify: (url: string) => Promise<boolean> = verifyUrl,
 ): Promise<Finding[]> {
   // Deduplicate against findings IN THIS CATEGORY
-  const existingUrls = new Set(store.findings.filter(f => f.category === categoryKey).map(f => normalizeUrl(f.url)));
+  const existingUrls = new Set(store.findings.filter(f => f.category === categoryKey).map(f => canonicalizeUrl(f.url)));
   const existingTitles = new Set(store.findings.filter(f => f.category === categoryKey).map(f => normalizeTitle(f.title)));
   
   // Also check the per-category seen pool
   const catSeen = state.seenUrls[categoryKey] || [];
-  const seenSet = new Set(catSeen.map(u => normalizeUrl(u)));
+  const seenSet = new Set(catSeen.map(u => canonicalizeUrl(u)));
   
   if (!state.seenUrls[categoryKey]) {
     state.seenUrls[categoryKey] = [];
@@ -189,10 +183,10 @@ export async function addFindings(
   for (const raw of raws) {
     if (!raw.url || !raw.url.startsWith('http')) continue;
     
-    const normalizedUrl = normalizeUrl(raw.url);
+    const canonical = canonicalizeUrl(raw.url);
     const normalizedTitle = normalizeTitle(raw.title || '');
 
-    if (seenSet.has(normalizedUrl) || existingUrls.has(normalizedUrl)) {
+    if (seenSet.has(canonical) || existingUrls.has(canonical)) {
       log?.(`  [skip] URL already processed for this category: ${raw.url}`);
       continue;
     }
@@ -200,8 +194,8 @@ export async function addFindings(
     if (normalizedTitle && existingTitles.has(normalizedTitle)) {
       log?.(`  [skip] Title already exists in this category: ${raw.title}`);
       // Still mark URL as seen to avoid re-verifying this specific URL for this category
-      state.seenUrls[categoryKey].push(normalizedUrl);
-      seenSet.add(normalizedUrl);
+      state.seenUrls[categoryKey].push(canonical);
+      seenSet.add(canonical);
       continue;
     }
 
@@ -209,8 +203,8 @@ export async function addFindings(
     if (!reachable) {
       log?.(`  [skip] URL unreachable (404/timeout): ${raw.url}`);
       // Still mark as seen so we don't retry it next run for this category
-      state.seenUrls[categoryKey].push(normalizedUrl);
-      seenSet.add(normalizedUrl);
+      state.seenUrls[categoryKey].push(canonical);
+      seenSet.add(canonical);
       continue;
     }
 
@@ -229,8 +223,8 @@ export async function addFindings(
     };
 
     store.findings.push(finding);
-    state.seenUrls[categoryKey].push(normalizedUrl);
-    existingUrls.add(normalizedUrl);
+    state.seenUrls[categoryKey].push(canonical);
+    existingUrls.add(canonical);
     existingTitles.add(normalizedTitle);
     added.push(finding);
   }
