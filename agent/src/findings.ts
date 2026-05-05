@@ -3,7 +3,9 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import type { Finding, FindingsStore, RunState } from './types.js';
+import { FindingsStoreSchema, RunStateSchema } from './types.js';
 import { normalizeUrl } from '@lincoln504/pi-research';
+import { safeParseValidatedJson } from './utils.js';
 
 // Status codes that mean the URL exists even if we can't read the body.
 // 401 excluded: sites like WSJ return 401 for ALL bot requests (real or fake)
@@ -64,8 +66,10 @@ function emptyState(): RunState {
 export function loadFindings(): FindingsStore {
   if (!existsSync(FINDINGS_PATH)) return emptyStore();
   try {
-    return JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8')) as FindingsStore;
-  } catch {
+    const raw = readFileSync(FINDINGS_PATH, 'utf-8');
+    return safeParseValidatedJson(FindingsStoreSchema, raw);
+  } catch (err) {
+    console.error(`  [warn] failed to load or validate findings: ${String(err)}`);
     return emptyStore();
   }
 }
@@ -81,24 +85,20 @@ export function loadState(): RunState {
   const state = emptyState();
   if (!existsSync(STATE_PATH)) return state;
   try {
-    const loaded = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+    const raw = readFileSync(STATE_PATH, 'utf-8');
+    const loaded = JSON.parse(raw);
     
     // Migration: if loaded.queryHistory is flat (values are strings), move them to a 'legacy' bucket or clear them
-    // For simplicity and effectiveness, we'll clear them or try to guess.
-    // Actually, let's just ensure it's a nested object.
     let queryHistory = loaded.queryHistory || {};
     const firstVal = Object.values(queryHistory)[0];
     if (firstVal && typeof firstVal === 'string') {
-      // It's the old flat format. Move it to a 'migrated' key so we don't lose data, but it's now category-aware.
       queryHistory = { migrated_legacy: queryHistory };
+      loaded.queryHistory = queryHistory;
     }
 
-    return {
-      ...state,
-      ...loaded,
-      queryHistory
-    };
-  } catch {
+    return safeParseValidatedJson(RunStateSchema, JSON.stringify(loaded));
+  } catch (err) {
+    console.error(`  [warn] failed to load or validate state: ${String(err)}`);
     return state;
   }
 }

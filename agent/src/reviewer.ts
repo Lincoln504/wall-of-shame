@@ -8,13 +8,29 @@ import {
   AuthStorage,
   ModelRegistry,
 } from '@mariozechner/pi-coding-agent';
+import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
-import { safeParseJson } from './utils.js';
+import { safeParseJson, safeParseValidatedJson } from './utils.js';
 
 const OPENROUTER_PROVIDER = 'openrouter';
 const MODEL_ID = 'google/gemma-4-26b-a4b-it';
 const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
 const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
+
+// ── Reviewer schemas ─────────────────────────────────────────────────────────
+
+const ReviewedFindingSchema = Type.Object({
+  url: Type.String(),
+  title: Type.String(),
+  domain: Type.String(),
+  summary: Type.String(),
+  category: Type.String(),
+  whyBad: Type.String(),
+  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')]),
+  verificationLog: Type.String(),
+});
+
+const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
 
 const REVIEW_PROMPT = `You are the Lead Adversarial Content Auditor for the "Wall of Shame."
 Your mission is to rigorously vet the findings discovered by our research team.
@@ -120,7 +136,7 @@ export async function runReview(
     await session.prompt(prompt);
     
     const text = fullOutput;
-    const reviewed = safeParseJson<RawFinding[]>(text);
+    const reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
     log(`  [reviewer] audit complete. ${reviewed.length}/${findings.length} findings approved.`);
     return reviewed;
   } catch (err) {

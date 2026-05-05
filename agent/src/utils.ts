@@ -1,3 +1,6 @@
+import { Value } from 'typebox/value';
+import type { TSchema, Static } from 'typebox';
+
 /**
  * Robustly extract and parse a JSON object or array from a potentially noisy LLM response.
  * Handles markdown code fences, trailing commas, and conversational preamble/postamble.
@@ -47,4 +50,18 @@ export function safeParseJson<T>(text: string): T {
       throw new Error(`JSON parse failed: ${String(err)}\nSnippet: ${jsonText.slice(0, 100)}...`);
     }
   }
+}
+
+/**
+ * Parses JSON robustly and validates it against a TypeBox schema.
+ */
+export function safeParseValidatedJson<T extends TSchema>(schema: T, text: string): Static<T> {
+  const data = safeParseJson<unknown>(text);
+  if (Value.Check(schema, data)) {
+    return data as Static<T>;
+  }
+  
+  const errors = [...Value.Errors(schema, data)];
+  const errorMsg = errors.map(e => `${e.path}: ${e.message}`).join(', ');
+  throw new Error(`Schema validation failed: ${errorMsg}`);
 }

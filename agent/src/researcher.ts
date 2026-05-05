@@ -11,13 +11,31 @@ import {
   ModelRegistry,
 } from '@mariozechner/pi-coding-agent';
 import { completeSimple } from '@mariozechner/pi-ai';
+import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
-import { safeParseJson } from './utils.js';
+import { safeParseJson, safeParseValidatedJson } from './utils.js';
 
 // ── Model config ──────────────────────────────────────────────────────────────
 
 const OPENROUTER_PROVIDER = 'openrouter';
 const MODEL_ID = 'google/gemma-4-26b-a4b-it';
+
+// ── Extraction schemas ────────────────────────────────────────────────────────
+
+const RawFindingSchema = Type.Object({
+  url: Type.String(),
+  title: Type.String(),
+  domain: Type.Optional(Type.String()),
+  summary: Type.String(),
+  category: Type.String(),
+  whyBad: Type.String(),
+  severity: Type.Optional(Type.String()),
+});
+
+const ExtractionResultSchema = Type.Object({
+  queries: Type.Array(Type.String()),
+  findings: Type.Array(RawFindingSchema),
+});
 
 // ── Extraction prompt template ────────────────────────────────────────────────
 // Sent to the LLM after /research completes so it can analyze results and
@@ -217,15 +235,15 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
 
     let result: { findings: RawFinding[]; queries: string[] };
     try {
-      result = safeParseJson<{ findings: RawFinding[]; queries: string[] }>(text);
+      result = safeParseValidatedJson(ExtractionResultSchema, text);
     } catch (err) {
-      log(`  [pi] FAILED to parse extraction JSON. Raw response length: ${text.length}`);
+      log(`  [pi] FAILED to parse or validate extraction JSON. Raw response length: ${text.length}`);
       // Attempt manual recovery of findings array if possible
       const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
       if (findingsMatch && findingsMatch[1]) {
         try {
           const findings = safeParseJson<RawFinding[]>(findingsMatch[1]);
-          log(`  [pi] recovered ${findings.length} findings from malformed JSON`);
+          log(`  [pi] recovered ${findings.length} findings from malformed JSON (bypassing full validation)`);
           result = { findings, queries: [] };
         } catch {
           throw err;
