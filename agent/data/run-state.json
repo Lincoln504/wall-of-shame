@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T08:40:07.974Z",
-  "categoryIndex": 11,
+  "lastRun": "2026-05-05T08:41:24.878Z",
+  "categoryIndex": 12,
   "seenUrls": [
     "https://www.heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
     "https://www.cato.org/sites/cato.org/files/pubs/pdf/the_myth_of_the_1_percent.pdf",
@@ -91,7 +91,9 @@
     "https://www.spiked-online.com/2023/10/24/ai-hysteria-is-out-of-control/",
     "https://www.niskanencenter.org/creeping-hysteria-artificial-intelligence/",
     "https://trustarc.com/resource/why-data-privacy-self-regulation-is-better-than-involuntary-options/",
-    "https://internetforgrowth.com/the-hidden-costs-of-data-privacy-laws-for-small-businesses/"
+    "https://internetforgrowth.com/the-hidden-costs-of-data-privacy-laws-for-small-businesses/",
+    "https://www.nfib.com/news/news-take-action-stop-ada-shakedown-lawsuits/",
+    "https://www.washingtonpost.com/investigations/interactive/2025/veterans-affairs-disability-claims-fraud/"
   ],
   "queryHistory": {
     "migrated_legacy": {
@@ -472,6 +474,13 @@
       "nothing to hide slogan accountability": "2026-05-05T08:40:07.973Z",
       "impact-based AI lending innovation or injustice": "2026-05-05T08:40:07.973Z",
       "e/acc movement vs AI safety doomerism": "2026-05-05T08:40:07.973Z"
+    },
+    "disability": {
+      "ADA shakedown lawsuits NFIB": "2026-05-05T08:41:17.931Z",
+      "Trump health fraud crackdown disability concerns": "2026-05-05T08:41:17.931Z",
+      "VA disability claims fraud investigation Washington Post": "2026-05-05T08:41:17.931Z",
+      "resurgence of R-word slur political discourse": "2026-05-05T08:41:17.931Z",
+      "meritocracy and disability accommodations systemic oppression": "2026-05-05T08:41:17.931Z"
     }
   }
 }
