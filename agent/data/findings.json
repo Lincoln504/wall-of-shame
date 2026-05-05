@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T12:29:10.616Z",
-  "totalFindings": 64,
+  "lastUpdated": "2026-05-05T12:37:22.960Z",
+  "totalFindings": 65,
   "findings": [
+    {
+      "id": "b85cf267-a2a5-437f-9ffd-c05efec4a747",
+      "url": "https://corpgov.law.harvard.edu/2023/07/16/share-buybacks-and-executive-compensation-assessing-key-criticisms/",
+      "title": "Share Buybacks and Executive Compensation: Assessing Key Criticisms",
+      "domain": "corpgov.law.harvard.edu",
+      "summary": "The article defends stock buybacks as efficient tools for capital reallocation and a signal of corporate health. It actively dismisses criticisms that these buybacks are primarily used to benefit executives and insiders at the expense of worker wages and long-term investment, labeling such concerns as 'overstated or unfounded.'",
+      "category": "economics",
+      "whyBad": "The article uses a 'neutral expertise' framing to present stock buybacks as standard, beneficial financial management. By characterizing the systemic impact on wealth inequality and worker compensation as 'unfounded' or 'overstated,' it masks the reality that these practices prioritize immediate payouts to shareholders and executives. This normalizes the extraction of corporate value away from the workforce, making a regressive wealth transfer appear to be a routine and necessary part of corporate governance.",
+      "severity": "medium",
+      "foundAt": "2026-05-05T12:37:22.959Z",
+      "researchQuery": "Focus: Arguments used to justify extreme inequality and the use of public resources for private gain.\n    \n    Strategies to explore:\n    - TAX CUT JUSTIFICATION: Arguments that cutting taxes for the wealthy pays for itself or is the only way to get growth.\n    - WEALTH CELEBRATION: Presenting extreme wealth as purely \"earned\" by merit and treating taxes on wealth as unfair.\n    - SUBSIDY ADVOCACY: Defending government help for profitable companies while opposing help for ordinary people.\n    - MONOPOLY DEFENSE: Presenting market domination as \"efficiency\" and treating rules against it as government overreach.\n    - ONE-SIDED DEREGULATION: Highlighting the costs of rules for businesses while ignoring the benefits to the public.\n    - INVESTOR OVER WORKERS: Prioritizing payments to shareholders over investments in workers and defending massive executive pay gaps.\n    - IDEOLOGICAL SHIELDS: New ways of framing the economy that protect concentrated wealth from being challenged.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "e3e91052-7fe7-48ee-9b87-bb261ef2e573",
       "url": "https://www.ishn.com/articles/114572-deregulation-of-osha-to-reduce-the-burden-on-business",

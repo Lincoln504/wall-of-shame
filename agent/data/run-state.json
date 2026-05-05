@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T12:29:10.617Z",
-  "categoryIndex": 1,
+  "lastRun": "2026-05-05T12:37:22.961Z",
+  "categoryIndex": 2,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -130,6 +130,13 @@
       "britannica.com/procon/a-new-rule-would-end-subminimum-wage-for-people-with-disabilities",
       "cwa-union.org/79a-23-02",
       "alvinandhisthoughts.com/2025/05/19/the-1996-welfare-reform-how-america-blamed-black-women-and-masked-systemic-poverty-with-personal-responsibility"
+    ],
+    "economics": [
+      "corpgov.law.harvard.edu/2023/07/16/share-buybacks-and-executive-compensation-assessing-key-criticisms",
+      "lse.ac.uk/research/research-for-the-world/economics/tax-cuts-for-the-wealthy-only-benefit-the-rich-debunking-trickle-down-economics",
+      "crfb.org/blogs/has-tcja-paid-itself",
+      "cato.org/policy-analysis/corporate-welfare-federal-budget-0",
+      "rooseveltinstitute.org/wp-content/uploads/2020/07/ri_endingshareholderprimacy_workingpaper_201902.pdf"
     ]
   },
   "queryHistory": {
@@ -578,6 +585,13 @@
     },
     "verification_test": {
       "git_test_1777975298309": "2026-05-05T10:01:38.309Z"
+    },
+    "economics": {
+      "trickle-down economics debunked 50 years 18 countries LSE": "2026-05-05T12:33:58.952Z",
+      "TCJA did not pay for itself CRFB revenue inflation anomaly": "2026-05-05T12:33:58.952Z",
+      "corporate welfare federal budget Cato 181 billion": "2026-05-05T12:33:58.952Z",
+      "stock buybacks defense Harvard Law Forum Pay Governance": "2026-05-05T12:33:58.952Z",
+      "shareholder primacy effects workers Roosevelt Institute": "2026-05-05T12:33:58.952Z"
     }
   }
 }
