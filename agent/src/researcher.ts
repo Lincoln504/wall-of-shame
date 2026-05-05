@@ -16,6 +16,7 @@ import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
 import { DATA_DIR } from './findings.js';
 import { safeParseJson, safeParseValidatedJson } from './utils.js';
+import type { FindingsStore, RunState } from './types.js';
 
 // ── Model config ──────────────────────────────────────────────────────────────
 
@@ -41,17 +42,17 @@ const ExtractionResultSchema = Type.Object({
 
 // ── Extraction prompt template ────────────────────────────────────────────────
 
-const EXTRACTION_PROMPT = `Analyze the research results and extract findings for the "Wall of Shame."
+const EXTRACTION_PROMPT = `Analyze the research results and extract findings for the database.
 
-CRITICAL GROUNDING RULES:
-1. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
-2. NO HALLUCINATED CONTEXT: Do NOT bring in external statistics or legal precedents unless they are explicitly mentioned in the article.
-3. QUOTE REQUIREMENT: Every finding must include at least one direct, verbatim quote from the article.
-4. SELECTIVITY: Only include pieces where the author ADVOCATES for or NORMALIZES harmful policy/ideology. Omit neutral reporting.
+CRITICAL GROUNDING & SYNTHESIS RULES:
+1. ANALYTICAL SYNTHESIS: You are expected to synthesize the findings into a cohesive, analytical report. Every factual claim MUST be directly supported by a page you scraped in this session.
+2. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
+3. NO HALLUCINATED CONTEXT: Do NOT bring in external statistics or legal precedents unless they are explicitly mentioned in the article. Never invent facts or attribute claims without evidence.
+4. QUOTE REQUIREMENT: Every finding must include at least one direct, verbatim quote from the article that shows its primary argument or how it frames the issue.
+5. SELECTIVITY: Include content where the piece itself acts as a way to normalize, justify, or hide the harm of regressive policies. Focus on op-eds, "alternative" news, and industry PR that uses biased framing. Omit neutral, fact-based reporting.
 
-DEDUPLICATION:
-Omit any findings for the following URLs (already in database):
-<SEEN_LINKS>
+OUTPUT READABILITY:
+The "summary" and "whyBad" fields must be written in plain, clear English that a common person can easily understand. Avoid academic jargon or ideological buzzwords in these fields. Use your internal analytical depth to identify the issues, but translate your findings into simple language.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -61,9 +62,9 @@ RETURN ONLY A RAW JSON OBJECT:
       "url": "https://...",
       "title": "Exact Title",
       "domain": "...",
-      "summary": "- Neutrally summarize 3-5 core points.\\n- State intended conclusion neutrally.",
+      "summary": "- Clearly summarize 3-5 main points in simple language.\\n- State the author's intended conclusion neutrally.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "Analysis: [1. Quote a specific claim. 2. Provide a reasoned political/logical critique of that claim. 3. Identify the logical fallacy or manipulative framing.]",
+      "whyBad": "A comprehensive, multi-layered analysis: [1. Cite a specific claim or quote. 2. Explain in plain English the framing 'trick' or intent. 3. Detail how this justifies or normalizes harm. 4. Identify specific logical fallacies or significant omissions.]",
       "severity": "low|medium|high"
     }
   ]
@@ -81,6 +82,7 @@ function buildExtractionPrompt(categoryKey: string, seenLinks: string[]): string
 export interface ResearchResult {
   findings: RawFinding[];
   queries: string[];
+  rawReport?: string;
 }
 
 const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
@@ -95,15 +97,15 @@ export async function runResearch(
   categoryKey: string,
   label: string,
   queryHistory: Record<string, string>,
-  findingsStore: any,
-  runState: any,
+  findingsStore: FindingsStore,
+  runState: RunState,
   log: (msg: string) => void,
 ): Promise<ResearchResult> {
   // env flags consumed by pi-research
   process.env['PI_RESEARCH_HOME'] = PI_RESEARCH_HOME;
   process.env['PI_RESEARCH_SKIP_HEALTHCHECK'] = '1';
   process.env['PI_RESEARCH_BROWSER_HEADLESS'] = 'true';
-  process.env['PI_RESEARCH_VERBOSE'] = '0';
+  process.env['PI_RESEARCH_VERBOSE'] = '1';
   process.env['PI_RESEARCH_RESEARCHER_TIMEOUT_MS'] = '600000'; // 10 minutes
 
   const agentDir = join(homedir(), '.pi', 'agent');
@@ -136,29 +138,29 @@ export async function runResearch(
 
   const forbidden = forbiddenEntries.map(([q, _]) => q);
   const avoidList = forbidden.length > 0
-    ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use SIGNIFICANTLY DIFFERENT phrasing and explore new angles.`
+    ? `\n\nAVOID THESE EXACT QUERIES (searched within the last week):\n${forbidden.join('\n')}\nYou must use DIFFERENT phrasing and explore new angles.`
     : '';
 
   const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const currentYear = new Date().getFullYear();
 
   const researchStrategy = `
-SEARCH STRATEGY — Be an investigative researcher. Do NOT just use the seed concepts; use them to generate 10-15 highly varied and creative search queries:
+SEARCH STRATEGY — Be an investigative researcher focusing on how issues are framed:
 
-1. VARY PHRASING: Use synonyms, industry jargon vs. academic terms, and loaded vs. neutral language.
-2. VARY SOURCE TYPES: Target a mix of mainstream media (op-eds, commentary, major news outlets), niche ideological blogs, "alternative" news sites, and industry association PR.
-3. VARY TIMEFRAMES: Include the current year (${currentYear}) or the previous year (${currentYear - 1}) in many queries.
-4. VARY ANGLES: Explore different facets of the category.
-5. CROSS-REFERENCE: Use findings from one search to inform the next.
+1. TARGETED EVIDENCE: Queries must be specific and designed to surface high-quality results. Prioritize queries that lead to primary sources and technical documentation.
+2. DESCRIPTIVE PHRASING: Look for how people justify or hide issues (e.g., "blaming workers," "ignoring risks," "pretending it's free"). Use exact terms, dates, names, and events.
+3. VARY SOURCE TYPES: Target a mix of mainstream media op-eds, niche blogs, and industry PR where specific viewpoints are strongest.
+4. VARY TIMEFRAMES: Include relevant years to see how arguments have changed over time.
+5. FOCUS ON INTENT: Explore the goal behind how a piece is written and what effect it tries to have on the reader. Focus on analytical synthesis rather than simple fact-dumping.
+6. CROSS-REFERENCE: Use findings from one search to spot similar patterns in others.
 
-PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.`;
+PERSPECTIVE TEST — Look for content where the piece's net effect is to make harmful outcomes seem normal or acceptable within the category.`;
 
   let researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
 
   const sessionId = `shame-${Date.now()}`;
   const researchId = `research-${categoryKey}-${Date.now()}`;
 
-  const mockCtx: any = {
+  const mockCtx = {
     cwd: process.cwd(),
     model,
     modelRegistry,
@@ -171,6 +173,7 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
     }
   };
 
+  let researchReport = '';
   try {
     log(`  [pi] starting research for: ${label}`);
     
@@ -184,12 +187,12 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
         DEFAULT_RESEARCH_DEPTH: 0,
         MAX_SCRAPE_BATCHES: 4,
         WORKER_THREADS: 4,
-        TUI_REFRESH_DEBOUNCE_MS: 10,
-        CONSOLE_RESTORE_DELAY_MS: 15000,
+        TUI_REFRESH_DEBOUNCE_MS: 0,
+        CONSOLE_RESTORE_DELAY_MS: 0,
     };
 
-    const researchReport = await piRunResearch({
-      ctx: mockCtx,
+    researchReport = await piRunResearch({
+      ctx: mockCtx as any,
       query: researchQueryStr,
       depth: 0, // Quick research for batch processing
       model,
@@ -205,89 +208,103 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
         onError: (err) => log(`  [pi] research error: ${err.message}`),
       }
     });
-
-    log(`  [pi] research complete (${researchReport.length} chars)`);
-    
-    // Debug: save the raw research report
-    try {
-      const reportsDir = join(DATA_DIR, 'reports');
-      if (!existsSync(reportsDir)) mkdirSync(reportsDir, { recursive: true });
-      const reportFile = join(reportsDir, `${categoryKey}-${Date.now()}.md`);
-      writeFileSync(reportFile, researchReport, 'utf-8');
-      log(`  [debug] research report saved to: ${reportFile}`);
-    } catch (err) {
-      log(`  [warn] failed to save debug report: ${String(err)}`);
-    }
-
-    log(`  [pi] extracting findings...`);
-    // Get all seen URLs for this category from both store and state
-    const existingInStore = mockCtx.findingsStore?.findings?.filter((f: any) => f.category === categoryKey).map((f: any) => f.url) || [];
-    const seenInCategory = mockCtx.runState?.seenUrls?.[categoryKey] || [];
-    const allSeen = Array.from(new Set([...existingInStore, ...seenInCategory]));
-    
-    const extractionPrompt = buildExtractionPrompt(categoryKey, allSeen);
-    
-    const auth = await modelRegistry.getApiKeyAndHeaders(model);
-    if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);
-
-    const extractionResult = await completeSimple(model, {
-      systemPrompt: extractionPrompt,
-      messages: [
-        { 
-          role: 'user', 
-          content: [
-            { type: 'text', text: `RESEARCH DATA:\n\n${researchReport}` },
-          ], 
-          timestamp: Date.now() 
-        }
-      ]
-    }, { 
-      apiKey: auth.apiKey, 
-      headers: auth.headers,
-      onPayload: (payload: any) => {
-        // Explicitly disable thinking for DeepSeek
-        if (payload.reasoning) delete payload.reasoning;
-        if (payload.thinking) delete payload.thinking;
-        payload.include_reasoning = false;
-        return payload;
-      }
-    });
-
-    const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text || "";
-    log(`  [debug] extraction raw response length: ${text.length}`);
-    if (text.length < 500) log(`  [debug] extraction raw response: ${text}`);
-    if (!text) {
-        log('  [pi] extraction failed: empty response from model');
-        return { findings: [], queries: [] };
-    }
-
-    let result: { findings: RawFinding[]; queries: string[] };
-    try {
-      result = safeParseValidatedJson(ExtractionResultSchema, text);
-    } catch (err) {
-      log(`  [pi] FAILED to parse or validate extraction JSON. Raw response length: ${text.length}`);
-      // Attempt manual recovery of findings array if possible
-      const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
-      if (findingsMatch && findingsMatch[1]) {
-        try {
-          const findings = safeParseJson<RawFinding[]>(findingsMatch[1]);
-          log(`  [pi] recovered ${findings.length} findings from malformed JSON (bypassing full validation)`);
-          result = { findings, queries: [] };
-        } catch {
-          throw err;
-        }
-      } else {
-        throw err;
-      }
-    }
-
-    return {
-      findings: result.findings || [],
-      queries: result.queries || [],
-    };
   } catch (err) {
+    log(`  [pi] CRITICAL ENGINE ERROR: ${String(err)}`);
     throw err;
   }
+
+  log(`  [pi] research phase finished, starting extraction...`);
+
+  // Debug: save the raw research report
+  try {
+    const reportsDir = join(DATA_DIR, 'reports');
+    if (!existsSync(reportsDir)) mkdirSync(reportsDir, { recursive: true });
+    const reportFile = join(reportsDir, `${categoryKey}-${Date.now()}.md`);
+    writeFileSync(reportFile, researchReport, 'utf-8');
+    log(`  [debug] research report saved to: ${reportFile}`);
+  } catch (err) {
+    log(`  [warn] failed to save debug report: ${String(err)}`);
+  }
+
+  // Get all seen URLs for this category from both store and state
+  const existingInStore = findingsStore.findings.filter((f) => f.category === categoryKey).map((f) => f.url);
+  const seenInCategory = runState.seenUrls[categoryKey] ?? [];
+  const allSeen = Array.from(new Set([...existingInStore, ...seenInCategory]));
+
+  const extractionPrompt = buildExtractionPrompt(categoryKey, allSeen);
+
+  const auth = await modelRegistry.getApiKeyAndHeaders(model);
+  if (!auth.ok) throw new Error(`Model auth failed: ${auth.error}`);
+
+  log(`  [pi] requesting extraction synthesis from model...`);
+  const extractionResult = await completeSimple(model, {
+    systemPrompt: extractionPrompt,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: `RESEARCH DATA:\n\n${researchReport}` },
+        ],
+        timestamp: Date.now(),
+      }
+    ]
+  }, {
+    apiKey: auth.apiKey,
+    headers: auth.headers,
+    onPayload: (payload: any) => {
+      if (payload.reasoning) delete payload.reasoning;
+      if (payload.thinking) delete payload.thinking;
+      payload.include_reasoning = false;
+      return payload;
+    }
+  });
+
+  const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text ?? '';
+  log(`  [debug] extraction raw response length: ${text.length}`);
+  if (text.length < 500) log(`  [debug] extraction raw response: ${text}`);
+  if (!text) {
+    log('  [pi] extraction failed: empty response from model');
+    return { findings: [], queries: [] };
+  }
+
+  let result: { findings: RawFinding[]; queries: string[] };
+  try {
+    result = safeParseValidatedJson(ExtractionResultSchema, text);
+  } catch (err) {
+    log(`  [pi] FAILED to parse or validate extraction JSON. Raw response length: ${text.length}`);
+
+    // Log failed response for debugging
+    try {
+      const failureDir = join(DATA_DIR, 'failures');
+      if (!existsSync(failureDir)) mkdirSync(failureDir, { recursive: true });
+      const failureFile = join(failureDir, `extraction-failure-${categoryKey}-${Date.now()}.txt`);
+      writeFileSync(failureFile, text, 'utf-8');
+      log(`  [debug] failed extraction response saved to: ${failureFile}`);
+    } catch (logErr) {
+      log(`  [warn] failed to save extraction failure log: ${String(logErr)}`);
+    }
+
+    // Attempt manual recovery of findings array if possible
+    const findingsMatch = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
+    if (findingsMatch && findingsMatch[1]) {
+      try {
+        const findings = safeParseJson<RawFinding[]>(findingsMatch[1]);
+        log(`  [pi] recovered ${findings.length} findings from malformed JSON (bypassing full validation)`);
+        result = { findings, queries: [] };
+      } catch {
+        log(`  [pi] manual recovery failed, falling back to raw report for next stage.`);
+        return { findings: [], queries: [], rawReport: researchReport };
+      }
+    } else {
+      log(`  [pi] extraction failed, falling back to raw report for next stage.`);
+      return { findings: [], queries: [], rawReport: researchReport };
+    }
+  }
+
+  return {
+    findings: result.findings ?? [],
+    queries: result.queries ?? [],
+  };
 }
 
 /**

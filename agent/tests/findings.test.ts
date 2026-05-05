@@ -307,10 +307,9 @@ describe('findings file I/O (integration)', () => {
     expect(store.totalFindings).toBe(0);
   });
 
-  it('loads empty store when findings.json is corrupted', () => {
+  it('throws on corrupted findings.json', () => {
     writeFileSync(findingsPath, '{invalid json', 'utf-8');
-    const store = mod.loadFindings();
-    expect(store.findings).toEqual([]);
+    expect(() => mod.loadFindings()).toThrow(/CRITICAL: Findings file exists/);
   });
 
   it('round-trips findings through save and load', () => {
@@ -360,10 +359,9 @@ describe('findings file I/O (integration)', () => {
     expect(state.seenUrls).toEqual({});
   });
 
-  it('loads empty state when run-state.json is corrupted', () => {
+  it('throws on corrupted run-state.json', () => {
     writeFileSync(statePath, 'not json', 'utf-8');
-    const state = mod.loadState();
-    expect(state.categoryIndex).toBe(0);
+    expect(() => mod.loadState()).toThrow(/CRITICAL: State file exists/);
   });
 
   it('round-trips state through save and load', () => {

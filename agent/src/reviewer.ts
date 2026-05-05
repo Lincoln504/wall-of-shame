@@ -15,7 +15,6 @@ import { safeParseJson, safeParseValidatedJson } from './utils.js';
 const OPENROUTER_PROVIDER = 'openrouter';
 const MODEL_ID = 'google/gemma-4-26b-a4b-it';
 const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
-const PI_RESEARCH_EXTENSION = join(PI_RESEARCH_HOME, 'src', 'index.ts');
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
@@ -32,22 +31,30 @@ const ReviewedFindingSchema = Type.Object({
 
 const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
 
-const REVIEW_PROMPT = `You are the Lead Adversarial Content Auditor for the "Wall of Shame."
+const REVIEW_PROMPT = `You are the Lead Auditor for the database.
 Your mission is to rigorously vet the findings discovered by our research team.
 
-MISSION CRITICAL: We only list content where the ARTICLE ITSELF is the bad actor. 
-- If an article reports on a hate crime, it is NOT for the Wall of Shame.
-- If an article ADVOCATES for, NORMALIZES, or MISLEADINGLY FRAMES harmful policy or ideology, it IS for the Wall of Shame.
+MISSION CRITICAL: We only list content where the piece itself acts as a way to normalize, justify, or hide the harm of regressive policies.
+
+INPUT DATA TYPE:
+The input may be a JSON array of pre-extracted findings OR a raw research report.
+- IF JSON: Audit the findings as normal.
+- IF RAW REPORT: Extract qualify findings FIRST, then perform the audit. Follow the exact same output schema.
+- If an article neutrally reports on a harmful event, it is NOT for this database.
+- If an article uses biased framing to make exploitation or discrimination seem acceptable, it IS for this database.
+
+READABILITY REQUIREMENT:
+The final "summary" and "whyBad" fields must be written in plain, clear English that a common person can understand. Avoid academic or ideological jargon.
 
 YOUR WORKFLOW:
 1. For every finding in the input:
    a. Use the 'research' tool with 'depth: 0' and the URL as the query to surgically verify the content.
-   b. Verify the claims and quotes in the researcher's summary/analysis are accurate.
-   c. EVALUATE ANALYSIS: Review the researcher's "whyBad" section. 
-      - PRESERVE: If the analysis is already high-quality and identifies specific fallacies, keep it as-is.
-      - MODIFY: If it is weak or generic, rewrite it to be sharper and identify specific techniques (False Dichotomy, Loaded Language, etc.). DO NOT OVERSIMPLIFY.
-      - DISAPPROVE: If the article is not actually a "bad actor" (e.g., it is just reporting facts), OMIT the finding entirely.
-   d. CRITICAL PERSPECTIVE TEST: Is the author's primary goal to inform, or to advocate/manipulate/mislead? Only approve if it clearly fails this test.
+   b. Verify the claims and quotes in the researcher's summary are accurate.
+   c. EVALUATE ANALYSIS: Review the researcher's "Why this is included" section. 
+      - PRESERVE: If the analysis clearly explains the harm and the intent in simple language, keep it.
+      - MODIFY: If it uses too many buzzwords or is unclear, rewrite it to be sharper and more readable while identifying the trick used to mislead.
+      - DISAPPROVE: If the article is not actually a way to justify harm (e.g., it is just reporting facts), OMIT the finding entirely.
+   d. CRITICAL PERSPECTIVE TEST: Is the author's goal to inform, or to make something harmful seem normal? Only approve if it clearly fails this test.
 
 2. OUTPUT FORMAT:
 Return ONLY a raw JSON array of verified findings. If a finding fails verification or doesn't meet the quality bar, OMIT it entirely.
@@ -59,9 +66,9 @@ Each entry must follow this schema:
   "domain": "...",
   "summary": "...",
   "category": "...",
-  "whyBad": "[The verified or improved analysis. Preserve researcher detail if high quality; avoid oversimplification.]",
+  "whyBad": "[A comprehensive and detailed analysis. Ensure it provides a multi-layered breakdown of the framing, its intended effect, and why the content qualifies as harmful normalized content.]",
   "severity": "low|medium|high",
-  "verificationLog": "Surgically verified on [Date]. [Note if analysis was preserved, modified, or why it was kept.]"
+  "verificationLog": "Audit completed on [Date]. [Note if analysis was preserved, modified, or why it was kept.]"
 }
 
 INPUT FINDINGS:
@@ -70,12 +77,14 @@ INPUT FINDINGS:
 Return ONLY the raw JSON array. No markdown, no preamble.`;
 
 export async function runReview(
-  findings: RawFinding[],
+  input: RawFinding[] | string,
   log: (msg: string) => void,
 ): Promise<RawFinding[]> {
-  if (findings.length === 0) return [];
+  const isRawReport = typeof input === 'string';
+  if (!isRawReport && input.length === 0) return [];
 
-  log(`  [reviewer] starting adversarial audit of ${findings.length} findings...`);
+  const countLabel = isRawReport ? 'raw report' : `${input.length} findings`;
+  log(`  [reviewer] starting audit and verification of ${countLabel}...`);
 
   const cwd = process.cwd();
   const agentDir = join(homedir(), '.pi', 'agent');
@@ -122,9 +131,11 @@ export async function runReview(
     setWorkingIndicator: (msg: string) => log(`  [reviewer] working: ${msg}`),
     confirm: async () => true,
     select: async (_title: string, options: any[]) => options[0]?.value,
+    onTerminalInput: () => ({ unsubscribe: () => {} }),
   } as any);
 
-  const prompt = REVIEW_PROMPT.replace('<FINDINGS_JSON>', JSON.stringify(findings, null, 2));
+  const inputContent = isRawReport ? input : JSON.stringify(input, null, 2);
+  const prompt = REVIEW_PROMPT.replace('<FINDINGS_JSON>', inputContent);
   
   let fullOutput = '';
   session.subscribe((event) => {
@@ -141,7 +152,8 @@ export async function runReview(
     
     const text = fullOutput;
     const reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
-    log(`  [reviewer] audit complete. ${reviewed.length}/${findings.length} findings approved.`);
+    const originalCount = isRawReport ? '(from report)' : String(input.length);
+    log(`  [reviewer] audit complete. ${reviewed.length}/${originalCount} findings approved.`);
     return reviewed;
   } catch (err) {
     log(`  [reviewer] AUDIT FAILED: ${String(err)}`);

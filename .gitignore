@@ -8,4 +8,8 @@ agent/pi-research-*.md
 agent/specialized-researcher-*.md
 agent/findings-*.md
 agent/supply_side_findings.json
+agent/audit_result.json
+agent/findings-output.json
+agent/data/reports/
+agent/data/failures/
 .env

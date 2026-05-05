@@ -22,7 +22,7 @@ PROCEDURE:
 1. For every finding:
    a. Use the /research tool to visit the URL.
    b. Verify if the quote or summary points are verbatim/accurate.
-   c. CRITICAL PERSPECTIVE TEST: Verify if the piece itself ADVANCES or NORMALIZES harm (e.g., uses logical fallacies, manipulative framing, or misinformation to promote harmful policies or ideologies). It must NOT just be "reporting" on bad things.
+   c. CRITICAL PERSPECTIVE TEST: Verify if the piece itself acts as a vehicle for harmful perspectives (e.g., through biased framing, advocacy for regressive policy, normalization of exploitation, or providing an intellectual veneer for discrimination). It must be more than just neutral reporting.
 
    d. Check for: 404, broken links, paywalls (unverifiable), or weak analysis.
 

@@ -156,26 +156,30 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
         const nextIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
         state.categoryIndex = nextIndex;
 
-        if (result.findings.length > 0) {
-          process.stdout.write(`${GREEN}${result.findings.length} findings found${RESET}\n`);
+        const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
+
+        if (reviewInput) {
+          const isRaw = typeof reviewInput === 'string';
+          const logMsg = isRaw ? 'raw report found' : `${result.findings.length} findings found`;
+          process.stdout.write(`${GREEN}${logMsg}${RESET}\n`);
           console.log(`  ${BOLD}Starting review...${RESET}`);
 
           // 2. Review
-          const reviewed = await runReview(result.findings, logFn);
+          const reviewed = await runReview(reviewInput, logFn);
 
           // 3. Save
           const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
           totalAdded += added.length;
 
-          // Mark as seen so we don't re-process in future batches
+          // Mark as seen
           if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
-          for (const raw of result.findings) {
+          const sourceArray = isRaw ? reviewed : result.findings;
+          for (const raw of sourceArray) {
             const canonical = canonicalizeUrl(raw.url);
             if (!state.seenUrls[cat.key].includes(canonical)) {
               state.seenUrls[cat.key].push(canonical);
             }
           }
-
 
           saveFindings(store);
           saveState(state);
@@ -183,30 +187,30 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
           if (added.length > 0) {
             console.log(`  ${GREEN}Added ${added.length} findings, pushing...${RESET}`);
             if (isGitRepo() && remoteExists() && hasDataChanges()) {
-              commitAndPush(added.length, cat.name);
+              commitAndPush(added.length, cat.name, logFn);
             }
           } else {
             console.log(`  ${DIM}No new findings after review.${RESET}`);
             if (isGitRepo() && remoteExists() && hasDataChanges()) {
-              git('add agent/data/run-state.json');
-              git('commit -m "chore: update run-state for ' + cat.key + ' (no findings)"');
-              git('push');
+              commitAndPush(0, cat.name, logFn);
             }
           }
         } else {
           process.stdout.write(`${DIM}no discoveries${RESET}\n`);
           saveState(state);
           if (isGitRepo() && remoteExists() && hasDataChanges()) {
-            git('add agent/data/run-state.json');
-            git('commit -m "chore: update run-state for ' + cat.key + ' (no discoveries)"');
-            git('push');
+            commitAndPush(0, cat.name, logFn);
           }
         }
       } catch (err) {
         process.stdout.write(`${RED}ERROR${RESET}\n`);
-        process.stdout.write(`  ${RED}${String(err).split('\n')[0]}${RESET}\n`);
+        console.error(`\n${RED}  ${String(err)}${RESET}`);
+        if (err instanceof Error && err.stack) {
+          console.error(`${DIM}${err.stack}${RESET}`);
+        }
         console.log(`\n${YELLOW}Stopping batch due to error. Category index is ${state.categoryIndex}.${RESET}`);
         totalErrors++;
+        await pressEnter();
         break;
       }
       divider();
@@ -272,7 +276,8 @@ async function showStats(): Promise<void> {
   // State info
   console.log(`  ${BOLD}Run state:${RESET}`);
   console.log(`    Category index:  ${CYAN}${state.categoryIndex}${RESET} (${CATEGORIES[state.categoryIndex]?.name ?? 'N/A'})`);
-  console.log(`    Seen URLs:       ${CYAN}${state.seenUrls.length}${RESET}`);
+  const totalSeen = Object.values(state.seenUrls).reduce((acc, urls) => acc + urls.length, 0);
+  console.log(`    Seen URLs:       ${CYAN}${totalSeen}${RESET}`);
   console.log(`    Last run:        ${CYAN}${state.lastRun.slice(0, 10)}${RESET}`);
   console.log();
 
@@ -387,7 +392,6 @@ async function setupCron(): Promise<void> {
   const confirm = await question(`Run setup-cron.sh?${YELLOW} (y/N)${RESET}: `);
   if (confirm.toLowerCase() === 'y') {
     try {
-      const { execSync } = await import('child_process');
       execSync(`bash "${scriptPath}"`, { cwd: REPO_ROOT, stdio: 'inherit' });
     } catch (err) {
       console.log(`${RED}Cron setup failed: ${String(err).split('\n')[0]}${RESET}`);

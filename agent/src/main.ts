@@ -80,17 +80,22 @@ async function main() {
           // Even if no findings, we advance the index for next time
           state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
 
-          if (result.findings.length > 0) {
-            log(`  [pi] discovered ${result.findings.length} raw findings, starting review...`);
+          const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
+
+          if (reviewInput) {
+            const isRaw = typeof reviewInput === 'string';
+            const logLabel = isRaw ? 'raw report' : `${result.findings.length} raw findings`;
+            log(`  [pi] discovered ${logLabel}, starting review...`);
             
-            // 2. Review
-            const reviewedFindings = await runReview(result.findings, log);
+            // 2. Review (also extracts if input is a raw report)
+            const reviewedFindings = await runReview(reviewInput, log);
             const added = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
             totalAdded += added.length;
 
-            // Mark ORIGINAL discoveries as seen for THIS category so we don't re-review them
+            // Mark discoveries as seen
             if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
-            for (const raw of result.findings) {
+            const sourceArray = isRaw ? reviewedFindings : result.findings;
+            for (const raw of sourceArray) {
               const canonical = canonicalizeUrl(raw.url);
               if (!state.seenUrls[cat.key].includes(canonical)) {
                 state.seenUrls[cat.key].push(canonical);

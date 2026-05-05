@@ -68,8 +68,7 @@ export function loadFindings(): FindingsStore {
     const raw = readFileSync(FINDINGS_PATH, 'utf-8');
     return safeParseValidatedJson(FindingsStoreSchema, raw);
   } catch (err) {
-    console.error(`  [warn] failed to load or validate findings: ${String(err)}`);
-    return emptyStore();
+    throw new Error(`CRITICAL: Findings file exists but is corrupted or invalid: ${String(err)}`);
   }
 }
 
@@ -104,8 +103,7 @@ export function loadState(): RunState {
 
     return safeParseValidatedJson(RunStateSchema, JSON.stringify(loaded));
   } catch (err) {
-    console.error(`  [warn] failed to load or validate state: ${String(err)}`);
-    return state;
+    throw new Error(`CRITICAL: State file exists but is corrupted or invalid: ${String(err)}`);
   }
 }
 

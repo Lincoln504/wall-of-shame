@@ -42,16 +42,21 @@ jobs:
           path: pi-research
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # agent/package.json references pi-research as file:../../pi-research, which
+      # resolves to one level above the workspace root. Move it there so npm install works.
+      - name: Place pi-research at expected relative path
+        run: mv ${{ github.workspace }}/pi-research ${{ github.workspace }}/../pi-research
+
       - name: Install pi-research deps
         run: npm install
-        working-directory: pi-research
+        working-directory: ${{ github.workspace }}/../pi-research
 
       - name: Run research agent
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PI_RESEARCH_SKIP_HEALTHCHECK: '1'
           PI_RESEARCH_BROWSER_HEADLESS: 'true'
-          PI_RESEARCH_HOME: ${{ github.workspace }}/pi-research
+          PI_RESEARCH_HOME: ${{ github.workspace }}/../pi-research
         run: |
           ARGS="--batch-size ${{ inputs.batch_size || '3' }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi

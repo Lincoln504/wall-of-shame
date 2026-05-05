@@ -4,173 +4,199 @@ export const CATEGORIES: Category[] = [
   {
     key: 'labor',
     name: 'Labor & Workers\' Rights',
-    description: 'Content undermining worker protections, framing exploitation as freedom, or blaming workers for systemic conditions',
-    researchQuery: `Focus: The erosion of labor protections and the normalization of worker exploitation.
+    description: 'Efforts to weaken worker protections, present exploitation as freedom, and undermine the ability of workers to act collectively.',
+    researchQuery: `Focus: The systematic dismantling of labor protections and the presentation of unfair management practices as normal or beneficial.
     
-    Dimensions to explore:
-    - GIG ECONOMY: Misclassification as "entrepreneurship," opposition to AB5-style laws, "portable benefits" as a replacement for employment rights.
-    - UNION BUSTING: "Right to work" advocacy, anti-union consultant materials, framing collective bargaining as "harmful to innovation."
-    - WAGE STANDARDS: Opposition to minimum wage increases, arguments for "sub-minimum" wages, defenses of wage theft or tip-pooling changes.
-    - CHILD LABOR: Rolling back age/hour restrictions, framing child work as "youth opportunity" or "character building."
-    - POVERTY BLAMING: "Dependency" rhetoric, "welfare trap" arguments, pathologizing the working poor.
-    - WORKPLACE SAFETY: Deregulation advocacy, framing safety standards as "red tape" that kills growth.`,
+    Strategies to explore:
+    - CONTRACTUAL SHIFTING: Presenting employees as "independent" to remove benefits and basic rights.
+    - UNDERMINING UNIONS: Arguing that individual bargaining is better than collective power and presenting anti-union efforts as "protecting" worker choice.
+    - WAGE REDUCTION: Arguments for lower minimum standards or creating groups of workers with fewer rights.
+    - CHILD LABOR JUSTIFICATION: Presenting youth work as a "character building" opportunity to justify removing age and hour protections.
+    - BLAMING THE POOR: Language that treats economic hardship as a personal failure or "dependency" rather than a systemic issue.
+    - SAFETY AS BURDEN: Framing workplace safety rules as unnecessary "red tape" that hurts the economy.
+    - GENERAL NARRATIVE: Broadly presenting worker rights as an obstacle to progress or individual freedom.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'economics',
     name: 'Economic Inequality & Propaganda',
-    description: 'Supply-side mythology, billionaire worship, meritocracy myths, and corporate-funded policy laundering',
-    researchQuery: `Focus: The legitimation of extreme wealth concentration and the promotion of regressive economic policy.
+    description: 'Justifying extreme wealth gaps, promoting policies that benefit the top at the expense of the bottom, and presenting corporate interests as the public interest.',
+    researchQuery: `Focus: Arguments used to justify extreme inequality and the use of public resources for private gain.
     
-    Dimensions to explore:
-    - TRICKLE-DOWN: "Tax cuts pay for themselves," Laffer curve revival, arguments against progressive taxation as "punitive."
-    - BILLIONAIRE DEFENSE: Meritocracy myths, treating extreme wealth as purely "earned," framing wealth taxes as "theft."
-    - CORPORATE WELFARE: Defending subsidies for profitable industries while opposing social spending.
-    - MONOPOLY/ANTITRUST: Defending market concentration as "efficiency," opposing antitrust enforcement as "government overreach."
-    - DEREGULATION: Counting gross costs of regulation without benefits, framing environmental/financial rules as "hidden taxes."
-    - BUYBACKS/EPS: Defending stock buybacks over worker investment, justifying executive pay gaps.`,
+    Strategies to explore:
+    - TAX CUT JUSTIFICATION: Arguments that cutting taxes for the wealthy pays for itself or is the only way to get growth.
+    - WEALTH CELEBRATION: Presenting extreme wealth as purely "earned" by merit and treating taxes on wealth as unfair.
+    - SUBSIDY ADVOCACY: Defending government help for profitable companies while opposing help for ordinary people.
+    - MONOPOLY DEFENSE: Presenting market domination as "efficiency" and treating rules against it as government overreach.
+    - ONE-SIDED DEREGULATION: Highlighting the costs of rules for businesses while ignoring the benefits to the public.
+    - INVESTOR OVER WORKERS: Prioritizing payments to shareholders over investments in workers and defending massive executive pay gaps.
+    - IDEOLOGICAL SHIELDS: New ways of framing the economy that protect concentrated wealth from being challenged.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'race',
     name: 'Racial Discrimination & Revisionism',
-    description: 'Content promoting racial hierarchies, denying structural racism, or rehabilitating historical racial violence',
-    researchQuery: `Focus: The denial of structural racism and the rehabilitation of racial hierarchies or historical violence.
+    description: 'Reviving racial hierarchies, denying the reality of systemic inequality, and sanitizing the history of racial violence.',
+    researchQuery: `Focus: The denial of systemic racism and the attempt to make historical or current racial oppression seem acceptable or non-existent.
     
-    Dimensions to explore:
-    - STRUCTURAL DENIAL: "Colorblindness" as a weapon against equity, framing DEI as "reverse racism," denying the racial wealth gap causes.
-    - HISTORICAL REVISIONISM: "Lost Cause" narratives, Colonialism as "net positive," minimizing slavery or indigenous genocide.
-    - PSEUDOSCIENCE: "Race and IQ" revivals, genetic determinism, "cultural" explanations for outcome gaps that omit policy.
-    - ANTI-PROTEST: Criminalizing anti-racist movements, framing civil rights advocacy as "divisive" or "anti-American."
-    - IMMIGRATION/RACE: Intersection of xenophobia and racial purity rhetoric, "demographic change" as a threat.`,
+    Strategies to explore:
+    - EQUITY ATTACKS: Framing fairness-focused policies as "reverse discrimination" and using "colorblind" language to hide the reality of race-based outcomes.
+    - HISTORY CLEANUP: Presenting colonialism as a "net positive," minimizing the horror of slavery or genocide, and ignoring the roots of current inequality.
+    - NATURALIZING GAPS: Using biased science or "culture" to explain why some groups have less, without mentioning the role of policy or history.
+    - ATTACKING PROTESTERS: Presenting civil rights movements as "divisive" or "dangerous" to justify shutting them down.
+    - XENOPHOBIC OVERLAP: Where arguments about "racial purity" meet fear-mongering about demographic change.
+    - TEACHING REVISIONISM: Systematic efforts to change what is taught in schools to hide the history of racial injustice.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'gender',
     name: 'Gender & Sexual Discrimination',
-    description: 'Misogyny, trans panic, conversion therapy defense, and pay gap denial packaged as commentary or advice',
-    researchQuery: `Focus: The rolling back of gender equity and the targeting of LGBTQ+ people through policy and rhetoric.
+    description: 'Rolling back gender equality, manufacturing fear around identity, and defending discriminatory practices.',
+    researchQuery: `Focus: The systematic attack on gender equality and the targeting of LGBTQ+ people through policy and public debate.
     
-    Dimensions to explore:
-    - TRANS PANIC: "Protecting women's spaces" as a pretext for exclusion, medical misinformation about gender-affirming care.
-    - MISOGYNY: "Traditional values" as a mask for subordination, "Red Pill" ideology in self-improvement/dating advice.
-    - PAY GAP DENIAL: Attributing the gender wage gap purely to "choices" while ignoring structural barriers.
-    - REPRODUCTIVE RIGHTS: Dehumanizing rhetoric in anti-abortion advocacy, framing reproductive healthcare as "immoral."
-    - CONVERSION THERAPY: Defending debunked practices as "religious liberty" or "counseling freedom."`,
+    Strategies to explore:
+    - IDENTITY FEAR-MONGERING: Using "protection" as an excuse to exclude people and using misleading health information to attack transition care.
+    - NATURALIZING SUBORDINATION: Presenting traditional power gaps between genders as "natural" and using dating/advice content to hide misogyny.
+    - CHOICE AS DEFLECTION: Claiming wage gaps are purely because of individual "choices" to avoid talking about systemic barriers.
+    - BODILY AUTONOMY ATTACKS: Using dehumanizing language to attack reproductive healthcare and the right to make one's own medical decisions.
+    - DISCRIMINATION AS FREEDOM: Presenting the "right to discriminate" as a matter of "religious liberty" or personal freedom.
+    - CULTURAL REACTION: Broader efforts to reverse progress made in gender and sexual rights.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'immigration',
     name: 'Immigration & Xenophobia',
-    description: 'Anti-immigrant rhetoric, demographic panic, and collective punishment of immigrant communities',
-    researchQuery: `Focus: The dehumanization of immigrants and the framing of migration as a civilizational threat.
+    description: 'Dehumanizing immigrants, using demographic fear as a political tool, and framing migration as a threat.',
+    researchQuery: `Focus: The manufactured presentation of migration as a threat to national survival and the attack on immigrant rights.
     
-    Dimensions to explore:
-    - REPLACEMENT THEORY: "Great Replacement" rhetoric, framing migration as an "invasion" or "surge."
-    - CRIME/IMMIGRATION: Cherry-picking anecdotes to tie migration to criminality, omitting native-born crime rates.
-    - ECONOMIC XENOPHOBIA: "Stealing jobs" myths, framing foreign workers as a burden on the social safety net.
-    - DUE PROCESS EROSION: Defending mass detention, opposition to asylum laws, dehumanizing language in border policy.
-    - NATIVISM: Defining national identity in exclusive ethnic/racial terms, framing assimilation as a "failure."`,
+    Strategies to explore:
+    - DEMOGRAPHIC ALARM: Framing migration as an "invasion" or a "replacement" of the current population.
+    - CRIMINALITY NARRATIVE: Using specific anecdotes to make it seem like immigrants are inherently dangerous.
+    - JOB COMPETITION MYTHS: Framing immigrants as the main cause of low wages and a "drain" on public money.
+    - REMOVING PROTECTIONS: Arguing for the removal of legal rights and the normalization of mass detention.
+    - NATIVIST IDENTITY: Defining the nation in a way that excludes certain groups and presents integration as a failure.
+    - BUREAUCRATIC HARASSMENT: Using procedural changes to make it impossible for immigrants to maintain legal status.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'religion',
     name: 'Religious Nationalism & Sectarian Discrimination',
-    description: 'Christian nationalist policy advocacy, religious law imposition, and faith-based discrimination',
-    researchQuery: `Focus: The imposition of religious doctrine on public law and the erosion of secular governance.
+    description: 'Using religious doctrine to shape public law and the systematic removal of secular protections.',
+    researchQuery: `Focus: Attempts to give specific religious views a privileged place in government and public life.
     
-    Dimensions to explore:
-    - CHRISTIAN NATIONALISM: "America as a Christian nation" revisionism, Seven Mountain Dominionism, Project Blitz.
-    - WEAPONIZED LIBERTY: Using "religious freedom" to bypass anti-discrimination laws or labor standards.
-    - THEOCRATIC POLICY: Scriptural arguments for secular legislation (e.g. anti-LGBTQ+ or anti-abortion laws).
-    - ESTABLISHMENT CLAUSE: Pushing prayer or sectarian curriculum into public schools, public funding for religious institutions.
-    - SECTARIAN BIAS: Framing pluralism as "persecution" of the majority religion.`,
+    Strategies to explore:
+    - RELIGIOUS REVISIONISM: Presenting the nation as "fundamentally religious" to justify using doctrine as law.
+    - WEAPONIZING EXEMPTIONS: Using "religious freedom" as an excuse to ignore civil rights, labor, or health laws.
+    - DOCTRINE AS LAW: Using scripture to justify taking away rights from others (like reproductive or LGBTQ+ rights).
+    - CLASSROOM CAPTURE: Pushing specific religious teachings into public schools and using public money for religious purposes.
+    - MARGINALIZING MINORITIES: Presenting a diverse society as a form of "persecution" against the majority religion.
+    - ERODING SEPARATION: Efforts to break down the wall between religious power and government authority.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'climate',
     name: 'Climate & Environmental Harm',
-    description: 'Climate denial, fossil fuel greenwashing, and manufactured delay to climate action',
-    researchQuery: `Focus: The delay of climate action through denial, greenwashing, or manufactured economic panic.
+    description: 'Delaying environmental action through misleading framing and downplaying ecological damage.',
+    researchQuery: `Focus: The strategic effort to slow down climate action using denial, greenwashing, or economic fear-mongering.
     
-    Dimensions to explore:
-    - GREENWASHING: "Net zero" claims paired with fossil fuel expansion, "bridge fuel" myths for natural gas.
-    - DELAYISM: "Too expensive to act," "China/India first," catastrophizing the transition to renewables.
-    - SCIENCE SKEPTICISM: Attacking climate models, cherry-picking temperature data, platforming contrarian "experts."
-    - REGULATORY CAPTURE: Defending fossil fuel subsidies while attacking renewable energy incentives.
-    - OFFSET MYTHS: Promoting unverified or temporary offsets as a substitute for real emissions cuts.`,
+    Strategies to explore:
+    - MISLEADING GREEN CLAIMS: Using terms like "net zero" or "bridge fuel" to hide the continued expansion of oil and gas.
+    - ECONOMIC FEAR: Presenting climate action as "too expensive" or "ruinous" to justify doing nothing.
+    - DOUBT MANUFACTURING: Attacking climate science and giving a platform to contrarian "experts" to create the illusion of a debate.
+    - SUBSIDY PROTECTION: Defending help for the fossil fuel industry while attacking help for renewable energy.
+    - OFFSET DISTRACTION: Using unverified carbon offsets as a way to avoid actually reducing pollution.
+    - INEVITABILITY ARGUMENTS: Claiming that environmental collapse is unavoidable to justify continuing to pollute.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'health',
     name: 'Health Misinformation',
-    description: 'Anti-vaccine propaganda, quackery targeting vulnerable people, and attacks on evidence-based medicine',
-    researchQuery: `Focus: The erosion of trust in public health and the promotion of unproven or dangerous treatments.
+    description: 'Undermining public health, promoting unproven treatments, and attacking evidence-based medicine.',
+    researchQuery: `Focus: The effort to damage trust in health authorities and promote dangerous or unverified medical claims.
     
-    Dimensions to explore:
-    - ANTI-VAX: Misrepresenting VAERS data, "gene therapy" mRNA myths, fabricating injury counts.
-    - QUACKERY: "Natural cures" for serious diseases, supplement marketing without evidence, "detox" scams.
-    - MEDICAL SKEPTICISM: Framing evidence-based medicine as purely a corporate "big pharma" conspiracy.
-    - PUBLIC HEALTH ATTACKS: Opposition to masking, clean air standards, or community health initiatives as "tyranny."
-    - DATA MANIPULATION: Overstating risks of treatment while minimizing risks of disease.`,
+    Strategies to explore:
+    - DATA MISINTERPRETATION: Taking health databases out of context to create scary narratives about vaccines or treatments.
+    - CONSPIRACY FRAMING: Presenting standard medicine as a corporate plot to push people toward unproven "alternatives."
+    - WELLNESS PROFITEERING: Selling "cures" or "detoxes" to sick people without any evidence that they work.
+    - ATTACKING PUBLIC SAFETY: Framing health rules (like masking or clean air) as "tyranny" to undermine safety measures.
+    - SKEWNING RISK: Exaggerating the risks of medicine while pretending the risks of the disease don't exist.
+    - FREEDOM AS DEFLECTION: Using "medical freedom" as a way to ignore the need for collective public health safety.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'democracy',
     name: 'Democracy & Political Rights',
-    description: 'Voter suppression advocacy, authoritarian admiration, and normalization of anti-democratic erosion',
-    researchQuery: `Focus: The erosion of democratic participation and the normalization of authoritarian governance.
+    description: 'Normalizing the loss of democratic rights, making it harder to vote, and justifying authoritarian power.',
+    researchQuery: `Focus: The slow removal of democratic power and the attempt to make non-democratic rule seem acceptable.
     
-    Dimensions to explore:
-    - VOTER SUPPRESSION: "Election integrity" as a pretext for disenfranchisement, defending restrictive ID or ballot laws.
-    - AUTHORITARIAN ADMIRATION: Praising foreign autocrats, framing "strongman" leadership as superior to deliberation.
-    - DARK MONEY: Defending unlimited, anonymous spending as "free speech," opposing transparency laws.
-    - JUDICIAL ACTIVISM: Defending the bypass of legislative/democratic processes through the courts.
-    - NORM EROSION: Normalizing the refusal to accept election results or the use of state power against opponents.`,
+    Strategies to explore:
+    - DISENFRANCHISEMENT: Using "voter integrity" as a reason to pass laws that make it harder for people to vote.
+    - AUTHORITARIAN PRAISE: Talking up "strongman" leaders and presenting democratic discussion as a sign of weakness.
+    - HIDDEN INFLUENCE: Defending the right to spend unlimited, anonymous money in politics as "free speech."
+    - BYPASSING THE PEOPLE: Using the courts to pass unpopular policies that couldn't get through the normal law-making process.
+    - REJECTING RESULTS: Normalizing the refusal to accept election losses and using government power against political rivals.
+    - ATTACKING INSTITUTIONS: Broad efforts to destroy trust in the foundations of democratic government.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'policing',
     name: 'Criminal Justice & Policing',
-    description: 'Police brutality apologia, prison labor normalization, and opposition to accountability reforms',
-    researchQuery: `Focus: The defense of state violence and the normalization of exploitative carceral systems.
+    description: 'Justifying state violence, normalizing prison exploitation, and attacking efforts to hold the system accountable.',
+    researchQuery: `Focus: The defense of excessive state power and the normalization of exploitative carceral systems.
     
-    Dimensions to explore:
-    - BRUTALITY APOLOGIA: "Split-second decision" defenses of excessive force, dehumanizing victims of police violence.
-    - QUALIFIED IMMUNITY: Defending the bypass of accountability for state actors.
-    - PRISON LABOR: Normalizing near-zero wage work as "discipline" or "rehabilitation," ALEC model legislation.
-    - ACCOUNTABILITY OPPOSITION: Attacking civilian oversight, framing reform as the cause of "crime waves."
-    - MASS INCARCERATION: Defending regressive sentencing, opposing bail reform, pathologizing over-policed communities.`,
+    Strategies to explore:
+    - VIOLENCE JUSTIFICATION: Using "split-second" excuses to make the use of excessive force by the state seem normal.
+    - AVOIDING ACCOUNTABILITY: Defending laws that let state actors avoid being held responsible for their actions.
+    - CARCERAL PROFIT: Normalizing the use of prisoners for near-free labor and justifying companies making money from jails.
+    - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.
+    - HARSHER SENTENCING: Pushing for mass incarceration and using "law and order" language to target specific communities.
+    - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'technology',
     name: 'Technology & Privacy',
-    description: 'Surveillance normalization, social media harm denial, and AI ethics dismissal',
-    researchQuery: `Focus: The normalization of digital surveillance and the dismissal of technological harms.
+    description: 'Normalizing digital spying, ignoring the harms of technology, and dismissing ethical concerns about AI.',
+    researchQuery: `Focus: The effort to make mass surveillance seem normal and to ignore the damage tech can do to society.
     
-    Dimensions to explore:
-    - SURVEILLANCE: "Nothing to hide" defenses of mass data collection, normalizing facial recognition/biometrics.
-    - ALGORITHMIC BIAS: Dismissing documented bias in hiring/lending/policing as "innovation."
-    - PLATFORM HARMS: Minimizing social media's impact on mental health or democracy, industry-funded denial.
-    - AI ACCELERATIONISM: Dismissing safety and ethics concerns as "sci-fi hysteria" or "anti-progress."
-    - DATA PRIVACY: Opposing legislative protection in favor of "self-regulation."`,
+    Strategies to explore:
+    - SURVEILLANCE EXCUSES: Using "nothing to hide" arguments to justify mass data collection and biometrics.
+    - BIAS AS EFFICIENCY: Pretending that biased computer systems are just "innovative" or "objective."
+    - DOWNPLAYING HARM: Minimizing how social media impacts mental health or democracy, often with industry money.
+    - ETHICS DISMISSAL: Calling safety and ethical concerns "anti-progress" or "hysterical."
+    - REMOVING PRIVACY: Fighting against laws that protect data in favor of letting companies "police themselves."
+    - TECH AS DESTINY: Claiming that harmful tech trends are "unavoidable" so people stop trying to regulate them.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'disability',
     name: 'Disability Rights',
-    description: 'Opposition to disability accommodations, ADA enforcement, or weaponization of disability as rhetoric',
-    researchQuery: `Focus: The marginalization of disabled people and the framing of accessibility as an undue burden.
+    description: 'Marginalizing disabled people, presenting accessibility as a burden, and fighting against the enforcement of rights.',
+    researchQuery: `Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.
     
-    Dimensions to explore:
-    - ADA OPPOSITION: Framing accessibility lawsuits as "shakedowns," opposing compliance as "too expensive."
-    - BENEFIT SKEPTICISM: Framing disability support as "enabling dependency," overstating fraud rates.
-    - ABLEIST RHETORIC: Using disability as a political slur, pathologizing neurodivergence in the workplace.
-    - EXCLUSION: Defending the denial of accommodations in education or employment under the banner of "merit."
-    - MEDICAL MODEL: Prioritizing "cures" or "institutionalization" over community-based living and rights.`,
+    Strategies to explore:
+    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as "shakedowns" and complaining that basic fairness is "too expensive."
+    - BLAMING THE INDIVIDUAL: Framing support as "enabling" and pretending that disability fraud is a massive problem.
+    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.
+    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of "merit."
+    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.
+    - PERSONALIZING FAILURE: Treating disability as an individual problem to be "fixed" rather than a civil rights issue.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
     key: 'war',
     name: 'War & Militarism',
-    description: 'Warmongering, war crime denial, civilian harm minimization, and arms industry propaganda',
-    researchQuery: `Focus: The normalization of military violence and the laundering of arms industry interests.
+    description: 'Normalizing military violence, hiding the influence of the arms industry, and downplaying the human cost of war.',
+    researchQuery: `Focus: The effort to make military violence seem normal and the capture of government policy by the arms industry.
     
-    Dimensions to explore:
-    - HAWKISH PROPAGANDA: Advocating for military escalation without disclosing industry funding, "regime change" myths.
-    - HARM MINIMIZATION: "Collateral damage" framing, using "precision strike" language to obscure civilian death.
-    - WAR CRIME DENIAL: Dismissing documented atrocities as "fake" or "justified."
-    - ARMS INDUSTRY PR: Laundering weapon sales as "jobs programs" or "global stability" initiatives.
-    - MILITARIZATION: Normalizing the use of military hardware/tactics in domestic or civil contexts.`,
+    Strategies to explore:
+    - PUSHING FOR WAR: Advocating for more fighting and "regime change" while hiding the role of the companies that profit from it.
+    - CLEANING UP HARM: Using technical language (like "precision strike") to hide the reality of civilian deaths.
+    - HIDING ATROCITIES: Dismissing reports of war crimes as "fake" or unavoidable results of war.
+    - WAR AS JOBS: Presenting the sale of weapons as a "jobs program" or a way to keep the world "stable."
+    - DOMESTIC MILITARISM: Bringing military gear and tactics into local policing and government.
+    - INEVITABLE CONFLICT: Framing global fights as "unavoidable" to justify spending forever on the military.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
 ];
 

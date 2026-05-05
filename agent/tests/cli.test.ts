@@ -6,6 +6,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { CATEGORIES, CATEGORY_COUNT, getBatch } from '../src/categories.js';
 import { loadFindings, loadState } from '../src/findings.js';
 
@@ -127,11 +130,9 @@ describe('CLI menu options logic', () => {
 describe('GitHub Actions integration', () => {
   it('deploy workflow copies findings.json from correct path', () => {
     // The deploy workflow does: cp agent/data/findings.json site/public/findings.json
-    const { existsSync } = require('fs');
-    const { join } = require('path');
-    const sourcePath = join(__dirname, '..', 'data', 'findings.json');
-    // Just verify the source path is valid — file may be empty but should exist
-    expect(typeof sourcePath).toBe('string');
+    // Verify the source file actually exists in the repo
+    const sourcePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'findings.json');
+    expect(existsSync(sourcePath)).toBe(true);
   });
 
   it('research workflow uses correct CLI args', () => {

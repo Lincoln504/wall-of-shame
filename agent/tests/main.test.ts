@@ -154,8 +154,8 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
     expect(raws).toEqual([]);
   });
 
-  it('error in runResearch does not crash the batch loop', () => {
-    // main.ts catches per-category errors and continues
+  it('error in runResearch breaks the batch loop (no further categories processed)', () => {
+    // main.ts catches per-category errors and breaks — remaining categories are not processed
     const results: string[] = [];
 
     for (let i = 0; i < 3; i++) {
@@ -164,13 +164,13 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
         results.push(`Category ${i} succeeded`);
       } catch {
         results.push(`Category ${i} failed`);
+        break;
       }
     }
 
-    expect(results).toHaveLength(3);
+    expect(results).toHaveLength(2);
     expect(results[0]).toBe('Category 0 succeeded');
     expect(results[1]).toBe('Category 1 failed');
-    expect(results[2]).toBe('Category 2 succeeded');
   });
 });
 
@@ -308,7 +308,7 @@ describe('full main.ts lifecycle integration', () => {
 
     // Verify the category index advances (modular arithmetic)
     expect(newIndex).toBe((CATEGORY_COUNT - 1 + 3) % CATEGORY_COUNT);
-    expect(newIndex).toBe(2); // (34-1+3)%34 = 36%34 = 2
+    expect(newIndex).toBe(2); // (13-1+3)%13 = 15%13 = 2
 
     // getBatch(startIndex, batchSize) calculates start = index % len
     // For startIndex=33, batchSize=3: start = 33

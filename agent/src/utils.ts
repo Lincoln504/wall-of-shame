@@ -39,15 +39,32 @@ export function safeParseJson<T>(text: string): T {
   try {
     return JSON.parse(jsonText) as T;
   } catch (err) {
-    // 4. Final attempt: brute-force cleanup of control characters that often break JSON.parse
-    // but preserve actual newlines in strings if they are escaped (\n)
+    // 4. Attempt to fix unescaped newlines in strings
+    // This is a common issue where LLMs put real newlines inside "..."
     try {
-      const bruteClean = jsonText
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ') // Remove non-printable control chars
-        .trim();
-      return JSON.parse(bruteClean) as T;
+      const fixedNewlines = jsonText.replace(/:\s*"([\s\S]*?)"(?=\s*[,}])/g, (match, p1) => {
+        return ': "' + p1.replace(/\n/g, '\\n').replace(/\r/g, '') + '"';
+      });
+      return JSON.parse(fixedNewlines) as T;
     } catch {
-      throw new Error(`JSON parse failed: ${String(err)}\nSnippet: ${jsonText.slice(0, 100)}...`);
+      // 5. Final attempt: brute-force cleanup of control characters
+      try {
+        const bruteClean = jsonText
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, (match) => (match === '\n' || match === '\r' || match === '\t') ? match : ' ')
+          .trim();
+        return JSON.parse(bruteClean) as T;
+      } catch {
+        // One last try: very aggressive cleanup
+        try {
+           const veryAggressive = jsonText
+             .replace(/\n/g, ' ')
+             .replace(/\r/g, ' ')
+             .replace(/\t/g, ' ');
+           return JSON.parse(veryAggressive) as T;
+        } catch {
+           throw new Error(`JSON parse failed: ${String(err)}\nSnippet: ${jsonText.slice(0, 100)}...`);
+        }
+      }
     }
   }
 }
