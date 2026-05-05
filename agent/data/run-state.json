@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T13:25:53.256Z",
-  "categoryIndex": 10,
+  "lastRun": "2026-05-05T13:45:57.521Z",
+  "categoryIndex": 11,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -118,7 +118,11 @@
       "eff.org/deeplinks/2025/08/data-brokers-are-ignoring-privacy-law-we-deserve-better",
       "en.wikipedia.org/wiki/nothing_to_hide_argument",
       "therecord.media/state-privacy-laws-big-tech-lobbying-report",
-      "campaignzero.org/the-private-companies-quietly-building-a-police-state"
+      "campaignzero.org/the-private-companies-quietly-building-a-police-state",
+      "wustllawreview.org/2024/03/18/privacy-nicks-how-the-law-normalizes-surveillance",
+      "perspectivelabs.org/is-industry-ai-self-regulation-just-regulatory-capture",
+      "humanrightsresearch.org/post/redefining-productivity-in-the-age-of-workplace-surveillance",
+      "iso.org.nz/2026/05/03/biometrics-and-surveillance-are-weapons-of-class-warfare"
     ],
     "disability": [
       "localnewsmatters.org/2024/02/22/serial-ada-plaintiffs-alter-tactics-and-venues-as-they-launch-new-litigation-in-state-courts"
@@ -593,7 +597,15 @@
       "data brokers ignoring privacy laws CCPA": "2026-05-05T12:10:14.078Z",
       "nothing to hide argument surveillance fallacy": "2026-05-05T12:10:14.078Z",
       "state privacy laws big tech lobbying failing grades": "2026-05-05T12:10:14.078Z",
-      "Campaign Zero biometric surveillance sold as foolproof": "2026-05-05T12:10:14.078Z"
+      "Campaign Zero biometric surveillance sold as foolproof": "2026-05-05T12:10:14.078Z",
+      "regulation as anti-innovation AI narrative": "2026-05-05T13:36:35.397Z",
+      "Big Tech tobacco tactics academic capture": "2026-05-05T13:36:35.397Z",
+      "AI surveillance schools safety normalizing": "2026-05-05T13:36:35.397Z",
+      "Big Tech preemption state privacy laws": "2026-05-05T13:36:35.397Z",
+      "privacy nicks how the law normalizes surveillance": "2026-05-05T13:45:28.002Z",
+      "AI industry self-regulation regulatory capture": "2026-05-05T13:45:28.002Z",
+      "workplace surveillance productivity redefining": "2026-05-05T13:45:28.002Z",
+      "biometrics surveillance class warfare weapons": "2026-05-05T13:45:28.002Z"
     },
     "disability": {
       "ADA shakedown lawsuits NFIB": "2026-05-05T08:41:17.931Z",
