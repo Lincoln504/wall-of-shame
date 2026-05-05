@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T12:22:06.950Z",
-  "categoryIndex": 0,
+  "lastRun": "2026-05-05T12:29:10.617Z",
+  "categoryIndex": 1,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -120,6 +120,16 @@
       "taxpayer.net/wp-content/uploads/2024/10/oct-2024-political-footprint-of-the-military-industry.pdf",
       "jacobin.com/2023/10/raytheon-general-dynamics-gaza-israel-war-military-industrial-complex",
       "defensepriorities.org/wp-content/uploads/2024/03/defp_great_power_competition_as_an_anachronism.pdf"
+    ],
+    "labor": [
+      "fisherphillips.com/en/insights/insights/dol-easing-up-on-independent-contractor-misclassification-enforcement",
+      "ishn.com/articles/114572-deregulation-of-osha-to-reduce-the-burden-on-business",
+      "floridapolicy.org/posts/fast-facts-hb-1225-and-sb-918-would-further-erode-child-labor-protections-in-florida",
+      "prismreports.org/2024/03/13/rollbacks-child-labor-protections-on-the-rise",
+      "compens.ai/en/articles/gig-worker-misclassification-uber-lyft-settlements-2025",
+      "britannica.com/procon/a-new-rule-would-end-subminimum-wage-for-people-with-disabilities",
+      "cwa-union.org/79a-23-02",
+      "alvinandhisthoughts.com/2025/05/19/the-1996-welfare-reform-how-america-blamed-black-women-and-masked-systemic-poverty-with-personal-responsibility"
     ]
   },
   "queryHistory": {
@@ -549,7 +559,15 @@
       "critique of portable benefits for gig workers": "2026-05-05T09:17:09.671Z",
       "Missouri SB 1325 youth minimum wage": "2026-05-05T09:17:09.671Z",
       "OSHA safety regulation rollbacks 2026": "2026-05-05T09:17:09.671Z",
-      "Department of Labor construction lighting requirements removal": "2026-05-05T09:17:09.671Z"
+      "Department of Labor construction lighting requirements removal": "2026-05-05T09:17:09.671Z",
+      "child labor laws rollback 2024 2025": "2026-05-05T12:26:07.112Z",
+      "gig worker misclassification settlements 2025": "2026-05-05T12:26:07.112Z",
+      "subminimum wage disabled workers 14(c)": "2026-05-05T12:26:07.112Z",
+      "captive audience meetings anti-union propaganda 2025": "2026-05-05T12:26:07.112Z",
+      "1996 welfare reform personal responsibility systemic poverty": "2026-05-05T12:26:07.112Z",
+      "OSHA regulations burden small business deregulation 2025": "2026-05-05T12:26:07.112Z",
+      "Florida HB 1225 SB 918 child labor 2025": "2026-05-05T12:26:07.112Z",
+      "independent contractor rule DOL enforcement 2025": "2026-05-05T12:26:07.112Z"
     },
     "gender": {
       "anti-LGBTQ+ legislation 2025 2026": "2026-05-05T09:26:15.030Z",
