@@ -62,6 +62,6 @@ export function safeParseValidatedJson<T extends TSchema>(schema: T, text: strin
   }
   
   const errors = [...Value.Errors(schema, data)];
-  const errorMsg = errors.map(e => `${e.path}: ${e.message}`).join(', ');
+  const errorMsg = errors.map((e: any) => `${e.path || 'root'}: ${e.message}`).join(', ');
   throw new Error(`Schema validation failed: ${errorMsg}`);
 }

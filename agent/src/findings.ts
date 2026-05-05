@@ -51,7 +51,7 @@ export async function verifyUrl(url: string, timeoutMs = 8000): Promise<boolean>
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_DATA_DIR = join(__dirname, '..', 'data');
-const DATA_DIR = process.env['PI_AGENT_DATA_DIR'] || DEFAULT_DATA_DIR;
+export const DATA_DIR = process.env['PI_AGENT_DATA_DIR'] || DEFAULT_DATA_DIR;
 const FINDINGS_PATH = join(DATA_DIR, 'findings.json');
 const STATE_PATH = join(DATA_DIR, 'run-state.json');
 

@@ -1,5 +1,6 @@
 import { homedir } from 'os';
 import { join } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { 
   runResearch as piRunResearch, 
   shutdownManager,
@@ -13,6 +14,7 @@ import {
 import { completeSimple } from '@mariozechner/pi-ai';
 import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
+import { DATA_DIR } from './findings.js';
 import { safeParseJson, safeParseValidatedJson } from './utils.js';
 
 // ── Model config ──────────────────────────────────────────────────────────────
@@ -225,7 +227,7 @@ PERSPECTIVE TEST — only flag a page if its own argument or framing is harmful.
       messages: [
         { role: 'user', content: [{ type: 'text', text: combinedInput }], timestamp: Date.now() }
       ]
-    }, { apiKey: auth.apiKey, headers: auth.headers });
+    }, { apiKey: auth.apiKey, headers: auth.headers, reasoning: 'medium' });
 
     const text = extractionResult.content.find((c): c is { type: 'text', text: string } => c.type === 'text')?.text || "";
     if (!text) {

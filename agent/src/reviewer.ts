@@ -107,8 +107,8 @@ export async function runReview(
     settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
-    // Researchers/Reviewers should be focused and not get distracted by internal thinking
-    thinkingLevel: 'off',
+    // Use medium reasoning for complex adversarial review
+    thinkingLevel: 'medium',
   });
 
   session.extensionRunner.setUIContext({
