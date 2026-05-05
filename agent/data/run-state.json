@@ -1,6 +1,6 @@
 {
-  "lastRun": "2026-05-05T13:14:50.000Z",
-  "categoryIndex": 8,
+  "lastRun": "2026-05-05T13:19:28.113Z",
+  "categoryIndex": 9,
   "seenUrls": {
     "global_legacy": [
       "heritage.org/taxes/report/the-laffer-curve-past-present-and-future",
@@ -96,7 +96,14 @@
       "washingtonpost.com/investigations/interactive/2025/veterans-affairs-disability-claims-fraud"
     ],
     "democracy": [
-      "whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians"
+      "whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians",
+      "brennancenter.org/our-work/research-reports/voting-laws-roundup-2024-review",
+      "protectdemocracy.org/wp-content/uploads/2024/03/the-authoritarian-playbook-updated.pdf",
+      "opensecrets.org/news/reports/a-decade-under-citizens-united",
+      "brennancenter.org/our-work/research-reports/fifteen-years-later-citizens-united-defined-2024-election",
+      "campaignlegal.org/sites/default/files/2025-12/report_subversion%20in%202024%20election%20and%20policy%20recommendations.pdf",
+      "brennancenter.org/our-work/policy-solutions/election-certification",
+      "election-integrity.org/post/map-new-voter-id-laws-impact-29m-americans-since-2020"
     ],
     "policing": [
       "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law"
