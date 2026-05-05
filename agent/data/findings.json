@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T16:36:11.812Z",
-  "totalFindings": 82,
+  "lastUpdated": "2026-05-05T16:42:54.765Z",
+  "totalFindings": 83,
   "findings": [
+    {
+      "id": "90c06dca-4e72-49b3-9e34-185bf546c1a1",
+      "url": "https://www.husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses/",
+      "title": "Husted Joins Effort to Permanently Repeal the Death Tax on Family Farms and Small Businesses",
+      "domain": "husted.senate.gov",
+      "summary": "- Argues that the federal estate tax, called the 'death tax,' unfairly burdens family farms and small businesses.\n- Claims the tax makes it hard or impossible for families to pass down farms and businesses to the next generation.\n- Uses emotional language about 'lifeblood of rural communities' and 'costly estate planning' to justify repeal.\n- Does not mention the $12.9 million exemption per individual (or $25.9 million for couples).\n- Frames repealing this tax as protecting rural livelihoods rather than cutting taxes on the richest 0.1% of estates.",
+      "category": "economics",
+      "whyBad": "The press release uses the loaded term 'death tax' and centers on 'family farms' to create the false impression that everyday small businesses are under threat. The core deception lies in hiding the fact that the estate tax only applies to massive fortunes—currently only affecting estates worth over $12.9 million. By omitting this huge exemption, the content tricks voters into fearing for their own livelihoods while actually advocating for a policy that only benefits the ultra-wealthy. This normalizes extreme wealth inequality by using the emotional plight of rural families as a shield to justify massive tax breaks for the top 0.1%.",
+      "severity": "high",
+      "foundAt": "2026-05-05T16:42:54.765Z",
+      "researchQuery": "Focus: Arguments used to justify extreme inequality and the use of public resources for private gain.\n    \n    Strategies to explore:\n    - TAX CUT JUSTIFICATION: Arguments that cutting taxes for the wealthy pays for itself or is the only way to get growth.\n    - WEALTH CELEBRATION: Presenting extreme wealth as purely \"earned\" by merit and treating taxes on wealth as unfair.\n    - SUBSIDY ADVOCACY: Defending government help for profitable companies while opposing help for ordinary people.\n    - MONOPOLY DEFENSE: Presenting market domination as \"efficiency\" and treating rules against it as government overreach.\n    - ONE-SIDED DEREGULATION: Highlighting the costs of rules for businesses while ignoring the benefits to the public.\n    - INVESTOR OVER WORKERS: Prioritizing payments to shareholders over investments in workers and defending massive executive pay gaps.\n    - IDEOLOGICAL SHIELDS: New ways of framing the economy that protect concentrated wealth from being challenged.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "8bec93d1-da61-4c11-8a4b-a7539e5a3cd8",
       "url": "https://www.osha.gov/deregulatory-rulemaking",
