@@ -1,7 +1,19 @@
 {
-  "lastUpdated": "2026-05-05T12:12:05.462Z",
-  "totalFindings": 61,
+  "lastUpdated": "2026-05-05T12:16:41.004Z",
+  "totalFindings": 62,
   "findings": [
+    {
+      "id": "0e1d1d4b-b4d1-4f07-9a48-792d1f621fe8",
+      "url": "https://localnewsmatters.org/2024/02/22/serial-ada-plaintiffs-alter-tactics-and-venues-as-they-launch-new-litigation-in-state-courts/",
+      "title": "Serial ADA plaintiffs alter tactics and venues as they launch new litigation in state courts",
+      "domain": "localnewsmatters.org",
+      "summary": "- Reports that a small number of serial plaintiffs filed thousands of ADA lawsuits, with 10 plaintiffs responsible for 85% of filings in one district.\n- District attorneys accused the plaintiffs and their law firm of running a \"shakedown\" operation against small businesses.\n- Plaintiffs shifted to state court under California's Unruh Act to avoid federal \"intent to return\" requirements.\n- A judge found one plaintiff's testimony not credible and ordered sanctions for bad-faith conduct.",
+      "category": "disability",
+      "whyBad": "This article normalizes the idea that disability rights enforcement is a form of predatory litigation rather than a pursuit of civil rights. By heavily utilizing the 'shakedown' framing provided by district attorneys, the piece shifts the focus from businesses' failure to comply with accessibility laws to the perceived greed of the plaintiffs. It uses the bad-faith actions of a few specific individuals to cast doubt on the legitimacy of all ADA litigation through a hasty generalization. This framing serves to justify non-compliance and delegitimize the voices of disabled people seeking basic access to public spaces.",
+      "severity": "high",
+      "foundAt": "2026-05-05T12:16:41.004Z",
+      "researchQuery": "Focus: Presenting the needs of disabled people as an unfair economic or personal burden on others.\n    \n    Strategies to explore:\n    - DISCREDITING RIGHTS: Presenting accessibility lawsuits as \"shakedowns\" and complaining that basic fairness is \"too expensive.\"\n    - BLAMING THE INDIVIDUAL: Framing support as \"enabling\" and pretending that disability fraud is a massive problem.\n    - ABLEIST LANGUAGE: Using disability as a way to insult others and treating different ways of thinking as personal failures.\n    - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of \"merit.\"\n    - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.\n    - PERSONALIZING FAILURE: Treating disability as an individual problem to be \"fixed\" rather than a civil rights issue.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
+    },
     {
       "id": "a502d9f2-375f-4ce7-ae54-302fce0df78b",
       "url": "https://poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law/",
