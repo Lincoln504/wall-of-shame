@@ -8,11 +8,14 @@ const REPO_ROOT = join(__dirname, '..', '..');
 /**
  * Execute a git command from the repo root
  */
-export function git(cmd: string): string {
+export function git(cmd: string, log?: (msg: string) => void): string {
   try {
-    return execSync(`git ${cmd}`, { cwd: REPO_ROOT, encoding: 'utf-8', stdio: 'pipe' }).trim();
-  } catch (err) {
-    throw new Error(`Git command failed: git ${cmd}\n${String(err)}`);
+    const output = execSync(`git ${cmd}`, { cwd: REPO_ROOT, encoding: 'utf-8', stdio: 'pipe' }).trim();
+    if (log && output) log(`  [git] ${cmd}: ${output.split('\n')[0]}`);
+    return output;
+  } catch (err: any) {
+    const stderr = err.stderr?.toString() || err.message;
+    throw new Error(`Git command failed: git ${cmd}\n${stderr}`);
   }
 }
 
@@ -21,6 +24,7 @@ export function git(cmd: string): string {
  */
 export function hasDataChanges(): boolean {
   try {
+    // Check both staged and unstaged changes in agent/data
     const status = git('status --porcelain agent/data/');
     return status.length > 0;
   } catch {
@@ -31,13 +35,51 @@ export function hasDataChanges(): boolean {
 /**
  * Stage, commit, and push findings and state
  */
-export function commitAndPush(addedCount: number, categoryLabel?: string): void {
+export function commitAndPush(addedCount: number, categoryLabel?: string, log?: (msg: string) => void): void {
+  if (!isGitRepo() || !remoteExists()) {
+    log?.('  [git] skipping push: not a git repo or remote missing');
+    return;
+  }
+
+  if (!hasDataChanges()) {
+    log?.('  [git] no data changes to commit.');
+    return;
+  }
+
   const date = new Date().toISOString().slice(0, 10);
   const catSuffix = categoryLabel ? ` [${categoryLabel}]` : '';
-  git('add agent/data/');
-  git(`commit -m "research: automated run ${date}${catSuffix} (+${addedCount} new)"`);
-  git('push');
+
+  try {
+    log?.(`  [git] staging data changes...`);
+    git('add agent/data/', log);
+
+    log?.(`  [git] committing results...`);
+    const message = addedCount > 0 
+      ? `research: automated run ${date}${catSuffix} (+${addedCount} new)`
+      : `chore: update run-state for ${categoryLabel || 'category'} (no findings)`;
+
+    // We check again just in case 'add' didn't actually stage anything new
+    const staged = git('diff --cached --name-only agent/data/');
+    if (staged.length > 0) {
+      git(`commit -m "${message}"`, log);
+    } else {
+      log?.('  [git] nothing to commit after staging.');
+    }
+
+    log?.(`  [git] syncing with remote (pull --rebase --autostash)...`);
+    // autostash handles local changes to source code that aren't staged
+    git('pull --rebase --autostash origin main', log);
+
+    log?.(`  [git] pushing to remote...`);
+    git('push origin main', log);
+    log?.(`  [git] successfully pushed findings to repository.`);
+  } catch (err) {
+    log?.(`  [git] CRITICAL: git operation failed: ${String(err)}`);
+    // We don't throw to allow the main loop to continue, 
+    // but the error is now visible in the logs.
+  }
 }
+
 
 export function isGitRepo(): boolean {
   try {

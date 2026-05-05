@@ -117,6 +117,10 @@ async function runAudit(findings: any[]): Promise<{ approved: any[], removed: an
     settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
+    // Use medium reasoning for adversarial audit
+    thinkingLevel: 'medium',
+    // Allow ONLY the research tool
+    tools: ['research'],
   });
 
   session.extensionRunner.setUIContext({

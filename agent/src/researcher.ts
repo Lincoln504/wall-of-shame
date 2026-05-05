@@ -76,6 +76,8 @@ export interface ResearchResult {
   queries: string[];
 }
 
+const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
+
 // ── Main entry point ──────────────────────────────────────────────────────────
 
 /**
@@ -89,6 +91,7 @@ export async function runResearch(
   log: (msg: string) => void,
 ): Promise<ResearchResult> {
   // env flags consumed by pi-research
+  process.env['PI_RESEARCH_HOME'] = PI_RESEARCH_HOME;
   process.env['PI_RESEARCH_SKIP_HEALTHCHECK'] = '1';
   process.env['PI_RESEARCH_BROWSER_HEADLESS'] = 'true';
   process.env['PI_RESEARCH_VERBOSE'] = '0';
@@ -103,6 +106,13 @@ export async function runResearch(
   const model = modelRegistry.find(OPENROUTER_PROVIDER, MODEL_ID);
   if (!model) {
     throw new Error(`Model ${OPENROUTER_PROVIDER}/${MODEL_ID} not found in registry.`);
+  }
+
+  // Explicitly disable reasoning at the model level to prevent thinking
+  model.reasoning = false;
+  if ((model as any).thinkingLevelMap) {
+    // Wipe thinking level map to avoid library-level defaults
+    (model as any).thinkingLevelMap = { off: 'off' };
   }
 
   log(`  [pi] using model: ${model.provider}/${model.id}`);

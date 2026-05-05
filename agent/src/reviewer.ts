@@ -111,6 +111,8 @@ export async function runReview(
     model,
     // Use medium reasoning for complex adversarial review
     thinkingLevel: 'medium',
+    // Allow ONLY the research tool (from pi-research extension)
+    tools: ['research'],
   });
 
   session.extensionRunner.setUIContext({

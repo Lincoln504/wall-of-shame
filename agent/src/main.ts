@@ -99,28 +99,11 @@ async function main() {
 
             saveFindings(store);
             saveState(state);
-
-            if (added.length > 0) {
-              log(`  [git] added ${added.length} findings, pushing results...`);
-              if (isGitRepo() && remoteExists() && hasDataChanges()) {
-                commitAndPush(added.length, cat.name);
-              }
-            } else {
-              log(`  [info] no new/valid findings after review for ${cat.name}`);
-              if (isGitRepo() && remoteExists() && hasDataChanges()) {
-                git('add agent/data/run-state.json');
-                git('commit -m "chore: update run-state for ' + cat.key + ' (no findings)"');
-                git('push');
-              }
-            }
+            commitAndPush(added.length, cat.name, log);
           } else {
             log(`  [info] no findings discovered for ${cat.name}`);
             saveState(state);
-            if (isGitRepo() && remoteExists() && hasDataChanges()) {
-              git('add agent/data/run-state.json');
-              git('commit -m "chore: update run-state for ' + cat.key + ' (no discoveries)"');
-              git('push');
-            }
+            commitAndPush(0, cat.name, log);
           }
         } catch (err) {
           log(`ERROR during processing for ${cat.key}: ${String(err)}`);
