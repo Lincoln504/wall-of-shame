@@ -3,13 +3,28 @@ dist/
 *.log
 *.bak
 .DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime generated — knowledge store (LanceDB, written to agent/knowledge_db/ at runtime)
+agent/knowledge_db/
+site/knowledge_db/
+
+# Research runtime artifacts
 agent/data/cron.log
+agent/data/reports/
+agent/data/failures/
+
+# Agent root debug artifacts (leftover from research sessions)
 agent/pi-research-*.md
 agent/specialized-researcher-*.md
 agent/findings-*.md
 agent/supply_side_findings.json
 agent/audit_result.json
 agent/findings-output.json
-agent/data/reports/
-agent/data/failures/
-.env
+
+# TypeScript build cache
+*.tsbuildinfo
