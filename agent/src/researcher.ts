@@ -14,7 +14,7 @@ import type { FindingsStore, RunState } from './types.js';
 // ── Model config ──────────────────────────────────────────────────────────────
 
 const OPENROUTER_PROVIDER = 'openrouter';
-const MODEL_ID = 'deepseek/deepseek-v4-flash';
+const MODEL_ID = 'deepseek/deepseek-v3';
 
 
 export interface ResearchResult {
