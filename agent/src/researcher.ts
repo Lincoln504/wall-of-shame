@@ -116,6 +116,7 @@ PERSPECTIVE TEST — Look for content where the piece's net effect is to make ha
   let researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
 
   let researchReport = '';
+  const capturedQueries: string[] = [];
   try {
     log(`  [pi] starting research for: ${label}`);
 
@@ -123,7 +124,10 @@ PERSPECTIVE TEST — Look for content where the piece's net effect is to make ha
       onProgress: (event, data) => {
         if (event === 'researcher_start') log(`  [pi] researcher ${data?.id} started: ${data?.name}`);
         else if (event === 'researcher_progress' && data?.status) log(`  [pi] researcher ${data.id}: ${data.status}`);
-        else if (event === 'search_start') log(`  [pi] search burst: ${data?.queries?.length ?? 0} queries`);
+        else if (event === 'search_start') {
+          log(`  [pi] search burst: ${data?.queries?.length ?? 0} queries`);
+          if (data?.queries) capturedQueries.push(...data.queries);
+        }
         else if (event === 'search_progress') log(`  [pi] search: ${data?.resultsCount ?? 0} links found so far`);
         else if (event === 'complete') log(`  [pi] research complete (${(data?.result ?? '').length} chars)`);
         else if (event === 'error') log(`  [pi] research error: ${data?.message}`);
@@ -155,5 +159,5 @@ PERSPECTIVE TEST — Look for content where the piece's net effect is to make ha
   // Extraction and verification is handled entirely by runReview (reviewer.ts).
   // The reviewer accepts either pre-extracted findings OR a raw report string,
   // so we always pass the raw report and let it do everything in one step.
-  return { findings: [], queries: [], rawReport: researchReport };
+  return { findings: [], queries: capturedQueries, rawReport: researchReport };
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -71,13 +72,26 @@ export function loadState(): RunState {
       queryHistory = { migrated_legacy: queryHistory };
       loaded.queryHistory = queryHistory;
     }
-
     // Migration: if loaded.seenUrls is an array, move it to a 'global_legacy' key
     let seenUrls = loaded.seenUrls || {};
     if (Array.isArray(seenUrls)) {
       seenUrls = { global_legacy: seenUrls };
-      loaded.seenUrls = seenUrls;
     }
+    
+    // Canonicalize all loaded URLs
+    for (const key of Object.keys(seenUrls)) {
+      if (Array.isArray(seenUrls[key])) {
+        seenUrls[key] = seenUrls[key].map(url => {
+          try {
+            return new URL(url).href;
+          } catch {
+            return url.toLowerCase().trim(); // Fallback if canonicalizeUrl isn't directly available here
+          }
+        });
+      }
+    }
+    loaded.seenUrls = seenUrls;
+
 
     return {
       lastRun: loaded.lastRun || state.lastRun,
@@ -86,7 +100,7 @@ export function loadState(): RunState {
       queryHistory: queryHistory
     };
   } catch {
-    return state;
+    throw new Error("CRITICAL: State file exists but is corrupted");
   }
 }
 
@@ -124,38 +138,69 @@ export async function addFindings(
   }
 
   for (const f of newFindings) {
-    const url = canonicalizeUrl(f.url);
+    let url = f.url;
+    let canonUrl = '';
+    let domain = f.domain;
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        log(`    [skipped] non-http URL: ${url}`);
+        continue;
+      }
+      canonUrl = canonicalizeUrl(url);
+      if (!domain) domain = parsed.hostname;
+    } catch {
+      log(`    [skipped] invalid URL format: ${url}`);
+      continue;
+    }
+
     const title = normalizeTitle(f.title);
 
-    // Deep deduplication
-    const isDuplicate = state.seenUrls[categoryKey]!.includes(url) ||
-                       store.findings.some(existing => canonicalizeUrl(existing.url) === url) ||
-                       store.findings.some(existing => normalizeTitle(existing.title) === title);
+    // Deep deduplication (scoped to category)
+    const isDuplicate = state.seenUrls[categoryKey]!.some(seen => canonicalizeUrl(seen) === canonUrl) ||
+                       store.findings.some(existing => existing.category === categoryKey && canonicalizeUrl(existing.url) === canonUrl) ||
+                       store.findings.some(existing => existing.category === categoryKey && normalizeTitle(existing.title) === title);
 
     if (isDuplicate) {
       log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
       continue;
     }
 
-    // Verification check
-    log(`    [verify] checking ${f.domain}...`);
-    const exists = await verifyUrl(f.url);
-    if (!exists) {
-      log(`    [skipped] URL unreachable or blocked: ${url}`);
+    // Verify stealth existence if valid URL (but await it)
+    try {
+      const isValid = await verifyUrl(url);
+      if (!isValid) {
+        log(`    [skipped] URL failed verification: ${url}`);
+        continue;
+      }
+    } catch {
+      log(`    [skipped] URL verification error: ${url}`);
       continue;
     }
 
+    let severity = f.severity;
+    if (!severity || !['critical', 'high', 'medium', 'low'].includes(severity)) {
+      severity = 'medium';
+    }
+
     const finding: Finding = {
-      id: Math.random().toString(36).slice(2, 11),
       ...f,
+      id: f.id || randomUUID(),
+      url,
+      domain: domain!,
+      severity: severity as Finding['severity'],
+      category: categoryKey,
       foundAt: new Date().toISOString(),
       researchQuery,
     };
 
     store.findings.push(finding);
-    state.seenUrls[categoryKey]!.push(url);
+    state.seenUrls[categoryKey]!.push(canonUrl);
     added.push(finding);
   }
 
+  // Sort store findings newest first
+  store.findings.sort((a, b) => new Date(b.foundAt).getTime() - new Date(a.foundAt).getTime());
+  
   return added;
 }

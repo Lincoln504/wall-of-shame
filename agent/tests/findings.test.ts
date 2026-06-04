@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+vi.mock('@lincoln504/pi-research', () => ({ verifyUrl: vi.fn().mockResolvedValue(true), initResearchSDK: vi.fn(), disposeResearchSDK: vi.fn() }));
 /**
  * findings.test.ts — Unit tests for findings.ts
  *
@@ -376,7 +378,7 @@ describe('findings file I/O (integration)', () => {
     mod.saveState(state);
     const loaded = mod.loadState();
     expect(loaded.categoryIndex).toBe(3);
-    expect(loaded.seenUrls['global']).toEqual(['ex.com/a', 'ex.com/b']);
+    expect(loaded.seenUrls['global']).toEqual([ 'https://ex.com/a', 'https://ex.com/b' ]);
     expect(loaded.queryHistory).toEqual({ cat1: { 'test query': nowISO } });
     // lastRun should be updated
     expect(loaded.lastRun).not.toBe('2025-06-01T00:00:00.000Z');
