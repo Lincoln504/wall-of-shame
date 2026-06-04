@@ -182,8 +182,8 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
             const reviewed = await runReview(cachedReviewInput, logFn);
 
             // 3. Save
-            const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
-            catAdded = added.length;
+            const addedFindings = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
+            catAdded = addedFindings.length;
             totalAdded += catAdded;
 
             // Mark as seen
@@ -198,8 +198,8 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
             saveFindings(store);
 
-            if (added.length > 0) {
-              console.log(`  ${GREEN}Added ${added.length} findings, pushing...${RESET}`);
+            if (addedFindings.length > 0) {
+              console.log(`  ${GREEN}Added ${addedFindings.length} findings, pushing...${RESET}`);
             } else {
               console.log(`  ${DIM}No new findings after review.${RESET}`);
             }

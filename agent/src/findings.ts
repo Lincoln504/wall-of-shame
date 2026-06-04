@@ -1,51 +1,20 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import { verifyUrl as sdkVerifyUrl } from '@lincoln504/pi-research';
 import type { Finding, FindingsStore, RunState } from './types.js';
 import { FindingsStoreSchema, RunStateSchema } from './types.js';
 import { safeParseValidatedJson, canonicalizeUrl, normalizeTitle } from './utils.js';
 
-// Status codes that mean the URL exists even if we can't read the body.
-// 401 excluded: sites like WSJ return 401 for ALL bot requests (real or fake)
-// so it cannot signal existence.
-const REACHABLE_CODES = new Set([200, 301, 302, 303, 307, 308, 403, 406, 429]);
+// Export types for consumer use
+export type { Finding, FindingsStore, RunState };
 
-// Strings present in bot-challenge bodies (Imperva/Incapsula, Cloudflare, DataDome).
-// These sites return HTTP 200 but serve a JS challenge instead of real content,
-// making 200 meaningless for existence detection.
-const BOT_CHALLENGE_MARKERS = [
-  '_Incapsula_Resource',   // Imperva
-  'captcha-delivery.com',  // DataDome
-  'cf-chl-bypass',         // Cloudflare
-  '__cf_chl_',             // Cloudflare
-];
-
-export async function verifyUrl(url: string, timeoutMs = 8000): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(url, {
-      // GET (not HEAD) so we can inspect the body for bot-challenge markers
-      method: 'GET',
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; wall-of-shame-bot/1.0)' },
-      redirect: 'follow',
-    });
-    clearTimeout(timer);
-
-    if (!REACHABLE_CODES.has(res.status)) return false;
-
-    // For 200 responses, read a small chunk to detect bot challenge pages
-    if (res.status === 200) {
-      const chunk = await res.text().then(t => t.slice(0, 4096));
-      if (BOT_CHALLENGE_MARKERS.some(m => chunk.includes(m))) return false;
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
+/**
+ * Verify if a URL exists using the Pi Research SDK (stealth browser).
+ * High fidelity existence detection.
+ */
+export async function verifyUrl(url: string): Promise<boolean> {
+  return await sdkVerifyUrl(url);
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -53,6 +22,16 @@ const DEFAULT_DATA_DIR = join(__dirname, '..', 'data');
 export const DATA_DIR = process.env['PI_AGENT_DATA_DIR'] || DEFAULT_DATA_DIR;
 const FINDINGS_PATH = join(DATA_DIR, 'findings.json');
 const STATE_PATH = join(DATA_DIR, 'run-state.json');
+
+/**
+ * Atomically write a JSON file by writing to a temporary file and renaming it.
+ */
+function writeAtomic(path: string, data: any): void {
+  const tmpPath = `${path}.${Math.random().toString(36).slice(2)}.tmp`;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  renameSync(tmpPath, path);
+}
 
 function emptyStore(): FindingsStore {
   return { lastUpdated: new Date().toISOString(), totalFindings: 0, findings: [] };
@@ -75,8 +54,7 @@ export function loadFindings(): FindingsStore {
 export function saveFindings(store: FindingsStore): void {
   store.lastUpdated = new Date().toISOString();
   store.totalFindings = store.findings.length;
-  mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(FINDINGS_PATH, JSON.stringify(store, null, 2), 'utf-8');
+  writeAtomic(FINDINGS_PATH, store);
 }
 
 export function loadState(): RunState {
@@ -101,133 +79,83 @@ export function loadState(): RunState {
       loaded.seenUrls = seenUrls;
     }
 
-    return safeParseValidatedJson(RunStateSchema, JSON.stringify(loaded));
-  } catch (err) {
-    throw new Error(`CRITICAL: State file exists but is corrupted or invalid: ${String(err)}`);
+    return {
+      lastRun: loaded.lastRun || state.lastRun,
+      categoryIndex: typeof loaded.categoryIndex === 'number' ? loaded.categoryIndex : state.categoryIndex,
+      seenUrls: seenUrls,
+      queryHistory: queryHistory
+    };
+  } catch {
+    return state;
   }
 }
 
 export function saveState(state: RunState): void {
   state.lastRun = new Date().toISOString();
-
-  // Normalize and deduplicate seenUrls per category
-  const cleanedSeen: Record<string, string[]> = {};
-  for (const [cat, urls] of Object.entries(state.seenUrls)) {
-    cleanedSeen[cat] = Array.from(new Set(urls.map(u => canonicalizeUrl(u))));
-  }
-  state.seenUrls = cleanedSeen;
-
-  // Prune query history: remove items older than 30 days
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  const prunedHistory: Record<string, Record<string, string>> = {};
-  
-  for (const [catKey, history] of Object.entries(state.queryHistory || {})) {
-    const catPruned: Record<string, string> = {};
-    let hasEntries = false;
-    for (const [query, lastAt] of Object.entries(history)) {
-      if (now - new Date(lastAt).getTime() < THIRTY_DAYS_MS) {
-        catPruned[query] = lastAt;
-        hasEntries = true;
-      }
-    }
-    if (hasEntries) {
-      prunedHistory[catKey] = catPruned;
-    }
-  }
-  state.queryHistory = prunedHistory;
-
-  mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(STATE_PATH, JSON.stringify(state, null, 2), 'utf-8');
+  writeAtomic(STATE_PATH, state);
 }
 
 export interface RawFinding {
   url: string;
   title: string;
-  domain?: string;
+  domain: string;
   summary: string;
   category: string;
-  subcategory?: string;
   whyBad: string;
-  severity?: string;
+  severity: 'low' | 'medium' | 'high';
+  verificationLog?: string;
 }
 
 /**
- * Add raw findings to the store and state, applying deduplication and verification.
+ * Append new findings to the store, performing deduplication and URL canonicalization.
  */
 export async function addFindings(
   store: FindingsStore,
   state: RunState,
   categoryKey: string,
-  raws: RawFinding[],
+  newFindings: RawFinding[],
   researchQuery: string,
-  log?: (msg: string) => void,
-  verify: (url: string) => Promise<boolean> = verifyUrl,
+  log: (msg: string) => void
 ): Promise<Finding[]> {
-  // Deduplicate against findings IN THIS CATEGORY
-  const existingUrls = new Set(store.findings.filter(f => f.category === categoryKey).map(f => canonicalizeUrl(f.url)));
-  const existingTitles = new Set(store.findings.filter(f => f.category === categoryKey).map(f => normalizeTitle(f.title)));
-  
-  // Also check the per-category seen pool
-  const catSeen = state.seenUrls[categoryKey] || [];
-  const seenSet = new Set(catSeen.map(u => canonicalizeUrl(u)));
-  
+  const added: Finding[] = [];
+
   if (!state.seenUrls[categoryKey]) {
     state.seenUrls[categoryKey] = [];
   }
 
-  const added: Finding[] = [];
+  for (const f of newFindings) {
+    const url = canonicalizeUrl(f.url);
+    const title = normalizeTitle(f.title);
 
-  for (const raw of raws) {
-    if (!raw.url || !raw.url.startsWith('http')) continue;
-    
-    const canonical = canonicalizeUrl(raw.url);
-    const normalizedTitle = normalizeTitle(raw.title || '');
+    // Deep deduplication
+    const isDuplicate = state.seenUrls[categoryKey]!.includes(url) ||
+                       store.findings.some(existing => canonicalizeUrl(existing.url) === url) ||
+                       store.findings.some(existing => normalizeTitle(existing.title) === title);
 
-    if (seenSet.has(canonical) || existingUrls.has(canonical)) {
-      log?.(`  [skip] URL already processed for this category: ${raw.url}`);
+    if (isDuplicate) {
+      log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
       continue;
     }
 
-    if (normalizedTitle && existingTitles.has(normalizedTitle)) {
-      log?.(`  [skip] Title already exists in this category: ${raw.title}`);
-      // Still mark URL as seen to avoid re-verifying this specific URL for this category
-      state.seenUrls[categoryKey].push(canonical);
-      seenSet.add(canonical);
-      continue;
-    }
-
-    const reachable = await verify(raw.url);
-    if (!reachable) {
-      log?.(`  [skip] URL unreachable (404/timeout): ${raw.url}`);
-      // Still mark as seen so we don't retry it next run for this category
-      state.seenUrls[categoryKey].push(canonical);
-      seenSet.add(canonical);
+    // Verification check
+    log(`    [verify] checking ${f.domain}...`);
+    const exists = await verifyUrl(f.url);
+    if (!exists) {
+      log(`    [skipped] URL unreachable or blocked: ${url}`);
       continue;
     }
 
     const finding: Finding = {
-      id: randomUUID(),
-      url: raw.url,
-      title: raw.title || 'Untitled',
-      domain: raw.domain || new URL(raw.url).hostname,
-      summary: raw.summary || '',
-      category: raw.category || 'uncategorized',
-      subcategory: raw.subcategory,
-      whyBad: raw.whyBad || '',
-      severity: (['low', 'medium', 'high'].includes(raw.severity ?? '') ? raw.severity : 'medium') as Finding['severity'],
+      id: Math.random().toString(36).slice(2, 11),
+      ...f,
       foundAt: new Date().toISOString(),
       researchQuery,
     };
 
     store.findings.push(finding);
-    state.seenUrls[categoryKey].push(canonical);
-    existingUrls.add(canonical);
-    existingTitles.add(normalizedTitle);
+    state.seenUrls[categoryKey]!.push(url);
     added.push(finding);
   }
 
-  // sort newest first
-  store.findings.sort((a, b) => b.foundAt.localeCompare(a.foundAt));
   return added;
 }

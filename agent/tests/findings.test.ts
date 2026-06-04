@@ -81,7 +81,7 @@ describe('addFindings', () => {
       },
     ];
 
-    const added = await mod.addFindings(store, state, 'test_category', raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test_category', raws, 'test_query', alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0]).toMatchObject({
@@ -126,7 +126,7 @@ describe('addFindings', () => {
       { url: 'https://example.com/new', title: 'New', summary: 'Fresh', category: 'test', whyBad: 'new harmful content' }, // new
     ];
 
-    const added = await mod.addFindings(store, state, 'test', raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test', raws, 'test_query', alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://example.com/new');
@@ -158,7 +158,7 @@ describe('addFindings', () => {
       { url: 'https://example.com/shared', title: 'Shared', summary: 'y', category: 'cat2', whyBad: 'y' },
     ];
 
-    const added = await mod.addFindings(store, state, 'cat2', raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'cat2', raws, 'test_query', alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].category).toBe('cat2');
@@ -192,7 +192,7 @@ describe('addFindings', () => {
       { url: 'http://example.com/page?ref=social', title: 'Duplicate URL', summary: 'y', category: 'cat1', whyBad: 'y' },
     ];
 
-    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', alwaysReachable);
     expect(added).toHaveLength(0);
   });
 
@@ -206,7 +206,7 @@ describe('addFindings', () => {
       { url: 'https://valid.com/good', title: 'Valid', summary: 'yes', category: 'test', whyBad: 'reason' },
     ];
 
-    const added = await mod.addFindings(store, state, 'test', raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'test', raws, 'q', alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://valid.com/good');
@@ -221,7 +221,7 @@ describe('addFindings', () => {
       { url: 'https://ex.com/c', title: 'Valid severity', summary: '', category: 't', whyBad: 'x', severity: 'low' },
     ];
 
-    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', alwaysReachable);
 
     expect(added[0].severity).toBe('medium');
     expect(added[1].severity).toBe('medium');
@@ -236,7 +236,7 @@ describe('addFindings', () => {
     const raws1 = [
       { url: 'https://ex.com/oldest', title: 'Oldest', summary: '', category: 't', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, 't', raws1, 'q1', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 't', raws1, 'q1', alwaysReachable);
 
     // Simulate time passing by using Date.now() — addFindings uses new Date().toISOString()
     // To guarantee different timestamps, we wait 10ms
@@ -245,7 +245,7 @@ describe('addFindings', () => {
     const raws2 = [
       { url: 'https://ex.com/newest', title: 'Newest', summary: '', category: 't', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, 't', raws2, 'q2', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 't', raws2, 'q2', alwaysReachable);
 
     expect(store.findings).toHaveLength(2);
     expect(store.findings[0].url).toBe('https://ex.com/newest');
@@ -259,7 +259,7 @@ describe('addFindings', () => {
       { url: 'https://www.somesite.com/article', title: 'No domain', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', alwaysReachable);
 
     expect(added[0].domain).toBe('www.somesite.com');
   });
@@ -268,7 +268,7 @@ describe('addFindings', () => {
     const store: FindingsStore = { lastUpdated: '', totalFindings: 0, findings: [] };
     const state: RunState = { lastRun: '', categoryIndex: 0, seenUrls: {}, queryHistory: {} };
 
-    const added = await mod.addFindings(store, state, 't', [], 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', [], 'q', alwaysReachable);
     expect(added).toHaveLength(0);
     expect(store.findings).toHaveLength(0);
   });
@@ -281,7 +281,7 @@ describe('addFindings', () => {
       { url: 'https://ex.com/dup-in-batch', title: 'Second (same URL)', summary: '', category: 't', whyBad: 'x' },
     ];
 
-    const added = await mod.addFindings(store, state, 't', raws, 'q', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 't', raws, 'q', alwaysReachable);
     expect(added).toHaveLength(1);
     expect(store.findings).toHaveLength(1);
   });
@@ -434,7 +434,7 @@ describe('findings full lifecycle (integration)', () => {
     const raws = [
       { url: 'https://ex.com/harmful', title: 'Harmful', summary: 'Bad stuff', category: 'cat1', whyBad: 'reason', severity: 'high' },
     ];
-    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', undefined, alwaysReachable);
+    const added = await mod.addFindings(store, state, 'cat1', raws, 'test_query', alwaysReachable);
     expect(added).toHaveLength(1);
 
     mod.saveFindings(store);
@@ -455,7 +455,7 @@ describe('findings full lifecycle (integration)', () => {
     const raws1 = [
       { url: 'https://ex.com/dup-test', title: 'First run', summary: 'x', category: 'c', whyBad: 'x' },
     ];
-    await mod.addFindings(store, state, 'c', raws1, 'q1', undefined, alwaysReachable);
+    await mod.addFindings(store, state, 'c', raws1, 'q1', alwaysReachable);
     mod.saveFindings(store);
     mod.saveState(state);
 
@@ -466,7 +466,7 @@ describe('findings full lifecycle (integration)', () => {
       { url: 'https://ex.com/dup-test', title: 'Second run (duplicate)', summary: 'x', category: 'c', whyBad: 'x' },
       { url: 'https://ex.com/new-item', title: 'New item', summary: 'y', category: 'c', whyBad: 'y' },
     ];
-    const added = await mod.addFindings(store2, state2, 'c', raws2, 'q2', undefined, alwaysReachable);
+    const added = await mod.addFindings(store2, state2, 'c', raws2, 'q2', alwaysReachable);
 
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://ex.com/new-item');

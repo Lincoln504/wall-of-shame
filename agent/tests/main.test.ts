@@ -269,7 +269,7 @@ describe('full main.ts lifecycle integration', () => {
         },
       ];
 
-      const added = await addFindings(store, state, cat.key, mockRaws, cat.researchQuery, undefined, async () => true);
+      const added = await addFindings(store, state, cat.key, mockRaws, cat.researchQuery, async () => true);
       totalAdded += added.length;
     }
 
