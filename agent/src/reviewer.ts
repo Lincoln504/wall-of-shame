@@ -9,12 +9,12 @@ import {
   ModelRegistry,
 } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
+import { repairJson } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
-import { safeParseJson, safeParseValidatedJson } from './utils.js';
+import { safeParseValidatedJson } from './utils.js';
 
 const OPENROUTER_PROVIDER = 'openrouter';
 const MODEL_ID = 'google/gemma-4-26b-a4b-it';
-const PI_RESEARCH_HOME = process.env['PI_RESEARCH_HOME'] ?? join(homedir(), 'Documents', 'pi-research');
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
@@ -89,12 +89,10 @@ export async function runReview(
   const cwd = process.cwd();
   const agentDir = join(homedir(), '.pi', 'agent');
   
-  // Use a more surgical resource loader that doesn't bloat the context
   const resourceLoader = new DefaultResourceLoader({
     cwd,
     agentDir,
-    additionalExtensionPaths: [PI_RESEARCH_HOME],
-    noExtensions: true,
+    noExtensions: false,
     noSkills: true,
     noPromptTemplates: true,
     noThemes: true,
@@ -118,9 +116,7 @@ export async function runReview(
     settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
-    // No thinking: reviewer must emit clean JSON only; chain-of-thought text breaks the parser
     thinkingLevel: 'off',
-    // Allow ONLY the research tool (from pi-research extension)
     tools: ['research'],
   });
 
@@ -150,13 +146,27 @@ export async function runReview(
     log(`  [reviewer] analyzing and verifying sources...`);
     await session.prompt(prompt);
     
-    const text = fullOutput;
-    const reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
+    let text = fullOutput;
+    let reviewed: RawFinding[];
+    
+    try {
+      reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
+    } catch (parseErr) {
+      log(`  [reviewer] parse failed, attempting agentic repair...`);
+      const repaired = await repairJson(text, ReviewerOutputSchema);
+      if (repaired) {
+        reviewed = repaired;
+        log(`  [reviewer] successfully repaired JSON findings.`);
+      } else {
+        throw parseErr;
+      }
+    }
+
     const originalCount = isRawReport ? '(from report)' : String(input.length);
     log(`  [reviewer] audit complete. ${reviewed.length}/${originalCount} findings approved.`);
     return reviewed;
   } catch (err) {
     log(`  [reviewer] AUDIT FAILED: ${String(err)}`);
-    throw err; // Do NOT fallback to unverified findings
+    throw err;
   }
 }
