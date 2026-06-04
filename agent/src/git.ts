@@ -20,12 +20,12 @@ export function git(cmd: string, log?: (msg: string) => void): string {
 }
 
 /**
- * Check if there are any uncommitted changes in the data directory
+ * Check if there are any uncommitted changes in the data or public directory
  */
 export function hasDataChanges(): boolean {
   try {
-    // Check both staged and unstaged changes in agent/data
-    const status = git('status --porcelain agent/data/');
+    // Check both staged and unstaged changes in agent/data and site/public
+    const status = git('status --porcelain agent/data/ site/public/knowledge.json');
     return status.length > 0;
   } catch {
     return false;
@@ -33,7 +33,7 @@ export function hasDataChanges(): boolean {
 }
 
 /**
- * Stage, commit, and push findings and state
+ * Stage, commit, and push findings, state, and knowledge export
  */
 export function commitAndPush(addedCount: number, categoryLabel?: string, log?: (msg: string) => void): void {
   if (!isGitRepo() || !remoteExists()) {
@@ -51,7 +51,7 @@ export function commitAndPush(addedCount: number, categoryLabel?: string, log?: 
 
   try {
     log?.(`  [git] staging data changes...`);
-    git('add agent/data/', log);
+    git('add agent/data/ site/public/knowledge.json', log);
 
     log?.(`  [git] committing results...`);
     const message = addedCount > 0 
@@ -59,7 +59,7 @@ export function commitAndPush(addedCount: number, categoryLabel?: string, log?: 
       : `chore: update run-state for ${categoryLabel || 'category'} (no findings)`;
 
     // We check again just in case 'add' didn't actually stage anything new
-    const staged = git('diff --cached --name-only agent/data/');
+    const staged = git('diff --cached --name-only agent/data/ site/public/knowledge.json');
     if (staged.length > 0) {
       git(`commit -m "${message}"`, log);
     } else {

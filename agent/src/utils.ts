@@ -1,6 +1,22 @@
 import { Value } from 'typebox/value';
 import type { TSchema, Static } from 'typebox';
 
+function findMatchingClose(text: string, openPos: number, openChar: string, closeChar: string): number {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = openPos; i < text.length; i++) {
+    const ch = text[i]!;
+    if (escaped) { escaped = false; continue; }
+    if (ch === '\\' && inString) { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === openChar) depth++;
+    else if (ch === closeChar) { depth--; if (depth === 0) return i; }
+  }
+  return -1;
+}
+
 /**
  * Robustly extract and parse a JSON object or array from a potentially noisy LLM response.
  * Handles markdown code fences, trailing commas, and conversational preamble/postamble.
@@ -13,16 +29,16 @@ export function safeParseJson<T>(text: string): T {
   // 2. Locate the outermost structure ([...] or {...})
   const startObj = target.indexOf('{');
   const startArr = target.indexOf('[');
-  
+
   let start = -1;
   let end = -1;
 
   if (startObj !== -1 && (startArr === -1 || startObj < startArr)) {
     start = startObj;
-    end = target.lastIndexOf('}');
+    end = findMatchingClose(target, startObj, '{', '}');
   } else if (startArr !== -1) {
     start = startArr;
-    end = target.lastIndexOf(']');
+    end = findMatchingClose(target, startArr, '[', ']');
   }
 
   if (start === -1 || end === -1 || end <= start) {

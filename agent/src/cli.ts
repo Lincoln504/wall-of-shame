@@ -19,6 +19,7 @@ import { createInterface } from 'readline';
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
 import { loadFindings, loadState, saveState, saveFindings, addFindings } from './findings.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
+import type { RawFinding } from './findings.js';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -128,89 +129,107 @@ async function runResearchBatch(dryRun: boolean): Promise<void> {
 
     const { runResearch } = await import('./researcher.js');
     const { runReview } = await import('./reviewer.js');
-    const { addFindings } = await import('./findings.js');
-    const { git } = await import('./git.js');
     const { canonicalizeUrl } = await import('./utils.js');
 
     // Sequential Processing
+    const MAX_ATTEMPTS = 3;
+    let cursorIndex = state.categoryIndex;
+
     for (let i = 0; i < batchSize; i++) {
-      const cat = CATEGORIES[state.categoryIndex];
-      if (!cat) break;
+      const cat = CATEGORIES[cursorIndex % CATEGORY_COUNT]!;
 
       process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} ... `);
 
-      // Advance index before any async work so a failure doesn't re-run this category
-      state.categoryIndex = (state.categoryIndex + 1) % CATEGORY_COUNT;
+      const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
+      let succeeded = false;
+      let catAdded = 0;
+      // Cache research result so review retries skip the expensive research phase
+      let researchDone = false;
+      let cachedReviewInput: RawFinding[] | string | null = null;
+      let cachedIsRaw = false;
 
-      try {
-        // 1. Research
-        const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
-        const catHistory = state.queryHistory[cat.key] || {};
-        const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, logFn);
-
-        // Update query history
-        const now = new Date().toISOString();
-        if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
-        for (const q of result.queries) {
-          state.queryHistory[cat.key]![q] = now;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        if (attempt > 1) {
+          const phase = researchDone ? 'review' : 'full';
+          console.log(`\n${YELLOW}  [retry] ${phase} attempt ${attempt}/${MAX_ATTEMPTS} for ${cat.key}${RESET}`);
+          process.stdout.write(`${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} (attempt ${attempt}) ... `);
         }
+        try {
+          if (!researchDone) {
+            // 1. Research (skipped on review-only retries)
+            const catHistory = state.queryHistory[cat.key] || {};
+            const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, logFn);
 
-        const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
-
-        if (reviewInput) {
-          const isRaw = typeof reviewInput === 'string';
-          const logMsg = isRaw ? 'raw report found' : `${result.findings.length} findings found`;
-          process.stdout.write(`${GREEN}${logMsg}${RESET}\n`);
-          console.log(`  ${BOLD}Starting review...${RESET}`);
-
-          // 2. Review
-          const reviewed = await runReview(reviewInput, logFn);
-
-          // 3. Save
-          const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
-          totalAdded += added.length;
-
-          // Mark as seen
-          if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
-          const sourceArray = isRaw ? reviewed : result.findings;
-          for (const raw of sourceArray) {
-            const canonical = canonicalizeUrl(raw.url);
-            if (!state.seenUrls[cat.key].includes(canonical)) {
-              state.seenUrls[cat.key].push(canonical);
+            // Update query history
+            const now = new Date().toISOString();
+            if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
+            for (const q of result.queries) {
+              state.queryHistory[cat.key]![q] = now;
             }
+
+            const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
+            cachedReviewInput = reviewInput ?? null;
+            cachedIsRaw = typeof reviewInput === 'string';
+            researchDone = true;
           }
 
-          saveFindings(store);
-          saveState(state);
+          if (cachedReviewInput !== null) {
+            const logMsg = cachedIsRaw ? 'raw report found' : `${(cachedReviewInput as RawFinding[]).length} findings found`;
+            process.stdout.write(`${GREEN}${logMsg}${RESET}\n`);
+            console.log(`  ${BOLD}Starting review...${RESET}`);
 
-          if (added.length > 0) {
-            console.log(`  ${GREEN}Added ${added.length} findings, pushing...${RESET}`);
-            if (isGitRepo() && remoteExists() && hasDataChanges()) {
-              commitAndPush(added.length, cat.name, logFn);
+            // 2. Review
+            const reviewed = await runReview(cachedReviewInput, logFn);
+
+            // 3. Save
+            const added = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
+            catAdded = added.length;
+            totalAdded += catAdded;
+
+            // Mark as seen
+            if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
+            const sourceArray = cachedIsRaw ? reviewed : (cachedReviewInput as RawFinding[]);
+            for (const raw of sourceArray) {
+              const canonical = canonicalizeUrl(raw.url);
+              if (!state.seenUrls[cat.key].includes(canonical)) {
+                state.seenUrls[cat.key].push(canonical);
+              }
+            }
+
+            saveFindings(store);
+
+            if (added.length > 0) {
+              console.log(`  ${GREEN}Added ${added.length} findings, pushing...${RESET}`);
+            } else {
+              console.log(`  ${DIM}No new findings after review.${RESET}`);
             }
           } else {
-            console.log(`  ${DIM}No new findings after review.${RESET}`);
-            if (isGitRepo() && remoteExists() && hasDataChanges()) {
-              commitAndPush(0, cat.name, logFn);
-            }
+            process.stdout.write(`${DIM}no discoveries${RESET}\n`);
           }
-        } else {
-          process.stdout.write(`${DIM}no discoveries${RESET}\n`);
-          saveState(state);
-          if (isGitRepo() && remoteExists() && hasDataChanges()) {
-            commitAndPush(0, cat.name, logFn);
+
+          succeeded = true;
+          break;
+        } catch (err) {
+          process.stdout.write(`${RED}ERROR${RESET}\n`);
+          console.error(`\n${RED}  [attempt ${attempt}/${MAX_ATTEMPTS}] ${String(err)}${RESET}`);
+          if (err instanceof Error && err.stack) {
+            console.error(`${DIM}${err.stack}${RESET}`);
+          }
+          if (attempt === MAX_ATTEMPTS) {
+            console.log(`\n${RED}All ${MAX_ATTEMPTS} attempts failed for ${cat.key}, moving to next category.${RESET}`);
+            totalErrors++;
           }
         }
-      } catch (err) {
-        process.stdout.write(`${RED}ERROR${RESET}\n`);
-        console.error(`\n${RED}  ${String(err)}${RESET}`);
-        if (err instanceof Error && err.stack) {
-          console.error(`${DIM}${err.stack}${RESET}`);
-        }
-        console.log(`\n${YELLOW}Skipping — continuing with next category.${RESET}`);
-        saveState(state);
-        totalErrors++;
       }
+
+      // Advance persistent index regardless of outcome — retries happened inline
+      state.categoryIndex = (cursorIndex + 1) % CATEGORY_COUNT;
+      saveState(state);
+      if (isGitRepo() && remoteExists() && hasDataChanges()) {
+        commitAndPush(succeeded ? catAdded : 0, cat.name, logFn);
+      }
+
+      cursorIndex = (cursorIndex + 1) % CATEGORY_COUNT;
       divider();
     }
   }

@@ -8,7 +8,7 @@ import {
   SettingsManager,
   AuthStorage,
   ModelRegistry,
-} from '@mariozechner/pi-coding-agent';
+} from '@earendil-works/pi-coding-agent';
 import { safeParseJson } from './utils.js';
 
 const OPENROUTER_PROVIDER = 'openrouter';
@@ -135,7 +135,7 @@ async function runAudit(findings: any[]): Promise<{ approved: any[], removed: an
   const prompt = AUDIT_PROMPT.replace('<FINDINGS_JSON>', JSON.stringify(findings, null, 2));
   
   let fullOutput = '';
-  session.subscribe((event) => {
+  session.subscribe((event: any) => {
     if (event.type === 'message_update' && (event as any).assistantMessageEvent?.type === 'text_delta') {
       const delta = (event as any).assistantMessageEvent.delta;
       fullOutput += delta;

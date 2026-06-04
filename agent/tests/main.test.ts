@@ -154,23 +154,38 @@ describe('batch lifecycle (main.ts orchestration logic)', () => {
     expect(raws).toEqual([]);
   });
 
-  it('error in runResearch skips the failed category and continues the batch', () => {
-    // main.ts catches per-category errors and continues — all categories in the batch run
+  it('retries a failing category up to MAX_ATTEMPTS times, then moves on', () => {
+    // Each category gets MAX_ATTEMPTS tries within the same run.
+    // After exhausting retries, the cursor (and persisted index) still advances.
+    const TOTAL = 5;
+    const MAX_ATTEMPTS = 3;
+    let persistedIndex = 0;
     const results: string[] = [];
 
+    let cursor = persistedIndex;
     for (let i = 0; i < 3; i++) {
-      try {
-        if (i === 1) throw new Error('Research failed for cat B');
-        results.push(`Category ${i} succeeded`);
-      } catch {
-        results.push(`Category ${i} failed`);
+      const catIdx = cursor % TOTAL;
+      let succeeded = false;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          if (catIdx === 1) throw new Error('always fails');
+          results.push(`cat${catIdx} ok`);
+          succeeded = true;
+          break;
+        } catch {
+          if (attempt === MAX_ATTEMPTS) {
+            results.push(`cat${catIdx} err`);
+          }
+        }
       }
+      // Always advance after all attempts
+      persistedIndex = (cursor + 1) % TOTAL;
+      cursor = (cursor + 1) % TOTAL;
     }
 
-    expect(results).toHaveLength(3);
-    expect(results[0]).toBe('Category 0 succeeded');
-    expect(results[1]).toBe('Category 1 failed');
-    expect(results[2]).toBe('Category 2 succeeded');
+    expect(results).toEqual(['cat0 ok', 'cat1 err', 'cat2 ok']);
+    // All three categories processed; index advanced past cat2
+    expect(persistedIndex).toBe(3);
   });
 });
 

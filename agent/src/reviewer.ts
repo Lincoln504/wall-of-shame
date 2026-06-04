@@ -7,7 +7,7 @@ import {
   SettingsManager,
   AuthStorage,
   ModelRegistry,
-} from '@mariozechner/pi-coding-agent';
+} from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
 import { safeParseJson, safeParseValidatedJson } from './utils.js';
@@ -118,15 +118,15 @@ export async function runReview(
     settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
-    // Use medium reasoning for complex adversarial review
-    thinkingLevel: 'medium',
+    // No thinking: reviewer must emit clean JSON only; chain-of-thought text breaks the parser
+    thinkingLevel: 'off',
     // Allow ONLY the research tool (from pi-research extension)
     tools: ['research'],
   });
 
   session.extensionRunner.setUIContext({
     notify: (msg: string, type: string) => log(`  [reviewer] notification: [${type}] ${msg}`),
-    setWidget: (id: string) => log(`  [reviewer] extension widget active: ${id}`),
+    setWidget: () => {},
     setStatus: (msg: string) => log(`  [reviewer] status: ${msg}`),
     setWorkingIndicator: (msg: string) => log(`  [reviewer] working: ${msg}`),
     confirm: async () => true,

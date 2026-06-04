@@ -1,5 +1,10 @@
-import { createSignal, createResource, For, Show, createMemo, onCleanup } from 'solid-js';
+import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
+import { pipeline, env } from '@huggingface/transformers';
+
+// Configuration for transformers.js
+env.allowLocalModels = false;
+env.useBrowserCache = true;
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -7,6 +12,23 @@ async function fetchFindings(): Promise<FindingsStore> {
   const res = await fetch(`${BASE}findings.json`);
   if (!res.ok) throw new Error(`Failed to load findings: ${res.status}`);
   return res.json() as Promise<FindingsStore>;
+}
+
+interface KnowledgeItem {
+  url: string;
+  text: string;
+  v: number[];
+  m: { d: string; t: number };
+}
+
+async function fetchKnowledge(): Promise<KnowledgeItem[]> {
+  try {
+    const res = await fetch(`${BASE}knowledge.json`);
+    if (!res.ok) return [];
+    return res.json() as Promise<KnowledgeItem[]>;
+  } catch {
+    return [];
+  }
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -47,7 +69,19 @@ function jsonToCsv(findings: Finding[]) {
   return [headers.join(','), ...rows].join('\n');
 }
 
-function FindingCard(props: { finding: Finding }) {
+function cosineSimilarity(v1: number[], v2: number[]): number {
+  let dotProduct = 0;
+  let norm1 = 0;
+  let norm2 = 0;
+  for (let i = 0; i < v1.length; i++) {
+    dotProduct += v1[i] * v2[i];
+    norm1 += v1[i] * v1[i];
+    norm2 += v2[i] * v2[i];
+  }
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+}
+
+function FindingCard(props: { finding: Finding; score?: number }) {
   const f = props.finding;
   const color = SEVERITY_COLOR[f.severity] ?? '#757575';
   const date = f.foundAt ? new Date(f.foundAt).toLocaleDateString() : '';
@@ -57,6 +91,9 @@ function FindingCard(props: { finding: Finding }) {
       <div style={s.cardHeader}>
         <span style={{ ...s.badge, background: color }}>{f.severity}</span>
         <span style={s.categoryBadge}>{categoryLabel(f.category)}</span>
+        <Show when={props.score !== undefined}>
+          <span style={s.scoreBadge}>Match: {Math.round(props.score! * 100)}%</span>
+        </Show>
         <span style={s.date}>{date}</span>
       </div>
       <h3 style={s.cardTitle}>
@@ -74,18 +111,73 @@ function FindingCard(props: { finding: Finding }) {
   );
 }
 
+let extractor: any = null;
+
 export default function App() {
   const [data] = createResource(fetchFindings);
+  const [knowledge] = createResource(fetchKnowledge);
   const [search, setSearch] = createSignal('');
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
-  const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity'>('newest');
+  const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity' | 'semantic'>('newest');
   const [showDownload, setShowDownload] = createSignal(false);
+  const [isSemanticLoading, setIsSemanticLoading] = createSignal(false);
+  const [queryVector, setQueryVector] = createSignal<number[] | null>(null);
+
+  // Initialize extractor
+  createEffect(async () => {
+    if (sortOrder() === 'semantic' && !extractor) {
+      setIsSemanticLoading(true);
+      try {
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+          device: 'webgpu' as any,
+        });
+      } catch (err) {
+        console.warn('WebGPU failed, falling back to CPU:', err);
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      } finally {
+        setIsSemanticLoading(false);
+      }
+    }
+  });
+
+  // Re-embed query when search changes and sort is semantic
+  createEffect(async () => {
+    const q = search();
+    if (sortOrder() === 'semantic' && extractor && q.trim().length > 2) {
+      setIsSemanticLoading(true);
+      try {
+        const output = await extractor(q, { pooling: 'mean', normalize: true });
+        setQueryVector(Array.from(output.data as number[]));
+      } catch (err) {
+        console.error('Embedding failed:', err);
+      } finally {
+        setIsSemanticLoading(false);
+      }
+    } else if (q.trim().length <= 2) {
+      setQueryVector(null);
+    }
+  });
 
   const categories = createMemo(() => {
     const d = data();
     if (!d) return [];
     return [...new Set(d.findings.map(f => f.category))].sort();
+  });
+
+  const semanticScores = createMemo(() => {
+    const qv = queryVector();
+    const k = knowledge();
+    if (!qv || !k || k.length === 0) return new Map<string, number>();
+
+    const scores = new Map<string, number>();
+    for (const item of k) {
+      const score = cosineSimilarity(qv, item.v);
+      // Keep max score per URL
+      const current = scores.get(item.url) || -1;
+      if (score > current) scores.set(item.url, score);
+    }
+    return scores;
   });
 
   const filtered = createMemo(() => {
@@ -94,18 +186,30 @@ export default function App() {
     const q = search().toLowerCase();
     const cat = category();
     const sev = severity();
+    const scores = semanticScores();
+    const order = sortOrder();
 
-    let list = d.findings;
+    let list = d.findings.map(f => ({ ...f, score: scores.get(f.url) }));
+
     if (cat) list = list.filter(f => f.category === cat);
     if (sev) list = list.filter(f => f.severity === sev);
-    if (q) list = list.filter(f =>
-      f.title.toLowerCase().includes(q) ||
-      f.summary.toLowerCase().includes(q) ||
-      f.whyBad.toLowerCase().includes(q) ||
-      f.domain.toLowerCase().includes(q)
-    );
+    
+    // Traditional search if not semantic or query too short
+    if (order !== 'semantic' && q) {
+      list = list.filter(f =>
+        f.title.toLowerCase().includes(q) ||
+        f.summary.toLowerCase().includes(q) ||
+        f.whyBad.toLowerCase().includes(q) ||
+        f.domain.toLowerCase().includes(q)
+      );
+    }
 
-    const order = sortOrder();
+    if (order === 'semantic' && queryVector()) {
+      return [...list]
+        .filter(f => f.score !== undefined && f.score > 0.1) // Minimum threshold
+        .sort((a, b) => (b.score || 0) - (a.score || 0));
+    }
+
     if (order === 'oldest') return [...list].sort((a, b) => a.foundAt.localeCompare(b.foundAt));
     if (order === 'severity') {
       const rank = { high: 0, medium: 1, low: 2 };
@@ -164,7 +268,7 @@ export default function App() {
       <div style={s.controls}>
         <input
           type="search"
-          placeholder="Search..."
+          placeholder={sortOrder() === 'semantic' ? "Semantic search query..." : "Search..."}
           value={search()}
           onInput={e => setSearch(e.currentTarget.value)}
           style={s.searchInput}
@@ -181,10 +285,11 @@ export default function App() {
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
-        <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as 'newest' | 'oldest' | 'severity')} style={s.select}>
+        <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="severity">By Severity</option>
+          <option value="semantic">Semantic (AI)</option>
         </select>
         
         <div class="download-container" style={s.downloadContainer}>
@@ -199,6 +304,12 @@ export default function App() {
           </Show>
         </div>
       </div>
+
+      <Show when={isSemanticLoading()}>
+        <div style={s.semanticLoading}>
+          AI model loading/processing... (Uses WebGPU)
+        </div>
+      </Show>
 
       <Show when={data.loading}>
         <div style={s.loading}>Loading...</div>
@@ -217,7 +328,7 @@ export default function App() {
         </Show>
         <main style={s.grid}>
           <For each={filtered()}>
-            {finding => <FindingCard finding={finding} />}
+            {item => <FindingCard finding={item} score={item.score} />}
           </For>
         </main>
       </Show>
@@ -274,6 +385,10 @@ const s: Record<string, any> = {
     'text-align': 'left', cursor: 'pointer', 'font-size': '0.85rem',
     color: '#333', transition: 'background 0.2s',
   },
+  semanticLoading: {
+    'font-size': '0.8rem', color: '#ef6c00', 'margin-bottom': '1rem',
+    'text-align': 'center', 'font-weight': '500'
+  },
   resultsBar: { 'font-size': '0.85rem', color: '#999', 'margin-bottom': '1rem', 'text-align': 'center' },
   grid: { display: 'flex', 'flex-direction': 'column', gap: '2rem' },
   loading: { color: '#999', padding: '4rem', 'text-align': 'center' },
@@ -291,6 +406,9 @@ const s: Record<string, any> = {
   categoryBadge: {
     'font-size': '0.7rem', color: '#888', 'font-weight': '500', 'text-transform': 'uppercase', 'letter-spacing': '0.02em'
   },
+  scoreBadge: {
+    'font-size': '0.65rem', color: '#ef6c00', 'font-weight': '700', 'text-transform': 'uppercase'
+  },
   date: { 'font-size': '0.75rem', color: '#bbb', 'margin-left': 'auto' },
   cardTitle: { 'font-size': '1.4rem', 'font-weight': '600', 'margin-bottom': '0.5rem', 'line-height': 1.3 },
   titleLink: { color: '#1a1a1a', 'text-decoration': 'none', borderBottom: '1px solid #eee' },
@@ -299,9 +417,9 @@ const s: Record<string, any> = {
   whyBadBox: {
     'font-size': '0.9rem', color: '#555', 'line-height': 1.6,
     background: '#fcfcf9', borderLeft: '3px solid #eee',
-    padding: '0.75rem 1rem',
+    padding: '1rem',
   },
-  whyBadLabel: { 'font-weight': '700', color: '#333' },
-  footer: { 'margin-top': '6rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#aaa', 'padding-top': '3rem', 'border-top': '1px solid #eee' },
-  footerLink: { color: '#666', 'text-decoration': 'underline' },
+  whyBadLabel: { 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.8rem', 'text-transform': 'uppercase' },
+  footer: { padding: '8rem 0 4rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footerLink: { color: '#bbb', 'text-decoration': 'underline' },
 };
