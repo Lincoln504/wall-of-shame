@@ -6,6 +6,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');
 
 /**
+ * Safely escape a string for use in a shell command.
+ * Wraps the string in single quotes and escapes any single quotes within it.
+ */
+function shellEscape(str: string): string {
+  return "'" + str.replace(/'/g, "'\\''") + "'";
+}
+
+/**
  * Execute a git command from the repo root
  */
 export function git(cmd: string, log?: (msg: string) => void): string {
@@ -61,7 +69,7 @@ export function commitAndPush(addedCount: number, categoryLabel?: string, log?: 
     // We check again just in case 'add' didn't actually stage anything new
     const staged = git('diff --cached --name-only agent/data/ site/public/knowledge.json');
     if (staged.length > 0) {
-      git(`commit -m "${message}"`, log);
+      git(`commit -m ${shellEscape(message)}`, log);
     } else {
       log?.('  [git] nothing to commit after staging.');
     }
