@@ -83,7 +83,8 @@ async function main() {
       let reviewedFindings: RawFinding[] = [];
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          reviewedFindings = await runReview(researchResult.findings, log);
+          // Pass rawReport (string) to reviewer for extraction, not empty findings array
+          reviewedFindings = await runReview(researchResult.rawReport, log);
           break;
         } catch (err) {
           log(`  [error] review attempt ${attempt} failed: ${String(err)}`);
