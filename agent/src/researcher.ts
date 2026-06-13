@@ -10,11 +10,12 @@ import {
 import type { RawFinding } from './findings.js';
 import { DATA_DIR } from './findings.js';
 import type { FindingsStore, RunState } from './types.js';
+import { getLegacyLinks } from './legacy.js';
 
 // ── Model config ──────────────────────────────────────────────────────────────
 
 const OPENROUTER_PROVIDER = 'openrouter';
-const MODEL_ID = 'deepseek/deepseek-v3';
+const MODEL_ID = 'google/gemma-4-26b-a4b-it';
 
 
 export interface ResearchResult {
@@ -29,23 +30,27 @@ let isSDKInitialized = false;
 
 /**
  * Initialize the PIE Research SDK for Wall of Shame.
- * Uses a local project knowledge_db.
+ * Disables knowledge store and reasoning as requested.
  */
 export async function initializeResearch(log: (msg: string) => void) {
   if (isSDKInitialized) return;
 
-  log('  [pi] initializing research SDK with local knowledge store...');
+  log('  [pi] initializing research SDK (reasoning=off, knowledge_store=off)...');
 
   await initResearchSDK({
     // Pass as string — SDK resolves it from ~/.pi/agent/models.json internally
     model: `${OPENROUTER_PROVIDER}/${MODEL_ID}`,
     cwd: process.cwd(),
     config: {
-      // KNOWLEDGE_STORE_DIR takes priority over USE_LOCAL_KNOWLEDGE_STORE in getDbDir(),
-      // so set it explicitly to the agent's own knowledge_db directory.
-      KNOWLEDGE_STORE_DIR: join(process.cwd(), 'knowledge_db'),
-      MAX_SCRAPE_BATCHES: 4,
-      RESEARCHER_TIMEOUT_MS: 600000,
+      // Disable knowledge store for Wall of Shame as requested
+      GLOBAL_KNOWLEDGE_STORE_ENABLED: false,
+      LOCAL_KNOWLEDGE_STORE_ENABLED: false,
+      // Disable reasoning/thinking as requested
+      THINKING_LEVEL: 'off',
+      // Increase batches for more thorough research since reasoning is off
+      MAX_SCRAPE_BATCHES: 3,
+      
+      RESEARCHER_TIMEOUT_MS: 900000,
     },
     verbose: false,
   });
@@ -85,6 +90,12 @@ export async function runResearch(
   log: (msg: string) => void,
 ): Promise<ResearchResult> {
   await initializeResearch(log);
+
+  // 1. Get legacy links for this category to seed research
+  const legacyLinks = getLegacyLinks(categoryKey);
+  if (legacyLinks.length > 0) {
+    log(`  [pi] found ${legacyLinks.length} legacy links for category: ${categoryKey}`);
+  }
 
   // Calculate forbidden queries (used in the last 7 days)
   const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -135,8 +146,9 @@ PERSPECTIVE TEST — Look for content where the piece's net effect is to make ha
     };
 
     researchReport = await runQuickResearch(researchQueryStr, {
-      depth: 0,
       observer,
+      // Pass historical links as seeds for research
+      initialLinks: legacyLinks,
     });
   } catch (err) {
     log(`  [pi] CRITICAL ENGINE ERROR: ${String(err)}`);

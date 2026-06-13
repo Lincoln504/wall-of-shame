@@ -153,9 +153,9 @@ export async function runReview(
       reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
     } catch (parseErr) {
       log(`  [reviewer] parse failed, attempting agentic repair...`);
-      const repaired = await repairJson(text, ReviewerOutputSchema);
+      const repaired = repairJson(text);
       if (repaired) {
-        reviewed = repaired;
+        reviewed = safeParseValidatedJson(ReviewerOutputSchema, repaired);
         log(`  [reviewer] successfully repaired JSON findings.`);
       } else {
         throw parseErr;

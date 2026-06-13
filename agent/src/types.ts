@@ -3,7 +3,7 @@ import { Type, type Static } from 'typebox';
 export const SeveritySchema = Type.Union([
   Type.Literal('low'),
   Type.Literal('medium'),
-  Type.Literal('high')
+  Type.Literal('high'), Type.Literal('critical')
 ]);
 
 export const FindingSchema = Type.Object({

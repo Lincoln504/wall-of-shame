@@ -15,7 +15,11 @@ export type { Finding, FindingsStore, RunState };
  * High fidelity existence detection.
  */
 export async function verifyUrl(url: string): Promise<boolean> {
-  return await sdkVerifyUrl(url);
+  try {
+    return await sdkVerifyUrl(url);
+  } catch {
+    return false;
+  }
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -67,11 +71,14 @@ export function loadState(): RunState {
     
     // Migration: if loaded.queryHistory is flat (values are strings), move them to a 'legacy' bucket
     let queryHistory = loaded.queryHistory || {};
-    const firstQueryVal = Object.values(queryHistory)[0];
-    if (firstQueryVal && typeof firstQueryVal === 'string') {
-      queryHistory = { migrated_legacy: queryHistory };
-      loaded.queryHistory = queryHistory;
+    if (Object.keys(queryHistory).length > 0) {
+      const firstQueryVal = Object.values(queryHistory)[0];
+      if (firstQueryVal && typeof firstQueryVal === 'string') {
+        queryHistory = { migrated_legacy: queryHistory };
+        loaded.queryHistory = queryHistory;
+      }
     }
+    
     // Migration: if loaded.seenUrls is an array, move it to a 'global_legacy' key
     let seenUrls = loaded.seenUrls || {};
     if (Array.isArray(seenUrls)) {
@@ -85,13 +92,11 @@ export function loadState(): RunState {
           try {
             return new URL(url).href;
           } catch {
-            return url.toLowerCase().trim(); // Fallback if canonicalizeUrl isn't directly available here
+            return url.toLowerCase().trim();
           }
         });
       }
     }
-    loaded.seenUrls = seenUrls;
-
 
     return {
       lastRun: loaded.lastRun || state.lastRun,
@@ -112,16 +117,16 @@ export function saveState(state: RunState): void {
 export interface RawFinding {
   url: string;
   title: string;
-  domain: string;
   summary: string;
   category: string;
   whyBad: string;
-  severity: 'low' | 'medium' | 'high';
-  verificationLog?: string;
+  domain?: string;
+  severity?: string;
 }
 
 /**
- * Append new findings to the store, performing deduplication and URL canonicalization.
+ * Add newly discovered findings to the store and state.
+ * Performs deep deduplication and stealth URL verification.
  */
 export async function addFindings(
   store: FindingsStore,
@@ -138,7 +143,7 @@ export async function addFindings(
   }
 
   for (const f of newFindings) {
-    let url = f.url;
+    const url = f.url;
     let canonUrl = '';
     let domain = f.domain;
     try {
@@ -185,7 +190,7 @@ export async function addFindings(
 
     const finding: Finding = {
       ...f,
-      id: f.id || randomUUID(),
+      id: randomUUID(),
       url,
       domain: domain!,
       severity: severity as Finding['severity'],

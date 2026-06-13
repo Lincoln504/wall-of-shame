@@ -84,7 +84,12 @@ async function main() {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           // Pass rawReport (string) to reviewer for extraction, not empty findings array
-          reviewedFindings = await runReview(researchResult.rawReport, log);
+          const report = researchResult.rawReport || '';
+          if (!report) {
+            log('  [warning] empty research report, skipping review');
+            break;
+          }
+          reviewedFindings = await runReview(report, log);
           break;
         } catch (err) {
           log(`  [error] review attempt ${attempt} failed: ${String(err)}`);
@@ -98,34 +103,45 @@ async function main() {
 
       // 3. Save Phase
       if (reviewedFindings.length > 0) {
-        const addedFindings = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
-        catAdded = addedFindings.length;
+        const added = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
+        catAdded = added.length;
         totalAdded += catAdded;
-        saveFindings(store);
-        saveState(state);
-        log(`  [success] added ${catAdded} new findings for ${cat.key}`);
+
+        if (catAdded > 0) {
+          log(`  [success] added ${catAdded} new findings`);
+          saveFindings(store);
+        } else {
+          log(`  [info] no new findings identified in this run`);
+        }
       }
 
-      // Increment global category index
+      // Record queries used in state history
+      if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
+      for (const q of researchResult.queries) {
+        state.queryHistory[cat.key]![q] = new Date().toISOString();
+      }
+
+      // Update cursor
       state.categoryIndex = (currentIdx + 1) % CATEGORY_COUNT;
       saveState(state);
       hr();
     }
 
-    // 4. Export & Sync Phase
-    if (totalAdded > 0 || hasDataChanges()) {
-      log('exporting knowledge store for site...');
-      const knowledgePath = join(process.cwd(), '..', 'site', 'public', 'knowledge.json');
-      await exportKnowledgeForSite(knowledgePath);
-      
-      log('syncing changes with git...');
-      commitAndPush(totalAdded, 'batch run', log);
+    log(`batch complete. ${totalAdded} total findings added.`);
+
+    // 4. Git Phase (Commit & Push)
+    if (totalAdded > 0 && await isGitRepo() && await remoteExists()) {
+      hr();
+      log('committing and pushing changes...');
+      try {
+        await commitAndPush(totalAdded, `Update findings (${totalAdded} new entries)`, log);
+      } catch (err) {
+        log(`  [error] git push failed: ${String(err)}`);
+      }
     }
 
-    log(`batch complete. added ${totalAdded} total findings.`);
-
   } catch (err) {
-    log(`CRITICAL ERROR: ${String(err)}`);
+    console.error('Fatal agent error:', err);
     process.exit(1);
   } finally {
     await shutdownResearch();
