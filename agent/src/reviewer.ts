@@ -25,7 +25,7 @@ const ReviewedFindingSchema = Type.Object({
   summary: Type.String(),
   category: Type.String(),
   whyBad: Type.String(),
-  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')]),
+  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high'), Type.Literal('critical')]),
   verificationLog: Type.String(),
 });
 
@@ -67,7 +67,7 @@ Each entry must follow this schema:
   "summary": "...",
   "category": "...",
   "whyBad": "[A comprehensive and detailed analysis. Ensure it provides a multi-layered breakdown of the framing, its intended effect, and why the content qualifies as harmful normalized content.]",
-  "severity": "low|medium|high",
+  "severity": "low|medium|high|critical",
   "verificationLog": "Audit completed on [Date]. [Note if analysis was preserved, modified, or why it was kept.]"
 }
 
