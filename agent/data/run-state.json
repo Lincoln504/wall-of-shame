@@ -1,6 +1,118 @@
 {
-  "lastRun": null,
+  "lastRun": "2026-06-15T00:00:00.000Z",
   "categoryIndex": 0,
-  "seenUrls": {},
+  "seenUrls": {
+    "race": [
+      "americafirstpolicy.com/issues/research-report-reversing-the-woke-takeover-of-higher-education-strategies-to-dismantle-campus-dei",
+      "fldoe.org/core/fileparse.php/20653/urlt/6-4.pdf",
+      "aporiamagazine.com/p/the-positive-legacy-of-empire",
+      "independent.org/article/2025/07/16/1619-flawed-history",
+      "whitehouse.gov/presidential-actions/2025/04/restoring-equality-of-opportunity-and-meritocracy",
+      "whitehouse.gov/wp-content/uploads/2025/05/Defunding-the-Open-Border-Fact-Sheet.pdf",
+      "whitehouse.gov/presidential-actions/2025/01/ending-radical-indoctrination-in-k-12-schooling",
+      "nationalreview.com/2025/10/restoring-columbus-to-his-rightful-place"
+    ],
+    "economics": [
+      "husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses",
+      "corpgov.law.harvard.edu/2023/07/16/share-buybacks-and-executive-compensation-assessing-key-criticisms",
+      "itif.org/publications/2026/03/25/antitrust-undone-how-competition-enforcers-are-undermining-competition",
+      "jamesmadison.org/bidens-antitrust-overreach-threatens-capitalism",
+      "cei.org/studies/ten-thousand-commandments-2025",
+      "aei.org/op-eds/in-defense-of-billionaires",
+      "americanthinker.com/articles/2025/04/tax_cuts_and_tariffs_need_not_be_paid_for.html",
+      "fee.org/articles/why-billionaires-are-good-for-us",
+      "newideal.aynrand.org/do-billionaires-deserve-their-wealth-it-depends",
+      "hoover.org/research/why-billionaires-should-exist",
+      "fee.org/articles/well-done-billionaires",
+      "reason.com/2019/09/30/elizabeth-warrens-wealth-tax-is-punishment-not-taxation",
+      "cei.org/ten-thousand-commandments",
+      "taxfoundation.org/research/all/federal/capital-gains-taxes",
+      "heritage.org/taxes/report/the-laffer-curve-past-present-and-future"
+    ],
+    "labor": [
+      "osha.gov/deregulatory-rulemaking",
+      "fisherphillips.com/en/insights/insights/osha-key-player-in-dol-deregulation-wave",
+      "reason.org/commentary/federal-independent-contractor-regulation-threatens-the-gig-economy",
+      "ishn.com/articles/114572-deregulation-of-osha-to-reduce-the-burden-on-business",
+      "fisherphillips.com/en/insights/insights/dol-easing-up-on-independent-contractor-misclassification-enforcement",
+      "alainguillot.com/welfare-trap",
+      "theblaze.com/contributions/fast-food-workers-you-dont-deserve-15-an-hour-to-flip-burgers-and-thats-ok",
+      "waysandmeans.house.gov/2025/01/08/new-report-shows-more-americans-dependent-on-welfare-checks-at-the-expense-of-work",
+      "fee.org/articles/oscar-lewis-personal-responsibility-and-poverty",
+      "econlib.org/poverty-is-it-circumstances-or-decision-making",
+      "rstreet.org/commentary/counterpoint-when-it-comes-to-the-gig-economy-the-only-thing-to-fear-is-fear-itself",
+      "about.doordash.com/en-us/news/dol-final-rule-statement",
+      "fee.org/articles/no-teachers-are-not-underpaid"
+    ],
+    "war": [
+      "realcleardefense.com/articles/2025/06/03/peace_through_strength_starts_with_reforming_the_pentagon_1114091.html"
+    ],
+    "disability": [
+      "waysandmeans.house.gov/2025/09/25/newt-gingrich-op-ed-reform-of-social-security-disability-benefits-could-help-move-countless-americans-toward-greater-sense-of-their-own-capabilities",
+      "edweek.org/leadership/special-education-is-getting-more-expensive-forcing-schools-to-make-cuts-elsewhere/2023/04",
+      "michaelbest.com/insights/the-proliferation-of-frivolous-ada-website-compliance-lawsuits-a-defense-perspec-102jv24",
+      "theacorn.com/articles/ada-lawsuits-called-legal-extortion-become-increasingly-common",
+      "city-journal.org/article/new-york-city-budget-carter-case-education-spending",
+      "dol.gov/newsroom/releases/osec/osec20250829",
+      "ecomback.com/annual-2024-ada-website-accessibility-lawsuit-report",
+      "localnewsmatters.org/2024/02/22/serial-ada-plaintiffs-alter-tactics-and-venues-as-they-launch-new-litigation-in-state-courts",
+      "nfib.com/news/news-take-action-stop-ada-shakedown-lawsuits"
+    ],
+    "policing": [
+      "nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare",
+      "banks.senate.gov/news/press-releases/senator-jim-banks-introduces-the-qualified-immunity-act-of-2025",
+      "congress.gov/119/bills/hr503/BILLS-119hr503ih.pdf",
+      "city-journal.org/article/broken-windows-policing-public-health-safety",
+      "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law"
+    ],
+    "religion": [
+      "whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office"
+    ],
+    "democracy": [
+      "whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians",
+      "judiciary.house.gov/sites/evo-subsites/republicans-judiciary.house.gov/files/evo-media-document/2024-07-09%20Lawfare%20-%20How%20the%20Manhattan%20District%20Attorneys%20Office%20and%20a%20New%20York%20State%20Judge%20Violated%20the%20Constitutional%20and%20Lega.pdf",
+      "adflegal.org/article/lawfare-when-the-process-is-the-punishment",
+      "aclj.org/election-law/stop-the-lawfare-fighting-back-against-the-lefts-global-assault-on-democracy",
+      "goldwaterinstitute.org/the-victims-of-dark-money-disclosure-how-governmen",
+      "aclu.org/press-releases/disclose-act-passed-house-today-compromises-free-speech",
+      "heritage.org/election-integrity/report/vote-harvesting-recipe-intimidation-coercion-and-election-fraud",
+      "judicialwatch.org/election-integrity-update-five-million-names-cleaned-from-voter-rolls-thanks-to-judicial-watch",
+      "honestelections.org/honest-elections-project-releases-2026-safeguarding-our-elections-report-and-new-model-bills-to-enhance-voter-integrity",
+      "publicinterestlegal.org/pilf-files/Safe-Spaces_Final.pdf",
+      "heritage.org/election-integrity/report/ranked-choice-voting-bad-choice",
+      "heartland.org/publications/ranked-choice-voting-a-major-threat-to-free-fair-and-secure-elections",
+      "whitehouse.gov/fact-sheets/2025/03/fact-sheet-president-donald-j-trump-protects-the-integrity-of-american-elections",
+      "thefga.org/research/ranked-choice-voting-partisan-plot-to-disrupt-elections",
+      "thefga.org/research/the-noncitizen-voting-problem-and-how-to-solve-it",
+      "ifs.org/research/citizens-united-after-10-years-more-speech-better-democracy",
+      "ifs.org/research/five-misconceptions-about-dark-money",
+      "thefederalist.com/2026/04/27/kansas-republicans-are-letting-democrats-destroy-ballot-integrity-safeguards"
+    ],
+    "technology": [
+      "internetforgrowth.com/the-hidden-costs-of-data-privacy-laws-for-small-businesses",
+      "trustarc.com/resource/why-data-privacy-self-regulation-is-better-than-involuntary-options",
+      "niskanencenter.org/creeping-hysteria-artificial-intelligence",
+      "spiked-online.com/2023/10/24/ai-hysteria-is-out-of-control",
+      "city-journal.org/article/artificial-intelligence-regulation-ai-futures-project"
+    ],
+    "climate": [
+      "whitehouse.gov/presidential-actions/2025/07/ending-market-distorting-subsidies-for-unreliable-foreign%E2%80%91controlled-energy-sources"
+    ],
+    "immigration": [
+      "crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime",
+      "whitehouse.gov/presidential-actions/2025/01/protecting-the-american-people-against-invasion",
+      "theamericanconservative.com/the-sam-francis-i-knew"
+    ],
+    "gender": [
+      "christianitytoday.com/2025/10/conversion-therapy-bans-lgbtq-laws-supreme-court",
+      "usatoday.com/story/opinion/columnist/2023/03/14/equal-pay-day-myth-truth-income-women/11464213002",
+      "whitehouse.gov/presidential-actions/2025/01/prioritizing-military-excellence-and-readiness",
+      "whitehouse.gov/presidential-actions/2025/01/defending-women-from-gender-ideology-extremism-and-restoring-biological-truth-to-the-federal-government",
+      "unherd.com/newsroom/does-the-snp-really-believe-there-are-24-genders"
+    ],
+    "health": [
+      "newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html"
+    ]
+  },
   "queryHistory": {}
 }
