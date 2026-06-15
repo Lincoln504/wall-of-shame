@@ -5,9 +5,8 @@ import { tmpdir } from 'os';
 
 vi.mock('@lincoln504/pi-research', () => ({
   initResearchSDK: vi.fn().mockResolvedValue(undefined),
-  disposeResearchSDK: vi.fn().mockResolvedValue(undefined),
+  shutdownResearchSDK: vi.fn().mockResolvedValue(undefined),
   runQuickResearch: vi.fn().mockResolvedValue('test report'),
-  exportKnowledge: vi.fn().mockResolvedValue(undefined),
   verifyUrl: vi.fn().mockResolvedValue(true)
 }));
 

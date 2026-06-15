@@ -87,165 +87,66 @@ function printMenu(): void {
 // ── Option 1 & 2: Run research ────────────────────────────────────────────────
 
 async function runResearchBatch(dryRun: boolean): Promise<void> {
-  console.log(`${BOLD}${dryRun ? YELLOW + 'DRY-RUN' : GREEN + 'RUNNING'} RESEARCH BATCH${RESET}`);
+  console.log(`${BOLD}${dryRun ? YELLOW + 'DRY-RUN' : GREEN + 'RUNNING'} RESEARCH ROUND${RESET}`);
   divider();
 
-  // Ask for batch size
-  const sizeInput = await question(`${DIM}Batch size (default 3, max 50):${RESET} `);
-  const batchSize = Math.min(Math.max(parseInt(sizeInput, 10) || 3, 1), 50);
+  // Ask for round size + concurrency
+  const sizeInput = await question(`${DIM}Categories this round (default 3, "all" for every category, max ${CATEGORY_COUNT}):${RESET} `);
+  const wantsAll = sizeInput.trim().toLowerCase() === 'all';
+  const batchSize = wantsAll ? CATEGORY_COUNT : Math.min(Math.max(parseInt(sizeInput, 10) || 3, 1), CATEGORY_COUNT);
 
-  console.log();
   const store = loadFindings();
   const state = loadState();
-  const batch = getBatch(state.categoryIndex, batchSize);
+  const startIndex = wantsAll ? 0 : state.categoryIndex;
+  const batch = wantsAll ? CATEGORIES : getBatch(startIndex, batchSize);
 
+  let concurrency = 4;
+  if (!dryRun) {
+    const concInput = await question(`${DIM}Concurrency — categories researched at once (default 4, max ${batchSize}):${RESET} `);
+    concurrency = Math.min(Math.max(parseInt(concInput, 10) || 4, 1), batchSize);
+  }
+
+  console.log();
   console.log(`${DIM}Current state:${RESET}`);
   console.log(`  Findings: ${CYAN}${store.findings.length}${RESET}`);
   console.log(`  Category index: ${CYAN}${state.categoryIndex}${RESET} (${CATEGORIES[state.categoryIndex]?.name ?? 'N/A'})`);
-  console.log(`  Categories in this batch:`);
+  console.log(`  Categories in this round:`);
   for (const cat of batch) {
     console.log(`    • ${cat.name} ${DIM}(${cat.key})${RESET}`);
   }
   console.log();
 
   const startTime = Date.now();
-  let totalAdded = 0;
-  let totalErrors = 0;
 
   if (dryRun) {
-    console.log(`\n${YELLOW}This is a dry-run — nothing will be researched or saved.${RESET}`);
-    console.log(`${DIM}The following categories would be processed:${RESET}`);
-    for (const cat of batch) {
-      console.log(`  • ${cat.name} ${DIM}(${cat.key})${RESET}`);
-    }
-    console.log(`\n${YELLOW}To actually run research, select option 1 instead.${RESET}\n`);
-    totalAdded = 0;
-  } else {
-    const confirm = await question(`${RED}Run research?${RESET} This costs API credits! (y/N): `);
-    if (confirm.toLowerCase() !== 'y') return;
-
+    console.log(`\n${YELLOW}This is a dry-run — nothing will be researched or saved.${RESET}\n`);
     divider();
-    const startTimeReal = Date.now();
-
-    const { runResearch } = await import('./researcher.js');
-    const { runReview } = await import('./reviewer.js');
-    const { canonicalizeUrl } = await import('./utils.js');
-
-    // Sequential Processing
-    const MAX_ATTEMPTS = 3;
-    let cursorIndex = state.categoryIndex;
-
-    for (let i = 0; i < batchSize; i++) {
-      const cat = CATEGORIES[cursorIndex % CATEGORY_COUNT]!;
-
-      process.stdout.write(`\n${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} ... `);
-
-      const logFn = (msg: string) => process.stdout.write(`\n  ${DIM}${msg}${RESET}\n`);
-      let succeeded = false;
-      let catAdded = 0;
-      // Cache research result so review retries skip the expensive research phase
-      let researchDone = false;
-      let cachedReviewInput: RawFinding[] | string | null = null;
-      let cachedIsRaw = false;
-
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        if (attempt > 1) {
-          const phase = researchDone ? 'review' : 'full';
-          console.log(`\n${YELLOW}  [retry] ${phase} attempt ${attempt}/${MAX_ATTEMPTS} for ${cat.key}${RESET}`);
-          process.stdout.write(`${BOLD}[${i + 1}/${batchSize}]${RESET} Processing: ${cat.name} (attempt ${attempt}) ... `);
-        }
-        try {
-          if (!researchDone) {
-            // 1. Research (skipped on review-only retries)
-            const catHistory = state.queryHistory[cat.key] || {};
-            const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, logFn);
-
-            // Update query history
-            const now = new Date().toISOString();
-            if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
-            for (const q of result.queries) {
-              state.queryHistory[cat.key]![q] = now;
-            }
-
-            const reviewInput = result.findings.length > 0 ? result.findings : result.rawReport;
-            cachedReviewInput = reviewInput ?? null;
-            cachedIsRaw = typeof reviewInput === 'string';
-            researchDone = true;
-          }
-
-          if (cachedReviewInput !== null) {
-            const logMsg = cachedIsRaw ? 'raw report found' : `${(cachedReviewInput as RawFinding[]).length} findings found`;
-            process.stdout.write(`${GREEN}${logMsg}${RESET}\n`);
-            console.log(`  ${BOLD}Starting review...${RESET}`);
-
-            // 2. Review
-            const reviewed = await runReview(cachedReviewInput, logFn);
-
-            // 3. Save
-            const addedFindings = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, logFn);
-            catAdded = addedFindings.length;
-            totalAdded += catAdded;
-
-            // Mark as seen
-            if (!state.seenUrls[cat.key]) state.seenUrls[cat.key] = [];
-            const sourceArray = cachedIsRaw ? reviewed : (cachedReviewInput as RawFinding[]);
-            for (const raw of sourceArray) {
-              const canonical = canonicalizeUrl(raw.url);
-              if (!state.seenUrls[cat.key].includes(canonical)) {
-                state.seenUrls[cat.key].push(canonical);
-              }
-            }
-
-            saveFindings(store);
-
-            if (addedFindings.length > 0) {
-              console.log(`  ${GREEN}Added ${addedFindings.length} findings, pushing...${RESET}`);
-            } else {
-              console.log(`  ${DIM}No new findings after review.${RESET}`);
-            }
-          } else {
-            process.stdout.write(`${DIM}no discoveries${RESET}\n`);
-          }
-
-          succeeded = true;
-          break;
-        } catch (err) {
-          process.stdout.write(`${RED}ERROR${RESET}\n`);
-          console.error(`\n${RED}  [attempt ${attempt}/${MAX_ATTEMPTS}] ${String(err)}${RESET}`);
-          if (err instanceof Error && err.stack) {
-            console.error(`${DIM}${err.stack}${RESET}`);
-          }
-          if (attempt === MAX_ATTEMPTS) {
-            console.log(`\n${RED}All ${MAX_ATTEMPTS} attempts failed for ${cat.key}, moving to next category.${RESET}`);
-            totalErrors++;
-          }
-        }
-      }
-
-      // Advance persistent index regardless of outcome — retries happened inline
-      state.categoryIndex = (cursorIndex + 1) % CATEGORY_COUNT;
-      saveState(state);
-      if (isGitRepo() && remoteExists() && hasDataChanges()) {
-        commitAndPush(succeeded ? catAdded : 0, cat.name, logFn);
-      }
-
-      cursorIndex = (cursorIndex + 1) % CATEGORY_COUNT;
-      divider();
-    }
+    console.log(`${BOLD}Results:${RESET}`);
+    console.log(`  Duration:  ${CYAN}${elapsed(startTime)}${RESET}`);
+    return;
   }
+
+  const confirm = await question(`${RED}Run research?${RESET} This costs API credits! (y/N): `);
+  if (confirm.toLowerCase() !== 'y') return;
 
   divider();
-  const elapsedTime = elapsed(startTime);
+
+  const { runRound } = await import('./run.js');
+  const logFn = (msg: string) => console.log(`  ${DIM}${msg}${RESET}`);
+  const result = await runRound({ categories: batch, concurrency, log: logFn, startIndex });
+
+  divider();
   console.log();
   console.log(`${BOLD}Results:${RESET}`);
-  console.log(`  Duration:  ${CYAN}${elapsedTime}${RESET}`);
-  console.log(`  Errors:    ${totalErrors > 0 ? RED : GREEN}${totalErrors}${RESET}`);
-
-  if (!dryRun) {
-    console.log(`  New items: ${GREEN}+${totalAdded}${RESET}`);
-    console.log(`  Total:     ${CYAN}${store.findings.length}${RESET} findings`);
-    console.log(`\n${DIM}Findings saved and pushed.${RESET}`);
+  console.log(`  Duration:  ${CYAN}${elapsed(startTime)}${RESET}`);
+  console.log(`  Errors:    ${result.errors > 0 ? RED : GREEN}${result.errors}${RESET}`);
+  console.log(`  New items: ${GREEN}+${result.totalAdded}${RESET}`);
+  console.log(`  Total:     ${CYAN}${result.totalFindings}${RESET} findings`);
+  for (const c of result.perCategory) {
+    const tag = c.error ? `${RED}ERROR${RESET}` : `${GREEN}+${c.added}${RESET}`;
+    console.log(`    ${c.key.padEnd(12)} ${tag}`);
   }
+  console.log(`\n${DIM}Findings saved${result.totalAdded > 0 ? ' and pushed' : ''}.${RESET}`);
 }
 
 // ── Option 3: Statistics ──────────────────────────────────────────────────────

@@ -1,23 +1,43 @@
 #!/usr/bin/env tsx
 /**
- * wall-of-shame agent
+ * wall-of-shame agent — batch entry point.
  *
- * Runs a batch of research queries using pi-research via the pi SDK,
- * appends new findings to agent/data/findings.json, then commits and pushes.
+ * Runs a research round (concurrently across categories) using pi-research via
+ * the SDK, appends new findings to agent/data/findings.json, then commits and
+ * pushes. All round logic lives in run.ts (shared with the interactive cli.ts).
+ *
+ * Usage:
+ *   tsx src/main.ts                         # default: 3 categories from cursor (discovery)
+ *   tsx src/main.ts --all                   # all categories in one round
+ *   tsx src/main.ts --seed --all            # SEED: re-evaluate curated legacy links
+ *   tsx src/main.ts --batch-size 6          # 6 categories from the cursor
+ *   tsx src/main.ts --concurrency 4         # cap simultaneous categories (default 4)
+ *   tsx src/main.ts --dry-run               # list categories, no API calls
+ *   tsx src/main.ts --no-commit             # run but don't git commit/push
  */
 
 import { getBatch, CATEGORIES, CATEGORY_COUNT } from './categories.js';
-import { loadFindings, saveFindings, loadState, saveState, addFindings, type RawFinding, type Finding } from './findings.js';
-import { runResearch, shutdownResearch, exportKnowledgeForSite, initializeResearch } from './researcher.js';
-import { runReview } from './reviewer.js';
-import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
-import { join } from 'path';
+import { loadFindings, loadState } from './findings.js';
+import { shutdownResearch } from './researcher.js';
+import { runRound, runSeedRound } from './run.js';
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const batchSize = parseInt(args[args.indexOf('--batch-size') + 1] ?? '3', 10) || 3;
+
+function numArg(flag: string, fallback: number): number {
+  const idx = args.indexOf(flag);
+  if (idx === -1) return fallback;
+  const v = parseInt(args[idx + 1] ?? '', 10);
+  return Number.isFinite(v) && v > 0 ? v : fallback;
+}
+
+const all = args.includes('--all');
+const seed = args.includes('--seed');
+const batchSize = all ? CATEGORY_COUNT : Math.min(numArg('--batch-size', 3), CATEGORY_COUNT);
+const concurrency = Math.min(numArg('--concurrency', 4), CATEGORY_COUNT);
 const dryRun = args.includes('--dry-run');
+const commit = !args.includes('--no-commit');
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -28,123 +48,45 @@ const hr = () => console.log(`[${ts()}] ${'─'.repeat(60)}`);
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  let shouldShutdown = false;
   try {
     hr();
     log('wall-of-shame agent starting');
-    log(`categories: ${CATEGORY_COUNT} | batch size: ${batchSize} | dry-run: ${dryRun}`);
-    hr();
 
     const store = loadFindings();
     const state = loadState();
     log(`existing findings: ${store.findings.length}`);
+    log(`mode: ${seed ? 'SEED (legacy re-evaluation)' : 'DISCOVERY (general search)'} | round size: ${batchSize} | concurrency: ${concurrency} | dry-run: ${dryRun}`);
     log(`resuming at category index: ${state.categoryIndex}`);
 
+    // Seed mode always covers all categories with curated links; discovery
+    // rotates through the cursor unless --all is given.
+    const startIndex = (all || seed) ? 0 : state.categoryIndex;
+    const categories = (all || seed) ? CATEGORIES : getBatch(startIndex, batchSize);
+
     if (dryRun) {
-      const batch = getBatch(state.categoryIndex, batchSize);
       log('DRY-RUN: skipping research — no API calls will be made');
-      for (const cat of batch) {
-        log(`  would research: ${cat.name} (${cat.key})`);
-      }
+      for (const cat of categories) log(`  would ${seed ? 'seed-evaluate' : 'research'}: ${cat.name} (${cat.key})`);
       hr();
       return;
     }
 
-    // Initialize SDK once
-    await initializeResearch(log);
+    shouldShutdown = true;
+    const round = seed ? runSeedRound : runRound;
+    const result = await round({ categories, concurrency, log, commit, startIndex });
 
-    let totalAdded = 0;
-    const cursorIndex = state.categoryIndex;
-
-    for (let i = 0; i < batchSize; i++) {
-      const currentIdx = (cursorIndex + i) % CATEGORY_COUNT;
-      const cat = CATEGORIES[currentIdx]!;
-
-      log(`[${i + 1}/${batchSize}] processing: ${cat.name}`);
-
-      let catAdded = 0;
-      let researchResult = null;
-
-      // 1. Research Phase (with 2 retries)
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const catHistory = state.queryHistory[cat.key] || {};
-          researchResult = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, log);
-          break;
-        } catch (err) {
-          log(`  [error] research attempt ${attempt} failed: ${String(err)}`);
-          if (attempt === 2) throw err;
-          await new Promise(r => setTimeout(r, 5000));
-        }
-      }
-
-      if (!researchResult) continue;
-
-      // 2. Review Phase (with 2 retries, independent of research)
-      let reviewedFindings: RawFinding[] = [];
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          // Pass rawReport (string) to reviewer for extraction, not empty findings array
-          const report = researchResult.rawReport || '';
-          if (!report) {
-            log('  [warning] empty research report, skipping review');
-            break;
-          }
-          reviewedFindings = await runReview(report, log);
-          break;
-        } catch (err) {
-          log(`  [error] review attempt ${attempt} failed: ${String(err)}`);
-          if (attempt === 2) {
-             log(`  [warning] skipping category ${cat.key} due to persistent reviewer failure`);
-          } else {
-             await new Promise(r => setTimeout(r, 5000));
-          }
-        }
-      }
-
-      // 3. Save Phase
-      if (reviewedFindings.length > 0) {
-        const added = await addFindings(store, state, cat.key, reviewedFindings, cat.researchQuery, log);
-        catAdded = added.length;
-        totalAdded += catAdded;
-
-        if (catAdded > 0) {
-          log(`  [success] added ${catAdded} new findings`);
-          saveFindings(store);
-        } else {
-          log(`  [info] no new findings identified in this run`);
-        }
-      }
-
-      // Record queries used in state history
-      if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
-      for (const q of researchResult.queries) {
-        state.queryHistory[cat.key]![q] = new Date().toISOString();
-      }
-
-      // Update cursor
-      state.categoryIndex = (currentIdx + 1) % CATEGORY_COUNT;
-      saveState(state);
-      hr();
+    hr();
+    log(`round complete. +${result.totalAdded} new findings, ${result.errors} categories errored.`);
+    log(`total findings on the wall: ${result.totalFindings}`);
+    for (const c of result.perCategory) {
+      log(`  ${c.key.padEnd(12)} +${c.added}${c.error ? `  [ERROR] ${c.error.slice(0, 80)}` : ''}`);
     }
-
-    log(`batch complete. ${totalAdded} total findings added.`);
-
-    // 4. Git Phase (Commit & Push)
-    if (totalAdded > 0 && await isGitRepo() && await remoteExists()) {
-      hr();
-      log('committing and pushing changes...');
-      try {
-        await commitAndPush(totalAdded, `Update findings (${totalAdded} new entries)`, log);
-      } catch (err) {
-        log(`  [error] git push failed: ${String(err)}`);
-      }
-    }
-
+    hr();
   } catch (err) {
     console.error('Fatal agent error:', err);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    await shutdownResearch();
+    if (shouldShutdown) await shutdownResearch();
     log('agent shutdown complete.');
   }
 }

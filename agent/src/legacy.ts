@@ -3,33 +3,60 @@ import { join } from 'path';
 import { DATA_DIR } from './findings.js';
 
 /**
- * Extracts historical URLs from legacy-entries.md for a specific category.
+ * Extracts historical seed URLs from legacy-entries.md for a specific category.
+ *
+ * legacy-entries.md groups entries under `## <Category>` section headers whose
+ * text maps 1:1 to a canonical category key (e.g. `## Democracy` -> `democracy`).
+ * We key off the section header rather than the per-row "Original Cat" column,
+ * because that column frequently holds non-canonical sub-category labels
+ * (`voter_suppression`, `dark_money`, `antitrust`, ...) that would otherwise
+ * never match a canonical key and silently drop those seeds.
  */
 export function getLegacyLinks(categoryKey: string): string[] {
+  return getLegacySeeds(categoryKey).map(s => s.url);
+}
+
+export interface LegacySeed {
+  url: string;
+  title: string;
+}
+
+/**
+ * Like getLegacyLinks but also returns each entry's title column, for building
+ * a seed-evaluation report.
+ */
+export function getLegacySeeds(categoryKey: string): LegacySeed[] {
   const legacyPath = join(DATA_DIR, 'legacy-entries.md');
   if (!existsSync(legacyPath)) return [];
 
   const content = readFileSync(legacyPath, 'utf-8');
   const lines = content.split('\n');
-  const urls: string[] = [];
+  const seeds: LegacySeed[] = [];
+  const target = categoryKey.toLowerCase();
+  const seen = new Set<string>();
 
-  // Very simple markdown table parser
+  let currentSection: string | null = null;
+
   for (const line of lines) {
+    const headerMatch = line.match(/^##\s+(.+?)\s*$/);
+    if (headerMatch) {
+      currentSection = headerMatch[1]!.trim().split(/\s+/)[0]!.toLowerCase();
+      continue;
+    }
+
+    if (currentSection !== target) continue;
+
+    // Table row: | URL | Title | Original Cat | Severity |
     if (line.includes('|') && line.includes('http')) {
       const parts = line.split('|').map(p => p.trim());
-      // Table format: | URL | Title | Original Cat | Severity |
-      // URL is part 1 (index 1), Original Cat is part 3 (index 3)
-      if (parts.length >= 4) {
-        const url = parts[1];
-        const cat = parts[3];
-        if (url && cat && cat.toLowerCase() === categoryKey.toLowerCase()) {
-          if (url.startsWith('http')) {
-            urls.push(url);
-          }
-        }
+      const url = parts[1];
+      const title = parts[2] || '';
+      if (url && url.startsWith('http') && !seen.has(url)) {
+        seen.add(url);
+        seeds.push({ url, title });
       }
     }
   }
 
-  return [...new Set(urls)];
+  return seeds;
 }

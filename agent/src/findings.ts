@@ -142,6 +142,25 @@ export async function addFindings(
     state.seenUrls[categoryKey] = [];
   }
 
+  // Global dedup sets — the wall holds at most one entry per URL/title across ALL
+  // categories and rounds. seenUrls is persisted per category, but a URL seen in
+  // any category (or already a finding) blocks re-adding it anywhere.
+  const globalSeen = new Set<string>();
+  for (const urls of Object.values(state.seenUrls)) {
+    for (const u of urls) globalSeen.add(canonicalizeUrl(u));
+  }
+  const existingUrls = new Set(store.findings.map(existing => canonicalizeUrl(existing.url)));
+  const existingTitles = new Set(store.findings.map(existing => normalizeTitle(existing.title)));
+
+  // Record a URL as permanently seen so duplicate / failed URLs are never
+  // re-researched or re-verified in a later round. Idempotent.
+  const markSeen = (canon: string) => {
+    if (!globalSeen.has(canon)) {
+      globalSeen.add(canon);
+      state.seenUrls[categoryKey]!.push(canon);
+    }
+  };
+
   for (const f of newFindings) {
     const url = f.url;
     let canonUrl = '';
@@ -161,13 +180,10 @@ export async function addFindings(
 
     const title = normalizeTitle(f.title);
 
-    // Deep deduplication (scoped to category)
-    const isDuplicate = state.seenUrls[categoryKey]!.some(seen => canonicalizeUrl(seen) === canonUrl) ||
-                       store.findings.some(existing => existing.category === categoryKey && canonicalizeUrl(existing.url) === canonUrl) ||
-                       store.findings.some(existing => existing.category === categoryKey && normalizeTitle(existing.title) === title);
-
-    if (isDuplicate) {
+    // Deep deduplication (global: across every category and prior round)
+    if (globalSeen.has(canonUrl) || existingUrls.has(canonUrl) || existingTitles.has(title)) {
       log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
+      markSeen(canonUrl);
       continue;
     }
 
@@ -176,10 +192,12 @@ export async function addFindings(
       const isValid = await verifyUrl(url);
       if (!isValid) {
         log(`    [skipped] URL failed verification: ${url}`);
+        markSeen(canonUrl);
         continue;
       }
     } catch {
       log(`    [skipped] URL verification error: ${url}`);
+      markSeen(canonUrl);
       continue;
     }
 
@@ -200,7 +218,9 @@ export async function addFindings(
     };
 
     store.findings.push(finding);
-    state.seenUrls[categoryKey]!.push(canonUrl);
+    existingUrls.add(canonUrl);
+    existingTitles.add(title);
+    markSeen(canonUrl);
     added.push(finding);
   }
 

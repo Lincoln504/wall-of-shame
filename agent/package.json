@@ -8,13 +8,15 @@
     "dev": "tsx watch src/main.ts",
     "cli": "tsx src/cli.ts",
     "tui": "tsx src/cli.ts",
+    "seed": "tsx src/main.ts --seed --all",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@lincoln504/pi-research": "file:../../pi-research",
-    "@earendil-works/pi-ai": "^0.77.0",
-    "@earendil-works/pi-coding-agent": "^0.77.0",
+    "@earendil-works/pi-ai": "0.79.2",
+    "@earendil-works/pi-coding-agent": "0.79.2",
     "tsx": "^4.19.0",
     "typebox": "^1.1.37"
   },

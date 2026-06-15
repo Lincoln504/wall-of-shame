@@ -3,8 +3,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import {
   initResearchSDK,
   runQuickResearch,
-  disposeResearchSDK,
-  exportKnowledge,
+  shutdownResearchSDK,
   type HeadlessObserverOptions
 } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
@@ -29,27 +28,29 @@ export interface ResearchResult {
 let isSDKInitialized = false;
 
 /**
- * Initialize the PIE Research SDK for Wall of Shame.
- * Disables knowledge store and reasoning as requested.
+ * Initialize the Pi Research SDK for Wall of Shame.
+ *
+ * The knowledge store is explicitly disabled (KNOWLEDGE_STORE_MODE: 'none') —
+ * Wall of Shame is a stateless re-discovery pipeline that keeps its own dedup
+ * state in run-state.json, so no vector store is wanted. These config overrides
+ * are forwarded to every downstream service by the SDK (initResearchSDK ->
+ * runDeepResearch -> runResearch).
  */
 export async function initializeResearch(log: (msg: string) => void) {
   if (isSDKInitialized) return;
 
-  log('  [pi] initializing research SDK (reasoning=off, knowledge_store=off)...');
+  log('  [pi] initializing research SDK (knowledge_store=none, aggressive scrape)...');
 
   await initResearchSDK({
-    // Pass as string — SDK resolves it from ~/.pi/agent/models.json internally
+    // "provider/id" — resolved against pi's model registry (~/.pi/agent).
     model: `${OPENROUTER_PROVIDER}/${MODEL_ID}`,
     cwd: process.cwd(),
     config: {
-      // Disable knowledge store for Wall of Shame as requested
-      GLOBAL_KNOWLEDGE_STORE_ENABLED: false,
-      LOCAL_KNOWLEDGE_STORE_ENABLED: false,
-      // Disable reasoning/thinking as requested
-      THINKING_LEVEL: 'off',
-      // Increase batches for more thorough research since reasoning is off
+      // No knowledge/vector store — Wall of Shame manages its own dedup state.
+      KNOWLEDGE_STORE_MODE: 'none',
+      // Aggressive, thorough scraping for hard-hitting source discovery.
       MAX_SCRAPE_BATCHES: 3,
-      
+      // Generous per-researcher budget (config range is 180000–1800000 ms).
       RESEARCHER_TIMEOUT_MS: 900000,
     },
     verbose: false,
@@ -59,20 +60,12 @@ export async function initializeResearch(log: (msg: string) => void) {
 }
 
 /**
- * Shutdown the PIE Research SDK.
+ * Shutdown the Pi Research SDK and release all background resources.
  */
 export async function shutdownResearch() {
   if (!isSDKInitialized) return;
-  await disposeResearchSDK();
+  await shutdownResearchSDK();
   isSDKInitialized = false;
-}
-
-/**
- * Export the Knowledge Store for the site.
- */
-export async function exportKnowledgeForSite(outputPath: string) {
-  if (!isSDKInitialized) return;
-  await exportKnowledge(outputPath);
 }
 
 // ── Research Execution ────────────────────────────────────────────────────────

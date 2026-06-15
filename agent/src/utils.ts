@@ -148,3 +148,36 @@ export function normalizeTitle(title: string): string {
     .trim()
     .replace(/\s/g, '');        // Final removal of spaces
 }
+
+/**
+ * Run an async mapper over `items` with a bounded number of concurrent workers.
+ *
+ * Results are returned in the original item order. Each item is settled
+ * independently: a rejected mapper does NOT cancel the others — its slot in the
+ * results array is an { error } sentinel so the caller can decide per item.
+ * This is the failure-isolation primitive behind concurrent research rounds.
+ */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<Array<{ ok: true; value: R } | { ok: false; error: unknown }>> {
+  const results: Array<{ ok: true; value: R } | { ok: false; error: unknown }> = new Array(items.length);
+  const concurrency = Math.max(1, Math.min(limit, items.length || 1));
+  let next = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      try {
+        results[i] = { ok: true, value: await mapper(items[i]!, i) };
+      } catch (error) {
+        results[i] = { ok: false, error };
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  return results;
+}

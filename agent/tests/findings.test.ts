@@ -7,7 +7,7 @@ import type { FindingsStore, RunState } from '../src/types.js';
 vi.mock('@lincoln504/pi-research', () => ({
   verifyUrl: vi.fn().mockResolvedValue(true),
   initResearchSDK: vi.fn(),
-  disposeResearchSDK: vi.fn()
+  shutdownResearchSDK: vi.fn()
 }));
 
 // ── We'll monkey-patch the module's internal paths before importing ──
@@ -88,7 +88,7 @@ describe('addFindings', () => {
     expect(store.findings).toHaveLength(1);
   });
 
-  it('deduplicates by URL against both seenUrls and existing findings (scoped to category)', async () => {
+  it('deduplicates by URL against seenUrls and existing findings, recording all processed URLs as seen', async () => {
     const store: FindingsStore = {
       lastUpdated: '',
       totalFindings: 1,
@@ -119,10 +119,17 @@ describe('addFindings', () => {
     expect(added).toHaveLength(1);
     expect(added[0].url).toBe('https://example.com/new');
     expect(store.findings).toHaveLength(2);
-    expect(state.seenUrls['test']).toHaveLength(2);
+    // All three processed URLs are now recorded as seen (the pre-existing
+    // 'seen', the duplicate 'dup' which was a finding but not yet in seenUrls,
+    // and the newly added 'new') so none are re-researched next round. New
+    // entries are stored canonicalized (no protocol/www).
+    expect(state.seenUrls['test']).toHaveLength(3);
+    expect(state.seenUrls['test']).toEqual(
+      expect.arrayContaining(['example.com/dup', 'example.com/new']),
+    );
   });
 
-  it('allows same URL in different categories', async () => {
+  it('deduplicates the same URL across categories (global, one entry per URL on the wall)', async () => {
     const store: FindingsStore = {
       lastUpdated: '',
       totalFindings: 1,
@@ -148,9 +155,9 @@ describe('addFindings', () => {
 
     const added = await mod.addFindings(store, state, 'cat2', raws, 'test_query', alwaysReachable);
 
-    expect(added).toHaveLength(1);
-    expect(added[0].category).toBe('cat2');
-    expect(store.findings).toHaveLength(2);
+    // A URL already on the wall under cat1 is NOT re-added under cat2.
+    expect(added).toHaveLength(0);
+    expect(store.findings).toHaveLength(1);
   });
 
   it('robustly deduplicates adversarial URL variations', async () => {
