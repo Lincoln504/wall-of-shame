@@ -134,9 +134,11 @@ export async function addFindings(
   categoryKey: string,
   newFindings: RawFinding[],
   researchQuery: string,
-  log: (msg: string) => void
+  log: (msg: string) => void,
+  stats?: { duplicates: number; failedVerify: number; invalid: number }
 ): Promise<Finding[]> {
   const added: Finding[] = [];
+  const bump = (k: 'duplicates' | 'failedVerify' | 'invalid') => { if (stats) stats[k]++; };
 
   if (!state.seenUrls[categoryKey]) {
     state.seenUrls[categoryKey] = [];
@@ -169,12 +171,14 @@ export async function addFindings(
       const parsed = new URL(url);
       if (!['http:', 'https:'].includes(parsed.protocol)) {
         log(`    [skipped] non-http URL: ${url}`);
+        bump('invalid');
         continue;
       }
       canonUrl = canonicalizeUrl(url);
       if (!domain) domain = parsed.hostname;
     } catch {
       log(`    [skipped] invalid URL format: ${url}`);
+      bump('invalid');
       continue;
     }
 
@@ -184,6 +188,7 @@ export async function addFindings(
     if (globalSeen.has(canonUrl) || existingUrls.has(canonUrl) || existingTitles.has(title)) {
       log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
       markSeen(canonUrl);
+      bump('duplicates');
       continue;
     }
 
@@ -193,16 +198,18 @@ export async function addFindings(
       if (!isValid) {
         log(`    [skipped] URL failed verification: ${url}`);
         markSeen(canonUrl);
+        bump('failedVerify');
         continue;
       }
     } catch {
       log(`    [skipped] URL verification error: ${url}`);
       markSeen(canonUrl);
+      bump('failedVerify');
       continue;
     }
 
     let severity = f.severity;
-    if (!severity || !['critical', 'high', 'medium', 'low'].includes(severity)) {
+    if (!severity || !['high', 'medium', 'low'].includes(severity)) {
       severity = 'medium';
     }
 

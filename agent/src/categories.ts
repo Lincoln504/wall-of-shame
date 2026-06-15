@@ -50,17 +50,17 @@ export const CATEGORIES: Category[] = [
   },
   {
     key: 'gender',
-    name: 'Gender & Sexual Discrimination',
-    description: 'Rolling back gender equality, manufacturing fear around identity, and defending discriminatory practices.',
-    researchQuery: `Focus: The systematic attack on gender equality and the targeting of LGBTQ+ people through policy and public debate.
-    
+    name: 'Misogyny & Patriarchal Backlash',
+    description: 'Justifying the subordination of women, normalizing misogyny, attacking feminism, and rolling back women\'s rights and bodily autonomy.',
+    researchQuery: `Focus: Content that normalizes misogyny and patriarchal power, frames the subordination of women as natural or desirable, and attacks feminism and women's rights. (Scope is sex/women-based: patriarchy, misogyny, women's autonomy — NOT gender-identity or sexual-orientation topics.)
+
     Strategies to explore:
-    - IDENTITY FEAR-MONGERING: Using "protection" as an excuse to exclude people and using misleading health information to attack transition care.
-    - NATURALIZING SUBORDINATION: Presenting traditional power gaps between genders as "natural" and using dating/advice content to hide misogyny.
-    - CHOICE AS DEFLECTION: Claiming wage gaps are purely because of individual "choices" to avoid talking about systemic barriers.
-    - BODILY AUTONOMY ATTACKS: Using dehumanizing language to attack reproductive healthcare and the right to make one's own medical decisions.
-    - DISCRIMINATION AS FREEDOM: Presenting the "right to discriminate" as a matter of "religious liberty" or personal freedom.
-    - CULTURAL REACTION: Broader efforts to reverse progress made in gender and sexual rights.
+    - NATURALIZING SUBORDINATION: Presenting traditional power gaps between men and women as "natural," biological, or God-ordained; "tradwife"/anti-career framing used to push women out of public life.
+    - MANOSPHERE & REDPILL MISOGYNY: Dating/advice/"high-value man" content and male-grievance media that dress up contempt for women as self-help or common sense.
+    - CHOICE AS DEFLECTION: Claiming the gender pay gap or underrepresentation is purely women's individual "choices" to avoid confronting systemic barriers and discrimination.
+    - BODILY AUTONOMY ATTACKS: Dehumanizing language against reproductive healthcare and women's right to make their own medical decisions; framing forced birth as "protection."
+    - ANTI-FEMINIST GRIEVANCE: Presenting feminism itself as the problem, mocking women's advancement, or recasting men as the real victims of equality.
+    - VIOLENCE MINIMIZATION: Downplaying, excusing, or victim-blaming domestic and sexual violence against women.
     - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {

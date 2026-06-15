@@ -25,7 +25,7 @@ const ReviewedFindingSchema = Type.Object({
   summary: Type.String(),
   category: Type.String(),
   whyBad: Type.String(),
-  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high'), Type.Literal('critical')]),
+  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')]),
   verificationLog: Type.String(),
 });
 
@@ -116,7 +116,10 @@ export async function runReview(
     settingsManager,
     sessionManager: SessionManager.inMemory(),
     model,
-    thinkingLevel: 'off',
+    // Low reasoning: the golden-quality analysis is produced by the deepseek
+    // extraction stage (reasoning OFF); the reviewer only needs a light touch to
+    // verify quotes and refine. Keeps cost/latency down at scale.
+    thinkingLevel: 'low',
     tools: ['research'],
   });
 

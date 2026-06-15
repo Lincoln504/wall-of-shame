@@ -1,9 +1,11 @@
 import { Type, type Static } from 'typebox';
 
+// low | medium | high only — matches the golden-era calibration and the site's
+// severity filter (App.tsx). No 'critical' tier.
 export const SeveritySchema = Type.Union([
   Type.Literal('low'),
   Type.Literal('medium'),
-  Type.Literal('high'), Type.Literal('critical')
+  Type.Literal('high'),
 ]);
 
 export const FindingSchema = Type.Object({

@@ -25,7 +25,7 @@
 import type { Category } from './types.js';
 import { CATEGORY_COUNT } from './categories.js';
 import {
-  loadFindings, saveFindings, loadState, saveState, addFindings,
+  loadFindings, saveFindings, loadState, saveState, addFindings, DATA_DIR,
   type RawFinding, type FindingsStore, type RunState,
 } from './findings.js';
 import { runResearch, initializeResearch } from './researcher.js';
@@ -33,6 +33,10 @@ import { runReview } from './reviewer.js';
 import { getLegacySeeds } from './legacy.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
 import { mapWithConcurrency } from './utils.js';
+import {
+  buildRunTelemetry, writeRunReport, logRunSummary,
+  type CategoryTelemetry, type RunTelemetry,
+} from './telemetry.js';
 
 const RESEARCH_ATTEMPTS = 2;
 const REVIEW_ATTEMPTS = 2;
@@ -62,28 +66,35 @@ export interface RoundResult {
   errors: number;
   perCategory: CategoryOutcome[];
   totalFindings: number;
+  telemetry: RunTelemetry;
+  reportPath: string;
 }
 
 interface ReviewedBundle {
   reviewed: RawFinding[];
   queries: string[];
+  /** audit telemetry from phase 1 */
+  researchMs: number;
+  reviewMs: number;
+  candidates: number;
 }
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
-/** Review a report with bounded retries. Returns [] if the report is empty. */
+/** Review extracted findings (or a raw report) with bounded retries. */
 async function reviewWithRetries(
   catKey: string,
-  report: string,
+  input: RawFinding[] | string,
   log: (msg: string) => void,
 ): Promise<RawFinding[]> {
-  if (!report) {
-    log(`  [warn] ${catKey}: empty report, nothing to review`);
+  const empty = Array.isArray(input) ? input.length === 0 : !input;
+  if (empty) {
+    log(`  [warn] ${catKey}: nothing to review`);
     return [];
   }
   for (let attempt = 1; attempt <= REVIEW_ATTEMPTS; attempt++) {
     try {
-      return await runReview(report, log);
+      return await runReview(input, log);
     } catch (err) {
       log(`  [error] ${catKey} review attempt ${attempt}/${REVIEW_ATTEMPTS} failed: ${String(err)}`);
       if (attempt === REVIEW_ATTEMPTS) throw err;
@@ -93,20 +104,23 @@ async function reviewWithRetries(
   return [];
 }
 
-/** Phase-1 work for DISCOVERY: research (retried) then review (retried). */
+/** Phase-1 work for DISCOVERY: research+extract (retried) then review (retried). */
 async function researchAndReview(
   cat: Category,
   store: FindingsStore,
   state: RunState,
   log: (msg: string) => void,
 ): Promise<ReviewedBundle> {
+  let findings: RawFinding[] = [];
   let report = '';
   let queries: string[] = [];
 
+  const researchStart = Date.now();
   for (let attempt = 1; attempt <= RESEARCH_ATTEMPTS; attempt++) {
     try {
       const catHistory = state.queryHistory[cat.key] || {};
       const result = await runResearch(cat.researchQuery, cat.key, cat.name, catHistory, store, state, log);
+      findings = result.findings;
       report = result.rawReport || '';
       queries = result.queries;
       break;
@@ -116,9 +130,14 @@ async function researchAndReview(
       await sleep(RETRY_DELAY_MS);
     }
   }
+  const researchMs = Date.now() - researchStart;
 
-  const reviewed = await reviewWithRetries(cat.key, report, log);
-  return { reviewed, queries };
+  // Golden flow: the reviewer audits the extracted findings; if extraction
+  // produced nothing, fall back to letting the reviewer mine the raw report.
+  const reviewInput: RawFinding[] | string = findings.length > 0 ? findings : report;
+  const reviewStart = Date.now();
+  const reviewed = await reviewWithRetries(cat.key, reviewInput, log);
+  return { reviewed, queries, researchMs, reviewMs: Date.now() - reviewStart, candidates: findings.length };
 }
 
 /** Build a directed reviewer report that evaluates a category's curated seed URLs. */
@@ -147,11 +166,12 @@ async function evaluateSeeds(
   const seeds = getLegacySeeds(cat.key);
   if (seeds.length === 0) {
     log(`  [seed] ${cat.key}: no legacy seeds`);
-    return { reviewed: [], queries: [] };
+    return { reviewed: [], queries: [], researchMs: 0, reviewMs: 0, candidates: 0 };
   }
   log(`  [seed] ${cat.key}: evaluating ${seeds.length} curated links`);
+  const reviewStart = Date.now();
   const reviewed = await reviewWithRetries(cat.key, buildSeedReport(cat, seeds), log);
-  return { reviewed, queries: [] };
+  return { reviewed, queries: [], researchMs: 0, reviewMs: Date.now() - reviewStart, candidates: seeds.length };
 }
 
 /**
@@ -163,44 +183,65 @@ async function mergeAndPersist(
   settled: Array<{ ok: true; value: ReviewedBundle } | { ok: false; error: unknown }>,
   store: FindingsStore,
   state: RunState,
-  opts: { commit: boolean; startIndex?: number; log: (msg: string) => void },
+  opts: { commit: boolean; startIndex?: number; log: (msg: string) => void;
+          mode: 'discovery' | 'seed'; concurrency: number; startedAt: number; runId: string },
 ): Promise<RoundResult> {
   const { log } = opts;
   let totalAdded = 0;
   let errors = 0;
   const perCategory: CategoryOutcome[] = [];
+  const telemetry: CategoryTelemetry[] = [];
 
   for (let i = 0; i < categories.length; i++) {
     const cat = categories[i]!;
     const outcome = settled[i]!;
 
+    const t: CategoryTelemetry = {
+      key: cat.key, name: cat.name, ok: false,
+      researchMs: 0, reviewMs: 0, mergeMs: 0, totalMs: 0,
+      candidates: 0, reviewed: 0, added: 0, duplicates: 0, failedVerify: 0, invalid: 0,
+    };
+
     if (!outcome.ok) {
       errors++;
-      perCategory.push({ key: cat.key, name: cat.name, added: 0, error: String(outcome.error) });
-      log(`  [skip] ${cat.key}: failed after retries — ${String(outcome.error)}`);
+      t.error = String(outcome.error);
+      t.failedStage = 'research';
+      telemetry.push(t);
+      perCategory.push({ key: cat.key, name: cat.name, added: 0, error: t.error });
+      log(`  [skip] ${cat.key}: failed after retries — ${t.error}`);
       continue;
     }
 
-    const { reviewed, queries } = outcome.value;
+    const { reviewed, queries, researchMs, reviewMs, candidates } = outcome.value;
+    t.researchMs = researchMs; t.reviewMs = reviewMs; t.candidates = candidates; t.reviewed = reviewed.length;
 
-    let added = 0;
+    const stats = { duplicates: 0, failedVerify: 0, invalid: 0 };
+    const mergeStart = Date.now();
     try {
-      const addedFindings = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, log);
-      added = addedFindings.length;
+      const addedFindings = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, log, stats);
+      t.added = addedFindings.length;
     } catch (err) {
       errors++;
-      perCategory.push({ key: cat.key, name: cat.name, added: 0, error: String(err) });
-      log(`  [skip] ${cat.key}: merge failed — ${String(err)}`);
+      t.error = String(err); t.failedStage = 'merge';
+      t.mergeMs = Date.now() - mergeStart; t.totalMs = researchMs + reviewMs + t.mergeMs;
+      telemetry.push(t);
+      perCategory.push({ key: cat.key, name: cat.name, added: 0, error: t.error });
+      log(`  [skip] ${cat.key}: merge failed — ${t.error}`);
       continue;
     }
+    t.mergeMs = Date.now() - mergeStart;
+    t.duplicates = stats.duplicates; t.failedVerify = stats.failedVerify; t.invalid = stats.invalid;
+    t.totalMs = researchMs + reviewMs + t.mergeMs;
+    t.ok = true;
 
     if (!state.queryHistory[cat.key]) state.queryHistory[cat.key] = {};
     const now = new Date().toISOString();
     for (const q of queries) state.queryHistory[cat.key]![q] = now;
 
-    totalAdded += added;
-    perCategory.push({ key: cat.key, name: cat.name, added });
-    log(`  [ok] ${cat.key}: +${added} new`);
+    totalAdded += t.added;
+    telemetry.push(t);
+    perCategory.push({ key: cat.key, name: cat.name, added: t.added });
+    log(`  [ok] ${cat.key}: +${t.added} new (cand=${t.candidates} rev=${t.reviewed} dup=${t.duplicates} failV=${t.failedVerify})`);
 
     // Persist progress atomically after each category.
     saveFindings(store);
@@ -216,17 +257,28 @@ async function mergeAndPersist(
     commitAndPush(totalAdded, `${categories.length} categories`, log);
   }
 
-  return { totalAdded, errors, perCategory, totalFindings: store.findings.length };
+  // Build + persist the pi-research audit artifact for this run.
+  const run = buildRunTelemetry({
+    runId: opts.runId, mode: opts.mode, startedAt: opts.startedAt, finishedAt: Date.now(),
+    concurrency: opts.concurrency, totalFindingsAfter: store.findings.length, categories: telemetry,
+  });
+  const reportPath = writeRunReport(run, DATA_DIR);
+  logRunSummary(run, log);
+  log(`  [audit] run report written: ${reportPath}`);
+
+  return { totalAdded, errors, perCategory, totalFindings: store.findings.length, telemetry: run, reportPath };
 }
 
 /** Run a general-search DISCOVERY round over the given categories. */
 export async function runRound(opts: RoundOptions): Promise<RoundResult> {
   const { categories, concurrency, log } = opts;
+  const startedAt = Date.now();
+  const runId = `${new Date(startedAt).toISOString().replace(/[:.]/g, '-')}-discovery`;
   const store = loadFindings();
   const state = loadState();
 
   await initializeResearch(log);
-  log(`discovery round: ${categories.length} categories @ concurrency ${concurrency}`);
+  log(`discovery round ${runId}: ${categories.length} categories @ concurrency ${concurrency}`);
 
   const settled = await mapWithConcurrency(
     categories, concurrency,
@@ -234,20 +286,21 @@ export async function runRound(opts: RoundOptions): Promise<RoundResult> {
   );
 
   return mergeAndPersist(categories, settled, store, state, {
-    commit: opts.commit ?? true,
-    startIndex: opts.startIndex,
-    log,
+    commit: opts.commit ?? true, startIndex: opts.startIndex, log,
+    mode: 'discovery', concurrency, startedAt, runId,
   });
 }
 
 /** Run a SEED re-evaluation round over the curated legacy URLs for each category. */
 export async function runSeedRound(opts: RoundOptions): Promise<RoundResult> {
   const { categories, concurrency, log } = opts;
+  const startedAt = Date.now();
+  const runId = `${new Date(startedAt).toISOString().replace(/[:.]/g, '-')}-seed`;
   const store = loadFindings();
   const state = loadState();
 
   await initializeResearch(log);
-  log(`seed round: ${categories.length} categories @ concurrency ${concurrency}`);
+  log(`seed round ${runId}: ${categories.length} categories @ concurrency ${concurrency}`);
 
   const settled = await mapWithConcurrency(
     categories, concurrency,
@@ -255,8 +308,7 @@ export async function runSeedRound(opts: RoundOptions): Promise<RoundResult> {
   );
 
   return mergeAndPersist(categories, settled, store, state, {
-    commit: opts.commit ?? true,
-    startIndex: opts.startIndex,
-    log,
+    commit: opts.commit ?? true, startIndex: opts.startIndex, log,
+    mode: 'seed', concurrency, startedAt, runId,
   });
 }
