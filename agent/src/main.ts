@@ -91,7 +91,23 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error('Fatal unhandled error:', err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // Batch CLI: exit deterministically. wall-of-shame opens its own keep-alive
+    // HTTP sockets to OpenRouter (gemma completeSimple for extraction/review, and
+    // verifyUrl's fetch). undici honours the server's keep-alive hint (up to a
+    // ~10-min cap), so at concurrency an idle socket pool keeps libuv's event loop
+    // alive for many minutes AFTER all work + SDK shutdown are done — the process
+    // would otherwise appear to "hang". The pi-research SDK itself disposes its own
+    // sockets cleanly (verified); this is purely about our own clients.
+    //
+    // All durable work (findings.json, run-state.json, audit JSON, git) is written
+    // synchronously before we reach here, so forcing exit truncates nothing. The
+    // timer is unref'd: if the loop is already empty the process exits immediately;
+    // otherwise it force-exits after a brief stdout-drain grace window.
+    setTimeout(() => process.exit(process.exitCode ?? 0), 1500).unref();
+  })
+  .catch(err => {
+    console.error('Fatal unhandled error:', err);
+    process.exit(1);
+  });
