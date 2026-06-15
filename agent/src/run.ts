@@ -28,6 +28,7 @@ import {
   loadFindings, saveFindings, loadState, saveState, addFindings, DATA_DIR,
   type RawFinding, type FindingsStore, type RunState,
 } from './findings.js';
+import { getSessionMetrics, extractRunStats } from '@lincoln504/pi-research';
 import { runResearch, initializeResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
 import { getLegacySeeds } from './legacy.js';
@@ -257,10 +258,19 @@ async function mergeAndPersist(
     commitAndPush(totalAdded, `${categories.length} categories`, log);
   }
 
+  // Capture pi-research's own internal telemetry for this round (the tool under
+  // audit). Session metrics are cumulative since SDK init; with one round per
+  // process invocation this equals this round's stats.
+  let piResearch = null;
+  try {
+    piResearch = extractRunStats(getSessionMetrics());
+  } catch { /* SDK metrics unavailable (e.g. seed mode without research) */ }
+
   // Build + persist the pi-research audit artifact for this run.
   const run = buildRunTelemetry({
     runId: opts.runId, mode: opts.mode, startedAt: opts.startedAt, finishedAt: Date.now(),
     concurrency: opts.concurrency, totalFindingsAfter: store.findings.length, categories: telemetry,
+    piResearch,
   });
   const reportPath = writeRunReport(run, DATA_DIR);
   logRunSummary(run, log);

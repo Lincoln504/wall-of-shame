@@ -11,6 +11,7 @@
 
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import type { ResearchStats } from '@lincoln504/pi-research';
 
 export interface CategoryTelemetry {
   key: string;
@@ -46,6 +47,9 @@ export interface RunTelemetry {
   concurrency: number;
   categoryCount: number;
   totalFindingsAfter: number;
+  /** pi-research's own internal telemetry for this round (the tool under audit):
+   *  researchers launched, searches, URLs analyzed/failed, tokens, cost, tool usage. */
+  piResearch: ResearchStats | null;
   categories: CategoryTelemetry[];
   totals: {
     added: number;
@@ -82,6 +86,7 @@ export function buildRunTelemetry(input: {
   concurrency: number;
   totalFindingsAfter: number;
   categories: CategoryTelemetry[];
+  piResearch?: ResearchStats | null;
 }): RunTelemetry {
   const cats = input.categories;
   const sum = (f: (c: CategoryTelemetry) => number) => cats.reduce((a, c) => a + f(c), 0);
@@ -109,6 +114,7 @@ export function buildRunTelemetry(input: {
     concurrency: input.concurrency,
     categoryCount: cats.length,
     totalFindingsAfter: input.totalFindingsAfter,
+    piResearch: input.piResearch ?? null,
     categories: cats,
     totals,
     rates: {
@@ -144,6 +150,14 @@ export function logRunSummary(t: RunTelemetry, log: (msg: string) => void): void
   log('── totals ──');
   log(`  candidates=${t.totals.candidates} reviewed=${t.totals.reviewed} added=${t.totals.added} `
     + `dup=${t.totals.duplicates} failVerify=${t.totals.failedVerify} invalid=${t.totals.invalid} errors=${t.totals.errors}`);
+  if (t.piResearch) {
+    const p = t.piResearch;
+    log('── pi-research internals (tool under audit) ──');
+    log(`  researchers=${p.researchersLaunched} rounds=${p.roundsCompleted} searchQueries=${p.searchQueries} `
+      + `urlsDiscovered=${p.urlsDiscovered} urlsAnalyzed=${p.urlsAnalyzed} urlsFailed=${p.urlsFailed}`);
+    log(`  fetchSuccess=${p.fetchSuccess} browserSuccess=${p.browserSuccess} browserFallbacks=${p.browserFallbacks} `
+      + `errors=${p.errors} tokens=${p.tokens} cost=$${(p.cost ?? 0).toFixed?.(4) ?? p.cost}`);
+  }
   log('── per category ──');
   for (const c of t.categories) {
     const status = c.ok ? 'ok ' : `ERR(${c.failedStage})`;
