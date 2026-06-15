@@ -1,5 +1,50 @@
 import { describe, it, expect } from 'vitest';
-import { safeParseJson, canonicalizeUrl, normalizeTitle } from '../src/utils.js';
+import { safeParseJson, canonicalizeUrl, normalizeTitle, normalizeWhyBad } from '../src/utils.js';
+
+describe('normalizeWhyBad', () => {
+  it('strips a leading "Analysis:" label', () => {
+    expect(normalizeWhyBad('Analysis: 1. The piece claims X.')).toBe('1. The piece claims X.');
+  });
+
+  it('strips the "Analysis: [ ... ]" golden-token wrapper', () => {
+    expect(normalizeWhyBad('Analysis: [1. Quote. 2. Fallacy.]')).toBe('1. Quote. 2. Fallacy.');
+  });
+
+  it('strips a bare outer bracket wrapper', () => {
+    expect(normalizeWhyBad('[1. Quote. 2. Harm.]')).toBe('1. Quote. 2. Harm.');
+  });
+
+  it('collapses repeated "Analysis:" labels', () => {
+    expect(normalizeWhyBad('Analysis: Analysis: 1. X.')).toBe('1. X.');
+  });
+
+  it('unwraps a fenced JSON object that leaked in as the value', () => {
+    const raw = '```json\n{"whyBad": "Analysis: [1. Quote. 2. Harm.]"}\n```';
+    expect(normalizeWhyBad(raw)).toBe('1. Quote. 2. Harm.');
+  });
+
+  it('recovers a leaked JSON object containing invalid JSON escapes', () => {
+    // Real failure mode: prose-style \' escapes make JSON.parse throw.
+    const raw = `{"whyBad": "Analysis: [1. It is a \\'public-health\\' framing. 2. Harm.]"}`;
+    expect(normalizeWhyBad(raw)).toBe("1. It is a 'public-health' framing. 2. Harm.");
+  });
+
+  it('is idempotent on already-clean text', () => {
+    const clean = '1. The author asserts X. 2. This is loaded language. 3. It hides harm.';
+    expect(normalizeWhyBad(clean)).toBe(clean);
+    expect(normalizeWhyBad(normalizeWhyBad(clean))).toBe(clean);
+  });
+
+  it('never destroys content (returns trimmed original if stripping empties it)', () => {
+    expect(normalizeWhyBad('   ')).toBe('');
+    expect(normalizeWhyBad('Analysis:')).toBe('Analysis:');
+  });
+
+  it('does not strip brackets that are not a full wrapper', () => {
+    const s = '1. The bill (see [Section 4]) does X.';
+    expect(normalizeWhyBad(s)).toBe(s);
+  });
+});
 
 describe('safeParseJson', () => {
   it('parses a valid JSON object', () => {

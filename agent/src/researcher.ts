@@ -55,7 +55,7 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
 5. SELECTIVITY: Only include content where the piece itself acts to NORMALIZE, JUSTIFY, or HIDE the harm of regressive policies — op-eds, "alternative" news, think-tank reports, and industry PR that use biased framing. OMIT neutral, fact-based reporting.
 
 WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigorous):
-The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Start it with the literal token "Analysis: [" and end with "]". Cover, in order:
+The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap the whole thing in square brackets (the site adds its own "Analysis:" heading). Cover, in order:
   1. Cite a specific claim or verbatim quote from the piece (use quotation marks).
   2. Name the precise rhetorical/framing technique or logical fallacy in plain English (e.g. "race-to-the-top fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "historical determinism", "false dichotomy", "loaded language").
   3. Explain concretely how this normalizes, justifies, or hides real-world harm.
@@ -77,7 +77,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "domain": "example.com",
       "summary": "- 3-5 main points in simple language, including at least one verbatim quote.\\n- The author's intended conclusion, stated neutrally.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "Analysis: [1. Cite a verbatim quote. 2. Name the specific fallacy/framing technique. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts (studies/laws/outcomes with dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction.] (>=150 words, scathing, evidence-grounded)",
+      "whyBad": "1. Cite a verbatim quote. 2. Name the specific fallacy/framing technique. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts (studies/laws/outcomes with dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction. (>=150 words, scathing, evidence-grounded; no 'Analysis:' label, no surrounding brackets)",
       "severity": "low|medium|high"
     }
   ]

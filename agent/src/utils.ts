@@ -150,6 +150,68 @@ export function normalizeTitle(title: string): string {
 }
 
 /**
+ * Normalize a whyBad analysis string for STORAGE/DISPLAY.
+ *
+ * Defense-in-depth against three malformations the models have produced:
+ *   1. The whole raw response leaking in (```json fences and/or a {"whyBad": "..."}
+ *      JSON object) instead of just the analysis text.
+ *   2. A leading "Analysis:" label (one or more) — the site renders its own
+ *      "Analysis:" heading, so a stored label produces "Analysis: Analysis: ...".
+ *   3. The analysis wrapped in an outer "[ ... ]" pair (the old golden-format token),
+ *      which then shows literal brackets in the UI.
+ *
+ * The numbered "1. … 5. …" structure is preserved verbatim. If normalization would
+ * empty the string, the trimmed original is returned (never destroy content).
+ */
+export function normalizeWhyBad(input: unknown): string {
+  let s = (input == null ? '' : String(input)).trim();
+  if (!s) return '';
+  const original = s;
+
+  // 1a. Unwrap a markdown code fence if the value is fenced.
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) s = fence[1].trim();
+
+  // 1b. If the value is (or contains) a JSON object carrying a whyBad key, pull it out.
+  if (/"whyBad"\s*:/.test(s)) {
+    // Models sometimes emit prose-style escapes (e.g. \') that are INVALID JSON and
+    // make JSON.parse throw. Strip backslashes that don't begin a legal JSON escape
+    // so the object parses; this never touches valid \\ \" \/ \b \f \n \r \t \uXXXX.
+    const dropBadEscapes = (t: string) => t.replace(/\\(?!["\\/bfnrtu])/g, '');
+    try {
+      const objMatch = s.match(/\{[\s\S]*\}/);
+      if (objMatch) {
+        const obj = JSON.parse(dropBadEscapes(objMatch[0])) as { whyBad?: unknown };
+        if (obj && typeof obj.whyBad === 'string') s = obj.whyBad.trim();
+      }
+    } catch {
+      const m = s.match(/"whyBad"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) {
+        try { s = JSON.parse(`"${dropBadEscapes(m[1])}"`); } catch { /* keep s */ }
+        s = s.trim();
+      }
+    }
+  }
+
+  // 2. Strip one or more leading "Analysis:" labels.
+  s = s.replace(/^(?:Analysis:\s*)+/i, '').trim();
+
+  // 3. Strip a single outer [ ... ] wrapper (the old golden-format token).
+  if (s.startsWith('[') && s.endsWith(']')) {
+    const inner = s.slice(1, -1).trim();
+    if (inner) s = inner;
+  }
+
+  // A second label can hide behind the bracket ("[Analysis: ...]").
+  s = s.replace(/^(?:Analysis:\s*)+/i, '').trim();
+
+  // Normalize line endings; do not otherwise reflow the analysis.
+  s = s.replace(/\r\n?/g, '\n').trim();
+
+  return s || original;
+}
+
+/**
  * Run an async mapper over `items` with a bounded number of concurrent workers.
  *
  * Results are returned in the original item order. Each item is settled

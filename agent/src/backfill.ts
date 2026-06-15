@@ -51,7 +51,7 @@ const BACKFILL_PROMPT = `You are the Lead Auditor for the Wall of Shame database
 You have NO web access. Ground your analysis ONLY in the ENTRY below — its summary already contains the article's verbatim quote and core argument. Do not change the URL, title, or category.
 
 Write a whyBad that:
-- begins with the literal token "Analysis: [" and ends with "]";
+- begins the text directly with "1." — NO "Analysis:" label and NO surrounding square brackets (the site adds its own "Analysis:" heading);
 - is 180–280 words, written as an explicitly NUMBERED breakdown;
 1. cite the verbatim quote (in quotation marks) and the claim it advances;
 2. name the precise framing technique or logical fallacy in plain English (e.g. "false dichotomy", "loaded language", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "just-world fallacy") — list MULTIPLE where present;
@@ -61,7 +61,7 @@ Write a whyBad that:
 
 NO FABRICATION: external context must be genuinely well-established public knowledge. Never invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead. Plain hard-hitting English, no academic jargon.
 
-Return ONLY a raw JSON object: {"whyBad": "Analysis: [ ... ]"}`;
+Return ONLY a raw JSON object: {"whyBad": "1. ... 2. ... 3. ... 4. External Context: ... 5. CONFLICT OF INTEREST / TIMELINESS NOTE: ..."}`;
 
 function buildUserText(f: Finding): string {
   return [
@@ -84,8 +84,8 @@ async function enrichOne(f: Finding, log: (m: string) => void): Promise<string |
     const obj = safeParseJson<{ whyBad?: string }>(m ? m[0] : text);
     whyBad = (obj.whyBad ?? '').trim();
   } catch {
-    // Fall back to raw text if it looks like a bare analysis.
-    if (/Analysis:\s*\[/.test(text)) whyBad = text.trim();
+    // Fall back to raw text if it looks like a bare numbered analysis.
+    if (/(^|\n)\s*1\.\s/.test(text) || /Analysis:\s*\[/.test(text)) whyBad = text.trim();
   }
   if (!whyBad) return null;
   // NO-REGRESSION GATE.

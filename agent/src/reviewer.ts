@@ -53,7 +53,7 @@ FOR EACH candidate, apply this workflow:
 3. PRESERVE-OR-STRENGTHEN whyBad (NEVER oversimplify, NEVER shorten a good analysis):
    - PRESERVE: if the analysis is already rich (>=150 words, cites a verbatim quote, names specific fallacies, and supplies external context), KEEP IT AS-IS or only correct factual inaccuracies. Do not trim it.
    - STRENGTHEN: if it is thin, generic, or under-developed, EXPAND it to the full bar below. Adding depth is the goal; collapsing it into two or three sentences is a FAILURE of the audit.
-   The bar — a scathing, evidence-grounded, plain-English breakdown of AT LEAST 150 words (aim 180–280). Begin with the literal token "Analysis: [" and end with "]". Cover in order:
+   The bar — a scathing, evidence-grounded, plain-English breakdown of AT LEAST 150 words (aim 180–280). Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap it in square brackets (the site adds its own "Analysis:" heading). Cover in order:
    1. cite a specific claim or verbatim quote from the piece (in quotation marks);
    2. name the precise framing technique or logical fallacy in plain English (e.g. "race-to-the-bottom fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "false dichotomy", "loaded language") — list MULTIPLE where present;
    3. explain concretely how it normalizes, justifies, or hides real-world harm;
@@ -76,7 +76,7 @@ Each entry must follow this schema exactly:
   "domain": "...",
   "summary": "- key points in plain language, including at least one verbatim quote.",
   "category": "...",
-  "whyBad": "Analysis: [1. verbatim quote. 2. named fallacy/framing technique(s). 3. concrete real-world harm. 4. External Context: rebutting facts with dates. 5. CONFLICT OF INTEREST / TIMELINESS NOTE where applicable.] (>=150 words; preserve rich researcher analysis, never shorten it)",
+  "whyBad": "1. verbatim quote. 2. named fallacy/framing technique(s). 3. concrete real-world harm. 4. External Context: rebutting facts with dates. 5. CONFLICT OF INTEREST / TIMELINESS NOTE where applicable. (>=150 words; preserve rich researcher analysis, never shorten it; no 'Analysis:' label, no surrounding brackets)",
   "severity": "low|medium|high",
   "verificationLog": "Desk audit: preserved/strengthened — one-line reason and what was checked against the context."
 }

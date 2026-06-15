@@ -3,9 +3,10 @@ import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from '
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { verifyUrl as sdkVerifyUrl } from '@lincoln504/pi-research';
+import { Value } from 'typebox/value';
 import type { Finding, FindingsStore, RunState } from './types.js';
 import { FindingsStoreSchema, RunStateSchema } from './types.js';
-import { safeParseValidatedJson, canonicalizeUrl, normalizeTitle } from './utils.js';
+import { canonicalizeUrl, normalizeTitle, normalizeWhyBad } from './utils.js';
 
 // Export types for consumer use
 export type { Finding, FindingsStore, RunState };
@@ -75,8 +76,16 @@ function emptyState(): RunState {
 export function loadFindings(): FindingsStore {
   if (!existsSync(FINDINGS_PATH)) return emptyStore();
   try {
+    // The findings file is OUR own artifact, always written via JSON.stringify, so
+    // it is strict JSON — parse it directly. Do NOT route it through the LLM-noise
+    // extractor (safeParseJson): that locates JSON by brace/bracket counting, which
+    // a whyBad value containing literal "[ ... ]" or braces will derail.
     const raw = readFileSync(FINDINGS_PATH, 'utf-8');
-    return safeParseValidatedJson(FindingsStoreSchema, raw);
+    const data = JSON.parse(raw) as unknown;
+    if (!Value.Check(FindingsStoreSchema, data)) {
+      throw new Error('findings.json does not match FindingsStoreSchema');
+    }
+    return data as FindingsStore;
   } catch (err) {
     throw new Error(`CRITICAL: Findings file exists but is corrupted or invalid: ${String(err)}`);
   }
@@ -85,6 +94,10 @@ export function loadFindings(): FindingsStore {
 export function saveFindings(store: FindingsStore): void {
   store.lastUpdated = new Date().toISOString();
   store.totalFindings = store.findings.length;
+  // Self-healing guard: normalize EVERY entry's whyBad on every write (idempotent on
+  // already-clean text). This prevents a concurrent round that loaded a pre-clean
+  // store from writing stale "Analysis: [...]" / fenced values back onto the wall.
+  for (const f of store.findings) f.whyBad = normalizeWhyBad(f.whyBad);
   writeAtomic(FINDINGS_PATH, store);
 }
 
@@ -244,6 +257,9 @@ export async function addFindings(
       id: randomUUID(),
       url,
       domain: domain!,
+      // Sanitize at storage time so a stray "Analysis: [...]" / fenced-JSON value can
+      // never reach the wall, regardless of which model stage produced it.
+      whyBad: normalizeWhyBad(f.whyBad),
       severity: severity as Finding['severity'],
       category: categoryKey,
       foundAt: new Date().toISOString(),
