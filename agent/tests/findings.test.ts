@@ -21,9 +21,14 @@ beforeAll(async () => {
   process.env['PI_AGENT_DATA_DIR'] = tempDir;
   findingsPath = join(tempDir, 'findings.json');
   statePath = join(tempDir, 'run-state.json');
+  // verifyUrl() now leads with an HTTP existence probe — stub fetch so tests are
+  // deterministic and offline. 200 => the URL exists (none of these tests assert
+  // a verification failure; dead-URL behaviour is exercised via URL-shape checks).
+  vi.stubGlobal('fetch', vi.fn(async () => ({ status: 200 }) as any));
 });
 
 afterAll(() => {
+  vi.unstubAllGlobals();
   if (tempDir && existsSync(tempDir)) {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -328,5 +333,40 @@ describe('findings full lifecycle (integration)', () => {
     const store2 = mod.loadFindings();
     expect(store2.findings).toHaveLength(1);
     expect(store2.findings[0].url).toBe('https://ex.com/harmful');
+  });
+});
+
+// ── verifyUrl existence gate (Cloudflare-tolerant) ─────────────────────────────
+describe('verifyUrl existence gate', () => {
+  let mod: Awaited<ReturnType<typeof importFindingsModule>>;
+  beforeAll(async () => { mod = await importFindingsModule(); });
+  afterEach(() => { vi.mocked(fetch as any).mockReset?.(); });
+
+  const stubStatus = (status: number) =>
+    vi.mocked(fetch as any).mockResolvedValueOnce({ status } as any);
+
+  it('treats 200 as existing', async () => {
+    stubStatus(200);
+    expect(await mod.verifyUrl('https://live.example/ok')).toBe(true);
+  });
+
+  it('treats a Cloudflare/auth/rate-limit response (403/429/503) as existing', async () => {
+    for (const code of [401, 403, 429, 503]) {
+      stubStatus(code);
+      expect(await mod.verifyUrl(`https://protected.example/${code}`)).toBe(true);
+    }
+  });
+
+  it('treats 404/410 as dead', async () => {
+    stubStatus(404);
+    expect(await mod.verifyUrl('https://gone.example/missing')).toBe(false);
+    stubStatus(410);
+    expect(await mod.verifyUrl('https://gone.example/gone')).toBe(false);
+  });
+
+  it('falls back to the SDK stealth check when the HTTP probe throws', async () => {
+    // sdkVerifyUrl is mocked to resolve true at the top of this file.
+    vi.mocked(fetch as any).mockRejectedValueOnce(new Error('ECONNRESET'));
+    expect(await mod.verifyUrl('https://flaky.example/x')).toBe(true);
   });
 });

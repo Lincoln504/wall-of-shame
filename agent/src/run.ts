@@ -87,6 +87,7 @@ async function reviewWithRetries(
   catKey: string,
   input: RawFinding[] | string,
   log: (msg: string) => void,
+  context?: string,
 ): Promise<RawFinding[]> {
   const empty = Array.isArray(input) ? input.length === 0 : !input;
   if (empty) {
@@ -95,7 +96,7 @@ async function reviewWithRetries(
   }
   for (let attempt = 1; attempt <= REVIEW_ATTEMPTS; attempt++) {
     try {
-      return await runReview(input, log);
+      return await runReview(input, log, context);
     } catch (err) {
       log(`  [error] ${catKey} review attempt ${attempt}/${REVIEW_ATTEMPTS} failed: ${String(err)}`);
       if (attempt === REVIEW_ATTEMPTS) throw err;
@@ -133,46 +134,38 @@ async function researchAndReview(
   }
   const researchMs = Date.now() - researchStart;
 
-  // Golden flow: the reviewer audits the extracted findings; if extraction
-  // produced nothing, fall back to letting the reviewer mine the raw report.
+  // Golden flow: the reviewer audits the extracted findings, grounded in the raw
+  // research report (desk-audit context). If extraction produced nothing, fall
+  // back to letting the reviewer mine the raw report directly.
   const reviewInput: RawFinding[] | string = findings.length > 0 ? findings : report;
+  const reviewContext = findings.length > 0 ? report : undefined;
   const reviewStart = Date.now();
-  const reviewed = await reviewWithRetries(cat.key, reviewInput, log);
+  const reviewed = await reviewWithRetries(cat.key, reviewInput, log, reviewContext);
   return { reviewed, queries, researchMs, reviewMs: Date.now() - reviewStart, candidates: findings.length };
 }
 
-/** Build a directed reviewer report that evaluates a category's curated seed URLs. */
-function buildSeedReport(cat: Category, seeds: { url: string; title: string }[]): string {
-  const list = seeds.map((s, i) => `${i + 1}. ${s.url}${s.title ? `  — ${s.title}` : ''}`).join('\n');
-  return [
-    `CATEGORY: ${cat.name}`,
-    `FOCUS: ${cat.description}`,
-    '',
-    'The following are previously-curated source URLs for this category. Evaluate EACH one:',
-    "use the 'research' tool with depth: 0 and the URL as the query to read the page, then —",
-    'if it uses biased framing to normalize, justify, or hide the harm described in the FOCUS —',
-    'produce a finding following the output schema. OMIT any URL that is dead, unreachable, or',
-    'merely reports facts neutrally. Write sharp, plain-English, hard-hitting analysis in whyBad.',
-    '',
-    'SEED URLS:',
-    list,
-  ].join('\n');
-}
-
-/** Phase-1 work for SEED mode: evaluate the category's legacy URLs directly. */
+/**
+ * Phase-1 work for SEED mode: research a category seeded by its curated legacy
+ * URLs, then extract + review. The reviewer no longer has a web tool, so seeds
+ * can't be "read" by the reviewer directly — instead runResearch() injects this
+ * category's legacy links as `initialLinks`, so the gemma research stage actually
+ * scrapes them and the same extract→review pipeline produces grounded findings.
+ * Categories with no legacy seeds are skipped (this is what makes seed mode
+ * distinct from full discovery).
+ */
 async function evaluateSeeds(
   cat: Category,
+  store: FindingsStore,
+  state: RunState,
   log: (msg: string) => void,
 ): Promise<ReviewedBundle> {
   const seeds = getLegacySeeds(cat.key);
   if (seeds.length === 0) {
-    log(`  [seed] ${cat.key}: no legacy seeds`);
+    log(`  [seed] ${cat.key}: no legacy seeds — skipping`);
     return { reviewed: [], queries: [], researchMs: 0, reviewMs: 0, candidates: 0 };
   }
-  log(`  [seed] ${cat.key}: evaluating ${seeds.length} curated links`);
-  const reviewStart = Date.now();
-  const reviewed = await reviewWithRetries(cat.key, buildSeedReport(cat, seeds), log);
-  return { reviewed, queries: [], researchMs: 0, reviewMs: Date.now() - reviewStart, candidates: seeds.length };
+  log(`  [seed] ${cat.key}: research seeded by ${seeds.length} curated links`);
+  return researchAndReview(cat, store, state, log);
 }
 
 /**
@@ -314,7 +307,7 @@ export async function runSeedRound(opts: RoundOptions): Promise<RoundResult> {
 
   const settled = await mapWithConcurrency(
     categories, concurrency,
-    (cat) => evaluateSeeds(cat, log),
+    (cat) => evaluateSeeds(cat, store, state, log),
   );
 
   return mergeAndPersist(categories, settled, store, state, {

@@ -11,14 +11,40 @@ import { safeParseValidatedJson, canonicalizeUrl, normalizeTitle } from './utils
 export type { Finding, FindingsStore, RunState };
 
 /**
- * Verify if a URL exists using the Pi Research SDK (stealth browser).
- * High fidelity existence detection.
+ * Verify that a URL EXISTS (not that it is freely scrapeable).
+ *
+ * This is an existence gate, not a content gate: a live page behind Cloudflare,
+ * auth, or rate-limiting (401/403/429/503) genuinely exists and must NOT be
+ * discarded — its content was already captured during the research stage. Only a
+ * true 404/410 or a DNS/connection failure means the URL is dead.
+ *
+ * The SDK's verifyUrl() does a full stealth-browser *scrape* and returns false on
+ * a Cloudflare challenge, which wrongly rejects (and permanently bans) legitimate
+ * sources. So we lead with a cheap HTTP probe and only fall back to the stealth
+ * browser when the HTTP layer is inconclusive (network error / timeout).
  */
+const VERIFY_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
 export async function verifyUrl(url: string): Promise<boolean> {
+  // 1. Cheap HTTP probe. Any response other than 404/410 proves the URL exists.
   try {
-    return await sdkVerifyUrl(url);
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: { 'User-Agent': VERIFY_UA, 'Accept': 'text/html,application/xhtml+xml' },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.status === 404 || res.status === 410) return false;
+    return true; // 2xx/3xx/401/403/429/503/etc. → the resource exists
   } catch {
-    return false;
+    // 2. HTTP layer inconclusive (DNS/timeout/reset). Get a second opinion from the
+    //    SDK stealth browser before declaring the URL dead.
+    try {
+      return await sdkVerifyUrl(url);
+    } catch {
+      return false;
+    }
   }
 }
 

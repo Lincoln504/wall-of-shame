@@ -1,20 +1,26 @@
-import { homedir } from 'os';
-import { join } from 'path';
-import {
-  createAgentSession,
-  DefaultResourceLoader,
-  SessionManager,
-  SettingsManager,
-  AuthStorage,
-  ModelRegistry,
-} from '@earendil-works/pi-coding-agent';
+/**
+ * reviewer.ts — the audit/refinement stage (gemma, single completeSimple call).
+ *
+ * Design: a fast desk audit, NOT an agentic re-research. The earlier design gave
+ * the reviewer the pi-research `research` tool and had it re-fetch every URL —
+ * 7–9 minutes PER finding, which made scaling to thousands of entries impossible.
+ *
+ * Grounding is already supplied upstream:
+ *   - the deepseek research stage actually scraped the pages,
+ *   - the gemma extraction stage required verbatim quotes drawn from that report,
+ *   - the merge stage (findings.ts) does a live stealth-browser existence check
+ *     (verifyUrl) before anything is written to the wall.
+ *
+ * So the reviewer's job is a cheap, deterministic pass: scope-gate (drop neutral
+ * reporting / off-topic), verify each quote/claim is consistent with the supplied
+ * RESEARCH CONTEXT (no new network calls), and sharpen whyBad to the golden bar.
+ */
+
 import { Type } from 'typebox';
 import { repairJson } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
 import { safeParseValidatedJson } from './utils.js';
-
-const OPENROUTER_PROVIDER = 'openrouter';
-const MODEL_ID = 'google/gemma-4-26b-a4b-it';
+import { GEMMA_MODEL_ID, getOpenRouterModel, completeText } from './models.js';
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
@@ -31,135 +37,100 @@ const ReviewedFindingSchema = Type.Object({
 
 const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
 
-const REVIEW_PROMPT = `You are the Lead Auditor for the database.
-Your mission is to rigorously vet the findings discovered by our research team.
+const REVIEW_PROMPT = `You are the Lead Auditor for the Wall of Shame database. Rigorously vet the candidate findings produced by the research team.
 
-MISSION CRITICAL: We only list content where the piece itself acts as a way to normalize, justify, or hide the harm of regressive policies.
+You do NOT have web access. Judge each candidate using ONLY the candidate data and the RESEARCH CONTEXT supplied below (the context is the report our researcher produced after actually scraping the pages).
 
-INPUT DATA TYPE:
-The input may be a JSON array of pre-extracted findings OR a raw research report.
-- IF JSON: Audit the findings as normal.
-- IF RAW REPORT: Extract qualify findings FIRST, then perform the audit. Follow the exact same output schema.
-- If an article neutrally reports on a harmful event, it is NOT for this database.
-- If an article uses biased framing to make exploitation or discrimination seem acceptable, it IS for this database.
+MISSION: We only list content where the PIECE ITSELF works to normalize, justify, or hide the harm of regressive policies (across class, labor, economics, race, democracy, policing, war, immigration, religion, climate, health, technology, disability, and patriarchy/misogyny). Neutral, factual reporting of a harmful event is NOT for this database — only biased framing that makes exploitation, discrimination, or cruelty seem acceptable, natural, or deserved.
 
-READABILITY REQUIREMENT:
-The final "summary" and "whyBad" fields must be written in plain, clear English that a common person can understand. Avoid academic or ideological jargon.
+INPUT may be either (A) a JSON array of candidate findings, or (B) a raw research report. If (B), first extract the qualifying findings, then audit them with the same rules.
 
-YOUR WORKFLOW:
-1. For every finding in the input:
-   a. Use the 'research' tool with 'depth: 0' and the URL as the query to surgically verify the content.
-   b. Verify the claims and quotes in the researcher's summary are accurate.
-   c. EVALUATE ANALYSIS: Review the researcher's "Why this is included" section. 
-      - PRESERVE: If the analysis clearly explains the harm and the intent in simple language, keep it.
-      - MODIFY: If it uses too many buzzwords or is unclear, rewrite it to be sharper and more readable while identifying the trick used to mislead.
-      - DISAPPROVE: If the article is not actually a way to justify harm (e.g., it is just reporting facts), OMIT the finding entirely.
-   d. CRITICAL PERSPECTIVE TEST: Is the author's goal to inform, or to make something harmful seem normal? Only approve if it clearly fails this test.
+FOR EACH candidate, apply this workflow:
+1. SCOPE GATE — Confirm the source's net effect is to normalize/justify/hide harm. OMIT it if it is neutral reporting, if it actually criticizes the harm, or if it is off-topic for its category.
+2. GROUNDING CHECK — The summary MUST contain at least one verbatim quote. Confirm the quote and the article's described argument are consistent with the RESEARCH CONTEXT. If a claim is NOT supported by the context, OMIT the finding — never invent support or fabricate quotes.
+3. SHARPEN whyBad — Rewrite it into a scathing, evidence-grounded, plain-English numbered breakdown of AT LEAST 120 words:
+   1. cite a specific claim or verbatim quote from the piece;
+   2. name the precise framing technique or logical fallacy in plain English (e.g. "race-to-the-bottom fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking");
+   3. explain concretely how it normalizes, justifies, or hides real-world harm;
+   4. supply well-established rebutting context (studies, law, outcomes) and flag any conflict of interest, funding bias, or predictions that aged poorly.
+   No academic jargon or empty buzzwords — hard-hitting, common-person English.
+4. READABILITY — summary and whyBad must be plain and clear.
 
-2. OUTPUT FORMAT:
-Return ONLY a raw JSON array of verified findings. If a finding fails verification or doesn't meet the quality bar, OMIT it entirely.
-
-Each entry must follow this schema:
+OUTPUT FORMAT:
+Return ONLY a raw JSON array of the APPROVED findings (no markdown, no preamble). Omit anything that fails the gate; an empty array [] is a valid answer.
+Each entry must follow this schema exactly:
 {
   "url": "...",
   "title": "...",
   "domain": "...",
-  "summary": "...",
+  "summary": "- key points in plain language, including at least one verbatim quote.",
   "category": "...",
-  "whyBad": "[A comprehensive and detailed analysis. Ensure it provides a multi-layered breakdown of the framing, its intended effect, and why the content qualifies as harmful normalized content.]",
-  "severity": "low|medium|high|critical",
-  "verificationLog": "Audit completed on [Date]. [Note if analysis was preserved, modified, or why it was kept.]"
+  "whyBad": "1. ... 2. ... 3. ... 4. ... (>=120 words, scathing, evidence-grounded)",
+  "severity": "low|medium|high",
+  "verificationLog": "Desk audit: kept/modified — one-line reason and what was checked against the context."
 }
 
-INPUT FINDINGS:
+Severity scale: low | medium | high ONLY.
+
+RESEARCH CONTEXT:
+<CONTEXT>
+
+CANDIDATE FINDINGS:
 <FINDINGS_JSON>
 
-Return ONLY the raw JSON array. No markdown, no preamble.`;
+Return ONLY the raw JSON array.`;
 
+const MAX_CONTEXT_CHARS = 16000;
+
+/**
+ * Audit and sharpen candidate findings (or mine a raw report) with gemma.
+ *
+ * @param input    a JSON-serializable array of candidate findings, OR a raw report string.
+ * @param log      logger.
+ * @param context  optional raw research report used as desk-audit grounding when
+ *                 `input` is a findings array (ignored when input is already the report).
+ */
 export async function runReview(
   input: RawFinding[] | string,
   log: (msg: string) => void,
+  context?: string,
 ): Promise<RawFinding[]> {
   const isRawReport = typeof input === 'string';
   if (!isRawReport && input.length === 0) return [];
 
   const countLabel = isRawReport ? 'raw report' : `${input.length} findings`;
-  log(`  [reviewer] starting audit and verification of ${countLabel}...`);
-
-  const cwd = process.cwd();
-  const agentDir = join(homedir(), '.pi', 'agent');
-  
-  const resourceLoader = new DefaultResourceLoader({
-    cwd,
-    agentDir,
-    noExtensions: false,
-    noSkills: true,
-    noPromptTemplates: true,
-    noThemes: true,
-    noContextFiles: true,
-  } as any);
-  await resourceLoader.reload();
-
-  const authStorage = AuthStorage.create(join(agentDir, 'auth.json'));
-  const modelRegistry = ModelRegistry.create(authStorage);
-  const settingsManager = SettingsManager.create(agentDir);
-  const model = modelRegistry.find(OPENROUTER_PROVIDER, MODEL_ID);
-  
-  if (!model) throw new Error('Reviewer model not found');
-
-  const { session } = await createAgentSession({
-    cwd,
-    agentDir,
-    resourceLoader,
-    authStorage,
-    modelRegistry,
-    settingsManager,
-    sessionManager: SessionManager.inMemory(),
-    model,
-    // Low reasoning: the golden-quality analysis is produced by the deepseek
-    // extraction stage (reasoning OFF); the reviewer only needs a light touch to
-    // verify quotes and refine. Keeps cost/latency down at scale.
-    thinkingLevel: 'low',
-    tools: ['research'],
-  });
-
-  session.extensionRunner.setUIContext({
-    notify: (msg: string, type: string) => log(`  [reviewer] notification: [${type}] ${msg}`),
-    setWidget: () => {},
-    setStatus: (msg: string) => log(`  [reviewer] status: ${msg}`),
-    setWorkingIndicator: (msg: string) => log(`  [reviewer] working: ${msg}`),
-    confirm: async () => true,
-    select: async (_title: string, options: any[]) => options[0]?.value,
-    onTerminalInput: () => ({ unsubscribe: () => {} }),
-  } as any);
+  log(`  [reviewer] desk audit (gemma) of ${countLabel}...`);
 
   const inputContent = isRawReport ? input : JSON.stringify(input, null, 2);
-  const prompt = REVIEW_PROMPT.replace('<FINDINGS_JSON>', inputContent);
-  
-  let fullOutput = '';
-  session.subscribe((event) => {
-    if (event.type === 'message_update' && (event as any).assistantMessageEvent?.type === 'text_delta') {
-      fullOutput += (event as any).assistantMessageEvent.delta;
-    } else if (event.type === 'tool_execution_start') {
-      log(`  [reviewer] using tool: ${event.toolName}`);
-    }
-  });
+  // When auditing a findings array, ground the audit in the research report.
+  // When the input already IS the report, it is its own context.
+  const ctxSource = isRawReport ? input : (context ?? '');
+  const ctx = ctxSource
+    ? ctxSource.slice(0, MAX_CONTEXT_CHARS)
+    : '(no separate context supplied — judge using the candidate data and your general knowledge; do not invent quotes.)';
+
+  const prompt = REVIEW_PROMPT
+    .replace('<CONTEXT>', ctx)
+    .replace('<FINDINGS_JSON>', inputContent);
+
+  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: false });
 
   try {
-    log(`  [reviewer] analyzing and verifying sources...`);
-    await session.prompt(prompt);
-    
-    let text = fullOutput;
+    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.');
+    if (!text.trim()) {
+      log('  [reviewer] empty response');
+      return [];
+    }
+
     let reviewed: RawFinding[];
-    
     try {
       reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
     } catch (parseErr) {
-      log(`  [reviewer] parse failed, attempting agentic repair...`);
+      log(`  [reviewer] parse failed, attempting JSON repair...`);
       const repaired = repairJson(text);
       if (repaired) {
         reviewed = safeParseValidatedJson(ReviewerOutputSchema, repaired);
-        log(`  [reviewer] successfully repaired JSON findings.`);
+        log(`  [reviewer] repaired JSON successfully.`);
       } else {
         throw parseErr;
       }

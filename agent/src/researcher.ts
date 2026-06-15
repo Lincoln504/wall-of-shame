@@ -1,36 +1,30 @@
-import { homedir } from 'os';
 import { join } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import {
   initResearchSDK,
   runQuickResearch,
   shutdownResearchSDK,
   type HeadlessObserverOptions,
 } from '@lincoln504/pi-research';
-import { AuthStorage, ModelRegistry } from '@earendil-works/pi-coding-agent';
-import { completeSimple } from '@earendil-works/pi-ai';
 import { Type } from 'typebox';
 import type { RawFinding } from './findings.js';
 import { DATA_DIR } from './findings.js';
 import type { FindingsStore, RunState } from './types.js';
 import { getLegacyLinks } from './legacy.js';
 import { safeParseJson, safeParseValidatedJson } from './utils.js';
+import { RESEARCH_MODEL_ID, GEMMA_MODEL_ID, OPENROUTER_PROVIDER, getOpenRouterModel, completeText } from './models.js';
 
-// ── Model config ──────────────────────────────────────────────────────────────
+// ── Model policy (see models.ts) ────────────────────────────────────────────────
 //
-// Quality pipeline (restored to the "golden era" 85-entry standard):
-//   1. RESEARCH   — a strong model (deepseek) drives the pi-research SDK's
-//      multi-source synthesis. Small models produced shallow reports; the golden
-//      corpus used deepseek for the heavy analytical lifting.
-//   2. EXTRACTION — the same strong model turns the raw report into structured
-//      findings using EXTRACTION_PROMPT (verbatim-quote requirement + the 4-part
-//      whyBad template that produced ~150-word scathing analyses).
-//   3. REVIEW     — gemma (reviewer.ts) adversarially verifies/refines each
-//      finding with reasoning on.
-
-const OPENROUTER_PROVIDER = 'openrouter';
-// Research + extraction model — strong frontier model (golden-era choice).
-const RESEARCH_MODEL_ID = 'deepseek/deepseek-v4-flash';
+// All-gemma three-stage pipeline (cheap enough to scale to thousands of entries):
+//   1. RESEARCH   — gemma drives the pi-research SDK's multi-page synthesis. Big
+//      scrapes are bounded by SDK config (MAX_SCRAPE_BATCHES + context-gating) so
+//      the window is never overrun, rather than swapping in a larger model.
+//   2. EXTRACTION — gemma turns the raw report into structured findings using
+//      EXTRACTION_PROMPT (verbatim-quote requirement + the 4-part whyBad template
+//      that produced ~150-word scathing analyses).
+//   3. REVIEW     — gemma (reviewer.ts) scope-gates and sharpens each finding.
 
 // ── Extraction schemas ────────────────────────────────────────────────────────
 
@@ -114,7 +108,15 @@ let isSDKInitialized = false;
 export async function initializeResearch(log: (msg: string) => void) {
   if (isSDKInitialized) return;
 
-  log('  [pi] initializing research SDK (deepseek research, knowledge_store=none)...');
+  // Full INFO+DEBUG diagnostics to /tmp/pi-research.log for post-hoc investigation
+  // of the tool under audit. The SDK reads PI_RESEARCH_DEBUG when constructing each
+  // (per-run, concurrent) logger, so setting the env var — not just the `verbose`
+  // option — is what reliably enables debug across all concurrent research runs.
+  process.env['PI_RESEARCH_DEBUG'] = 'true';
+  const logPath = join(tmpdir(), 'pi-research.log');
+
+  log('  [pi] initializing research SDK (all-gemma pipeline, knowledge_store=none)...');
+  log(`  [pi] SDK debug logging ON → ${logPath}`);
 
   await initResearchSDK({
     model: `${OPENROUTER_PROVIDER}/${RESEARCH_MODEL_ID}`,
@@ -126,8 +128,10 @@ export async function initializeResearch(log: (msg: string) => void) {
       MAX_SCRAPE_BATCHES: 4,
       // Generous per-researcher budget (config range is 180000–1800000 ms).
       RESEARCHER_TIMEOUT_MS: 900000,
+      // Emit INFO+DEBUG to the log file (kept in sync with PI_RESEARCH_DEBUG).
+      DEBUG: true,
     },
-    verbose: false,
+    verbose: true,
   });
 
   isSDKInitialized = true;
@@ -142,23 +146,7 @@ export async function shutdownResearch() {
   isSDKInitialized = false;
 }
 
-// ── Extraction model (deepseek), resolved once and cached ───────────────────────
-
-let cachedExtractionModel: { model: any; apiKey?: string; headers?: Record<string, string> } | null = null;
-
-async function getExtractionModel() {
-  if (cachedExtractionModel) return cachedExtractionModel;
-  const agentDir = join(homedir(), '.pi', 'agent');
-  const registry = ModelRegistry.create(AuthStorage.create(join(agentDir, 'auth.json')));
-  const model = registry.find(OPENROUTER_PROVIDER, RESEARCH_MODEL_ID);
-  if (!model) throw new Error(`Extraction model ${OPENROUTER_PROVIDER}/${RESEARCH_MODEL_ID} not found in registry.`);
-  // Extraction is a direct, non-thinking synthesis call (golden behavior).
-  (model as any).reasoning = false;
-  const auth = await registry.getApiKeyAndHeaders(model);
-  if (!auth.ok) throw new Error(`Extraction model auth failed: ${auth.error}`);
-  cachedExtractionModel = { model, apiKey: auth.apiKey, headers: auth.headers };
-  return cachedExtractionModel;
-}
+// ── Extraction (gemma — small context, cheap), resolved once and cached ─────────
 
 /**
  * Turn a raw research report into structured findings using the golden
@@ -169,26 +157,15 @@ async function extractFindings(
   researchReport: string,
   log: (msg: string) => void,
 ): Promise<{ findings: RawFinding[]; queries: string[] }> {
-  const { model, apiKey, headers } = await getExtractionModel();
+  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: false });
 
-  log(`  [pi] extracting structured findings (deepseek)...`);
-  const extraction = await completeSimple(model, {
-    systemPrompt: buildExtractionPrompt(categoryKey),
-    messages: [
-      { role: 'user', content: [{ type: 'text', text: `RESEARCH DATA:\n\n${researchReport}` }], timestamp: Date.now() },
-    ],
-  }, {
-    apiKey,
-    headers,
-    onPayload: (payload: any) => {
-      delete payload.reasoning;
-      delete payload.thinking;
-      payload.include_reasoning = false;
-      return payload;
-    },
-  });
+  log(`  [pi] extracting structured findings (gemma)...`);
+  const text = await completeText(
+    model,
+    buildExtractionPrompt(categoryKey),
+    `RESEARCH DATA:\n\n${researchReport}`,
+  );
 
-  const text = extraction.content.find((c: any): c is { type: 'text'; text: string } => c.type === 'text')?.text ?? '';
   if (!text) {
     log('  [pi] extraction returned empty response');
     return { findings: [], queries: [] };
