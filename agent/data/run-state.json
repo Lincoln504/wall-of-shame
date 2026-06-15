@@ -1,5 +1,5 @@
 {
-  "lastRun": "2026-06-15T00:00:00.000Z",
+  "lastRun": "2026-06-15T23:18:11.379Z",
   "categoryIndex": 0,
   "seenUrls": {
     "race": [
@@ -8,9 +8,10 @@
       "aporiamagazine.com/p/the-positive-legacy-of-empire",
       "independent.org/article/2025/07/16/1619-flawed-history",
       "whitehouse.gov/presidential-actions/2025/04/restoring-equality-of-opportunity-and-meritocracy",
-      "whitehouse.gov/wp-content/uploads/2025/05/Defunding-the-Open-Border-Fact-Sheet.pdf",
+      "whitehouse.gov/wp-content/uploads/2025/05/defunding-the-open-border-fact-sheet.pdf",
       "whitehouse.gov/presidential-actions/2025/01/ending-radical-indoctrination-in-k-12-schooling",
-      "nationalreview.com/2025/10/restoring-columbus-to-his-rightful-place"
+      "nationalreview.com/2025/10/restoring-columbus-to-his-rightful-place",
+      "heritage.org/civil-rights/commentary/dei-euphemism-discrimination-the-way-out"
     ],
     "economics": [
       "husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses",
@@ -42,7 +43,10 @@
       "econlib.org/poverty-is-it-circumstances-or-decision-making",
       "rstreet.org/commentary/counterpoint-when-it-comes-to-the-gig-economy-the-only-thing-to-fear-is-fear-itself",
       "about.doordash.com/en-us/news/dol-final-rule-statement",
-      "fee.org/articles/no-teachers-are-not-underpaid"
+      "fee.org/articles/no-teachers-are-not-underpaid",
+      "dol.gov/newsroom/releases/whd/whd20210106",
+      "uschamber.com/economy/how-excessive-regulation-hurts-the-economy",
+      "natlawreview.com/article/nlrb-overturns-two-decades-old-precedents-relating-what-employers-can-say-employees"
     ],
     "war": [
       "realcleardefense.com/articles/2025/06/03/peace_through_strength_starts_with_reforming_the_pentagon_1114091.html"
@@ -61,16 +65,18 @@
     "policing": [
       "nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare",
       "banks.senate.gov/news/press-releases/senator-jim-banks-introduces-the-qualified-immunity-act-of-2025",
-      "congress.gov/119/bills/hr503/BILLS-119hr503ih.pdf",
+      "congress.gov/119/bills/hr503/bills-119hr503ih.pdf",
       "city-journal.org/article/broken-windows-policing-public-health-safety",
-      "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law"
+      "poracldf.org/blog/qualified-immunity-in-use-of-force-cases-guidance-for-police-part-i-the-law",
+      "americafirstpolicy.com/issues/issue-brief-protecting-qualified-immunity",
+      "casemine.com/commentary/us/heid-v.-rutkoski:-broadening-the-%E2%80%9Ctotality-of-the-circumstances%E2%80%9D-shield%E2%80%94qualified-immunity-for-split-second-deadly-force-decisions/view"
     ],
     "religion": [
       "whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office"
     ],
     "democracy": [
       "whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians",
-      "judiciary.house.gov/sites/evo-subsites/republicans-judiciary.house.gov/files/evo-media-document/2024-07-09%20Lawfare%20-%20How%20the%20Manhattan%20District%20Attorneys%20Office%20and%20a%20New%20York%20State%20Judge%20Violated%20the%20Constitutional%20and%20Lega.pdf",
+      "judiciary.house.gov/sites/evo-subsites/republicans-judiciary.house.gov/files/evo-media-document/2024-07-09%20lawfare%20-%20how%20the%20manhattan%20district%20attorneys%20office%20and%20a%20new%20york%20state%20judge%20violated%20the%20constitutional%20and%20lega.pdf",
       "adflegal.org/article/lawfare-when-the-process-is-the-punishment",
       "aclj.org/election-law/stop-the-lawfare-fighting-back-against-the-lefts-global-assault-on-democracy",
       "goldwaterinstitute.org/the-victims-of-dark-money-disclosure-how-governmen",
@@ -78,7 +84,7 @@
       "heritage.org/election-integrity/report/vote-harvesting-recipe-intimidation-coercion-and-election-fraud",
       "judicialwatch.org/election-integrity-update-five-million-names-cleaned-from-voter-rolls-thanks-to-judicial-watch",
       "honestelections.org/honest-elections-project-releases-2026-safeguarding-our-elections-report-and-new-model-bills-to-enhance-voter-integrity",
-      "publicinterestlegal.org/pilf-files/Safe-Spaces_Final.pdf",
+      "publicinterestlegal.org/pilf-files/safe-spaces_final.pdf",
       "heritage.org/election-integrity/report/ranked-choice-voting-bad-choice",
       "heartland.org/publications/ranked-choice-voting-a-major-threat-to-free-fair-and-secure-elections",
       "whitehouse.gov/fact-sheets/2025/03/fact-sheet-president-donald-j-trump-protects-the-integrity-of-american-elections",
@@ -96,7 +102,7 @@
       "city-journal.org/article/artificial-intelligence-regulation-ai-futures-project"
     ],
     "climate": [
-      "whitehouse.gov/presidential-actions/2025/07/ending-market-distorting-subsidies-for-unreliable-foreign%E2%80%91controlled-energy-sources"
+      "whitehouse.gov/presidential-actions/2025/07/ending-market-distorting-subsidies-for-unreliable-foreign%e2%80%91controlled-energy-sources"
     ],
     "immigration": [
       "crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime",
@@ -108,11 +114,188 @@
       "usatoday.com/story/opinion/columnist/2023/03/14/equal-pay-day-myth-truth-income-women/11464213002",
       "whitehouse.gov/presidential-actions/2025/01/prioritizing-military-excellence-and-readiness",
       "whitehouse.gov/presidential-actions/2025/01/defending-women-from-gender-ideology-extremism-and-restoring-biological-truth-to-the-federal-government",
-      "unherd.com/newsroom/does-the-snp-really-believe-there-are-24-genders"
+      "unherd.com/newsroom/does-the-snp-really-believe-there-are-24-genders",
+      "opentodebate.substack.com/p/should-we-address-the-gender-wage-gap",
+      "oxfordpoliticalreview.com/2026/05/06/repackaging-faith-analysing-the-tradwife-revival"
     ],
     "health": [
       "newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html"
     ]
   },
-  "queryHistory": {}
+  "queryHistory": {
+    "labor": {
+      "rhetorical strategies used to justify deregulation of labor protections": "2026-06-15T23:18:09.398Z",
+      "framing independent contractor misclassification as worker flexibility and autonomy": "2026-06-15T23:18:09.398Z",
+      "anti-union messaging framing collective bargaining as restrictive to individual choice": "2026-06-15T23:18:09.398Z",
+      "arguments framing workplace safety regulations as economic burdens or red tape": "2026-06-15T23:18:09.398Z",
+      "justification of youth labor through character building and work ethic narratives": "2026-06-15T23:18:09.398Z",
+      "language used to frame poverty as personal failure or welfare dependency vs systemic issue": "2026-06-15T23:18:09.398Z",
+      "economic arguments for lowering minimum wage or creating tiered worker rights": "2026-06-15T23:18:09.398Z",
+      "corporate PR strategies for normalizing precarious employment and gig economy models": "2026-06-15T23:18:09.398Z",
+      "https://www.dol.gov/newsroom/releases/whd/whd20210106": "2026-06-15T23:18:09.398Z",
+      "https://www.uschamber.com/economy/how-excessive-regulation-hurts-the-economy": "2026-06-15T23:18:09.398Z",
+      "https://natlawreview.com/article/nlrb-overturns-two-decades-old-precedents-relating-what-employers-can-say-employees": "2026-06-15T23:18:09.398Z",
+      "https://www.forbes.com/sites/aishanyandoro/2025/09/29/facing-povertys-reality-not-the-convenient-myths/": "2026-06-15T23:18:09.398Z"
+    },
+    "economics": {
+      "arguments justifying tax cuts for wealthy \"pay for itself\" supply-side economics": "2026-06-15T23:18:09.401Z",
+      "justifications for extreme wealth \"meritocracy\" \"earned wealth\" vs wealth tax arguments": "2026-06-15T23:18:09.401Z",
+      "defense of corporate subsidies vs social welfare programs framing": "2026-06-15T23:18:09.401Z",
+      "arguments defending monopolies as \"efficiency\" and \"consumer benefit\" vs antitrust": "2026-06-15T23:18:09.401Z",
+      "economic arguments for deregulation \"burden on business\" vs public protection": "2026-06-15T23:18:09.401Z",
+      "justification for shareholder primacy over worker interests and executive pay gaps": "2026-06-15T23:18:09.401Z",
+      "ideological framing of economic inequality \"capitalism under threat\" arguments": "2026-06-15T23:18:09.401Z",
+      "framing government spending on corporations as \"incentivizing growth\" vs \"corporate welfare\"": "2026-06-15T23:18:09.401Z",
+      "arguments used to justify extreme inequality and public resources for private benefit": "2026-06-15T23:18:09.401Z",
+      "tax cut justification supply-side logic": "2026-06-15T23:18:09.401Z",
+      "defense of estate tax death tax Husted": "2026-06-15T23:18:09.401Z",
+      "antitrust consumer welfare standard ITIF James Madison": "2026-06-15T23:18:09.401Z",
+      "shareholder primacy Friedman doctrine Harvard": "2026-06-15T23:18:09.401Z",
+      "corporate welfare vs social welfare framing": "2026-06-15T23:18:09.401Z"
+    },
+    "race": {
+      "arguments framing DEI as reverse discrimination and colorblindness strategies": "2026-06-15T23:18:09.659Z",
+      "rhetoric presenting colonialism as a net positive and minimizing slavery horror": "2026-06-15T23:18:09.659Z",
+      "pseudo-scientific arguments for racial gaps in intelligence or socioeconomics culture vs policy": "2026-06-15T23:18:09.659Z",
+      "framing civil rights movements as divisive or dangerous to justify crackdowns": "2026-06-15T23:18:09.659Z",
+      "rhetoric linking racial purity to demographic change fearmongering": "2026-06-15T23:18:09.659Z",
+      "legislation and systematic efforts for teaching revisionism in K-12 schools racial injustice": "2026-06-15T23:18:09.659Z",
+      "whitehouse.gov 2025 restoring equality of opportunity and meritocracy analysis": "2026-06-15T23:18:09.659Z",
+      "America First Policy Institute reversing woke takeover of higher education analysis": "2026-06-15T23:18:09.659Z",
+      "Mechanisms of Erasure and Denial of Systemic Racism": "2026-06-15T23:18:09.659Z",
+      "Restoring Equality of Opportunity and Meritocracy Executive Order 2025": "2026-06-15T23:18:09.659Z",
+      "The positive legacy of empire Aporia Magazine": "2026-06-15T23:18:09.659Z",
+      "DEI euphemism for discrimination Heritage Foundation": "2026-06-15T23:18:09.659Z"
+    },
+    "gender": {
+      "mechanisms of normalizing misogyny and patriarchal power in media and online discourse": "2026-06-15T23:18:10.582Z",
+      "\"tradwife\" movement rhetoric and naturalizing female subordination": "2026-06-15T23:18:10.582Z",
+      "manosphere red pill ideology framing women as objects or biological imperatives": "2026-06-15T23:18:10.582Z",
+      "arguments attributing gender pay gap to individual choice rather than systemic barriers": "2026-06-15T23:18:10.582Z",
+      "rhetoric used to attack reproductive rights and bodily autonomy framing forced birth as protection": "2026-06-15T23:18:10.582Z",
+      "anti-feminist grievance narratives and framing men as victims of equality": "2026-06-15T23:18:10.582Z",
+      "discourse minimizing or victim-blaming in domestic and sexual violence cases": "2026-06-15T23:18:10.582Z",
+      "biological determinism and religious justifications for female subordination in modern conservative media": "2026-06-15T23:18:10.582Z",
+      "should we address the gender wage gap open to debate": "2026-06-15T23:18:10.582Z",
+      "repackaging faith analysing the tradwife revival oxford political review": "2026-06-15T23:18:10.582Z",
+      "misogyny has become a political strategy the conversation": "2026-06-15T23:18:10.582Z",
+      "what is the manosphere and why should we care un women": "2026-06-15T23:18:10.582Z"
+    },
+    "immigration": {
+      "rhetorical analysis migration \"invasion\" \"replacement\" demographic alarmism": "2026-06-15T23:18:10.584Z",
+      "\"criminality narrative\" immigrants anecdotes framing mechanics": "2026-06-15T23:18:10.584Z",
+      "\"job competition myths\" immigrants low wages economic arguments analysis": "2026-06-15T23:18:10.584Z",
+      "\"removing protections\" immigrant rights normalization of mass detention rhetoric": "2026-06-15T23:18:10.584Z",
+      "\"nativist identity\" exclusionary nationalism integration failure framing": "2026-06-15T23:18:10.584Z",
+      "\"bureaucratic harassment\" immigration status procedural barriers intentionality": "2026-06-15T23:18:10.584Z",
+      "\"Protecting the American People Against Invasion\" presidential action 2025 analysis": "2026-06-15T23:18:10.584Z",
+      "\"illegal immigrant crime\" New York Post 2025 rhetoric critique": "2026-06-15T23:18:10.584Z",
+      "https://kennedyhumanrights.org/wp-content/uploads/assets/CERD-1pger_US-Discrimination-Against-Black-Migrants-Refugees-and-Asylum-Seekers-at-the-Border-and-Beyond.pdf": "2026-06-15T23:18:10.584Z",
+      "https://crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime/": "2026-06-15T23:18:10.584Z",
+      "https://www.whitehouse.gov/presidential-actions/2025/01/protecting-the-american-people-against-invasion/": "2026-06-15T23:18:10.584Z"
+    },
+    "religion": {
+      "White House Faith Office establishment presidential action 2025 analysis": "2026-06-15T23:18:10.587Z",
+      "religious revisionism \"fundamentally religious\" nation doctrine as law arguments": "2026-06-15T23:18:10.587Z",
+      "weaponizing religious freedom exemptions civil rights labor health laws cases": "2026-06-15T23:18:10.587Z",
+      "using scripture to justify reproductive and LGBTQ+ rights restrictions legal arguments": "2026-06-15T23:18:10.587Z",
+      "classroom capture religious teachings public schools public funds strategies": "2026-06-15T23:18:10.587Z",
+      "marginalizing religious minorities framing diversity as persecution majority religion": "2026-06-15T23:18:10.587Z",
+      "eroding separation of church and state government religious authority efforts": "2026-06-15T23:18:10.587Z",
+      "mechanisms of framing religious privilege in public life and policy": "2026-06-15T23:18:10.587Z",
+      "Executive Order 14205 White House Faith Office": "2026-06-15T23:18:10.587Z",
+      "Religious Liberty Commission separation of church and state": "2026-06-15T23:18:10.587Z",
+      "Texas Bible-infused curriculum public schools": "2026-06-15T23:18:10.587Z",
+      "weaponization of religious freedom civil rights exemptions": "2026-06-15T23:18:10.587Z"
+    },
+    "climate": {
+      "strategies used to delay climate action greenwashing mechanisms": "2026-06-15T23:18:10.590Z",
+      "misleading use of 'net zero' and 'bridge fuel' in fossil fuel industry PR": "2026-06-15T23:18:10.590Z",
+      "economic fear-mongering climate policy cost arguments analysis": "2026-06-15T23:18:10.590Z",
+      "manufacturing doubt climate science contrarian experts history": "2026-06-15T23:18:10.590Z",
+      "fossil fuel subsidy protection vs renewable energy subsidies framing": "2026-06-15T23:18:10.590Z",
+      "carbon offset distraction and unverified credits investigation": "2026-06-15T23:18:10.590Z",
+      "climate inevitability arguments and psychological framing of inaction": "2026-06-15T23:18:10.590Z",
+      "analysis of fossil fuel industry lobbying and framing strategies": "2026-06-15T23:18:10.590Z",
+      "Big Oil climate advertising and gaslighting": "2026-06-15T23:18:10.590Z",
+      "fossil fuel industry lobbying 2024 Canada": "2026-06-15T23:18:10.590Z",
+      "transition from greenwashing to climate gaslighting": "2026-06-15T23:18:10.590Z"
+    },
+    "health": {
+      "mechanisms of vaccine misinformation and conspiracy framing medical freedom deflection": "2026-06-15T23:18:10.593Z",
+      "wellness profiteering strategies detox cures unverified medical claims": "2026-06-15T23:18:10.593Z",
+      "how health data misinterpretation creates vaccine fear narratives": "2026-06-15T23:18:10.593Z",
+      "framing public health rules as tyranny and medical freedom as deflection research": "2026-06-15T23:18:10.593Z",
+      "psychological tactics used to damage trust in health authorities": "2026-06-15T23:18:10.593Z",
+      "how vaccines AI globalist elites target humanity newstarget": "2026-06-15T23:18:10.593Z",
+      "depopulation agenda conspiracy vaccine AI": "2026-06-15T23:18:10.593Z",
+      "NewsTarget vaccine globalist elites": "2026-06-15T23:18:10.593Z"
+    },
+    "democracy": {
+      "framing of \"voter integrity\" laws as disenfranchisement mechanisms": "2026-06-15T23:18:10.595Z",
+      "rhetorical strategies praising strongman leaders and delegitimizing democratic debate": "2026-06-15T23:18:10.595Z",
+      "justification of unlimited anonymous political spending as \"free speech\"": "2026-06-15T23:18:10.595Z",
+      "judicial activism vs bypassing democratic processes in policy making arguments": "2026-06-15T23:18:10.595Z",
+      "normalization of rejecting election results and using government power against rivals": "2026-06-15T23:18:10.595Z",
+      "efforts to destroy trust in democratic institutions framing mechanisms": "2026-06-15T23:18:10.595Z",
+      "how non-democratic rule is normalized through political rhetoric and policy": "2026-06-15T23:18:10.595Z",
+      "legal arguments for \"lawfare\" and its impact on democratic norms": "2026-06-15T23:18:10.595Z",
+      "https://www.whitehouse.gov/releases/2026/02/voter-id-is-overwhelmingly-popular-with-literally-everyone-except-democrat-politicians/": "2026-06-15T23:18:10.595Z",
+      "https://www.whitehouse.gov/fact-sheets/2025/03/fact-sheet-president-donald-j-trump-protects-the-integrity-of-american-elections/": "2026-06-15T23:18:10.595Z",
+      "https://honestelections.org/honest-elections-project-releases-2026-safeguarding-our-elections-report-and-new-model-bills-to-enhance-voter-integrity/": "2026-06-15T23:18:10.595Z"
+    },
+    "policing": {
+      "defense of qualified immunity and \"split-second\" decisions in police use of force rhetoric": "2026-06-15T23:18:11.367Z",
+      "arguments for protecting law enforcement from \"lawfare\" and civil liability": "2026-06-15T23:18:11.367Z",
+      "justification for private prison profit and inmate labor exploitation in political discourse": "2026-06-15T23:18:11.367Z",
+      "\"broken windows\" policing and \"law and order\" rhetoric as a means of expanding state control": "2026-06-15T23:18:11.367Z",
+      "critiques of criminal justice reform as a cause of rising crime rates": "2026-06-15T23:18:11.367Z",
+      "legislative efforts to expand police surveillance and authority through technology": "2026-06-15T23:18:11.367Z",
+      "rhetorical strategies used to normalize carceral systems and mass incarceration": "2026-06-15T23:18:11.367Z",
+      "protecting qualified immunity america first policy institute": "2026-06-15T23:18:11.367Z",
+      "Heid v. Rutkoski Eleventh Circuit commentary": "2026-06-15T23:18:11.367Z",
+      "prison industry book corporations profit prism reports": "2026-06-15T23:18:11.367Z",
+      "criminal justice reform crime rates new republic": "2026-06-15T23:18:11.367Z"
+    },
+    "technology": {
+      "rhetorical strategies used by tech companies to normalize mass surveillance": "2026-06-15T23:18:11.370Z",
+      "\"nothing to hide\" argument analysis surveillance justification": "2026-06-15T23:18:11.370Z",
+      "industry framing of algorithmic bias as efficiency or innovation": "2026-06-15T23:18:11.370Z",
+      "how tech companies downplay social media harm to mental health and democracy": "2026-06-15T23:18:11.370Z",
+      "critique of \"anti-progress\" framing in AI ethics and safety discussions": "2026-06-15T23:18:11.370Z",
+      "lobbying against data privacy laws industry arguments \"self-regulation\"": "2026-06-15T23:18:11.370Z",
+      "technological determinism \"unavoidable\" framing in tech regulation debates": "2026-06-15T23:18:11.370Z",
+      "discourse analysis of tech industry PR regarding societal risks": "2026-06-15T23:18:11.370Z",
+      "AI hysteria is out of control spiked online": "2026-06-15T23:18:11.370Z",
+      "artificial intelligence regulation AI futures project city journal": "2026-06-15T23:18:11.370Z",
+      "FTC report social media surveillance privacy cyberscoop": "2026-06-15T23:18:11.370Z"
+    },
+    "disability": {
+      "ADA website accessibility lawsuits \"shakedown\" \"legal extortion\" rhetoric": "2026-06-15T23:18:11.374Z",
+      "\"economic burden\" narrative disability UK government DPOs": "2026-06-15T23:18:11.374Z",
+      "\"disability fraud\" claims political rhetoric framing support as \"enabling\"": "2026-06-15T23:18:11.374Z",
+      "justifying refusal of workplace accommodations \"meritocracy\" \"burden\"": "2026-06-15T23:18:11.374Z",
+      "\"special education\" costs \"forcing schools to make cuts\" rhetoric": "2026-06-15T23:18:11.374Z",
+      "framing disability as an \"economic inactivity\" issue": "2026-06-15T23:18:11.374Z",
+      "\"medical model\" vs \"social model\" of disability framing in policy": "2026-06-15T23:18:11.374Z",
+      "\"meritocracy\" vs \"disability accommodations\" arguments in education and employment": "2026-06-15T23:18:11.374Z",
+      "the proliferation of frivolous ADA website compliance lawsuits a defense perspective": "2026-06-15T23:18:11.374Z",
+      "ADA lawsuits called legal extortion become increasingly common": "2026-06-15T23:18:11.374Z",
+      "special education is getting more expensive forcing schools to make cuts elsewhere": "2026-06-15T23:18:11.374Z",
+      "government must drop economic burden narrative and sanctions mps are told": "2026-06-15T23:18:11.374Z"
+    },
+    "war": {
+      "military-industrial complex revolving door influence on government policy research": "2026-06-15T23:18:11.377Z",
+      "framing civilian casualties as precision strikes technical language analysis": "2026-06-15T23:18:11.377Z",
+      "arms industry promoting weapons sales as jobs programs economic argument": "2026-06-15T23:18:11.377Z",
+      "normalization of domestic militarism policing military gear tactics": "2026-06-15T23:18:11.377Z",
+      "rhetoric of unavoidable conflict and inevitability of war justification": "2026-06-15T23:18:11.377Z",
+      "dismissing war crimes reports as fake news propaganda strategy": "2026-06-15T23:18:11.377Z",
+      "regime change advocacy and arms industry profit connection": "2026-06-15T23:18:11.377Z",
+      "defense industry lobbying for increased military spending and war justifications": "2026-06-15T23:18:11.377Z",
+      "The Normalization of Military Violence and the Capture of Policy by the Arms Industry": "2026-06-15T23:18:11.377Z",
+      "military contractors received over half of pentagon spending since 2020 Quincy Institute": "2026-06-15T23:18:11.377Z",
+      "Black Alliance for Peace bulletin on US domestic militarization issue 3": "2026-06-15T23:18:11.377Z"
+    }
+  }
 }
