@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'agent/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'agent/**'
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # agent depends on @lincoln504/pi-research via file:../../pi-research,
+      # which resolves to one level above the workspace root.
+      - name: Checkout pi-research
+        uses: actions/checkout@v4
+        with:
+          repository: Lincoln504/pi-research
+          path: pi-research
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Place pi-research at expected relative path
+        run: mv ${{ github.workspace }}/pi-research ${{ github.workspace }}/../pi-research
+
+      - name: Install pi-research deps
+        run: npm install
+        working-directory: ${{ github.workspace }}/../pi-research
+
+      - name: Install agent deps
+        run: npm install
+        working-directory: agent
+
+      - name: Type-check
+        run: npm run typecheck
+        working-directory: agent
+
+      - name: Unit tests
+        run: npm test
+        working-directory: agent
