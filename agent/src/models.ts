@@ -15,14 +15,19 @@
  * window is never overrun. DEEPSEEK_MODEL_ID is kept only as a documented manual
  * escalation lever; nothing uses it by default.
  *
- * Reasoning is forced OFF at the payload level for every call (cheap + fast at
- * scale; the analytical quality comes from the prompts, not from chain-of-thought).
+ * Reasoning policy (per project direction): the RESEARCH stage runs reasoning OFF
+ * (it drives the SDK's tool loop, where chain-of-thought adds latency without
+ * improving the final report). The EXTRACTION and REVIEW stages run at MEDIUM
+ * reasoning — that is what restores the golden-era analytical depth (the rich,
+ * multi-point whyBad breakdowns with named fallacies + external context). Effort
+ * is requested per-call via completeText({ reasoning: 'medium' }); when omitted,
+ * reasoning is stripped at the payload level (the cheap/fast default).
  */
 
 import { homedir } from 'os';
 import { join } from 'path';
 import { AuthStorage, ModelRegistry } from '@earendil-works/pi-coding-agent';
-import { completeSimple } from '@earendil-works/pi-ai';
+import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai';
 
 export const OPENROUTER_PROVIDER = 'openrouter';
 
@@ -46,8 +51,10 @@ export interface ResolvedModel {
 const cache = new Map<string, ResolvedModel>();
 
 /**
- * Resolve an OpenRouter model from pi's real auth storage (~/.pi/agent/auth.json),
- * with reasoning forced off by default. Cached per (modelId, reasoning).
+ * Resolve an OpenRouter model from pi's real auth storage (~/.pi/agent/auth.json).
+ * `reasoning` here is the model CAPABILITY flag (whether the provider should be
+ * told this model can think); the per-call effort is requested separately in
+ * completeText. Cached per (modelId, reasoning-capable).
  */
 export async function getOpenRouterModel(
   modelId: string,
@@ -73,14 +80,20 @@ export async function getOpenRouterModel(
 }
 
 /**
- * Single-shot text completion with reasoning stripped at the payload level.
- * Returns the concatenated text content (empty string if none).
+ * Single-shot text completion. By default reasoning is stripped at the payload
+ * level (cheap/fast). Pass `reasoning: 'medium'` (or any ThinkingLevel) to enable
+ * chain-of-thought for the analytical stages (extraction/review) — pi-ai renders
+ * it as OpenRouter's `reasoning: { effort }`. The returned value is always the
+ * final TEXT content only; any reasoning/thinking blocks are never concatenated
+ * into the result, so they cannot leak into a finding's whyBad.
  */
 export async function completeText(
   resolved: ResolvedModel,
   systemPrompt: string,
   userText: string,
+  opts: { reasoning?: ThinkingLevel | false } = {},
 ): Promise<string> {
+  const reasoning = opts.reasoning ?? false;
   const res = await completeSimple(
     resolved.model,
     {
@@ -92,10 +105,14 @@ export async function completeText(
     {
       apiKey: resolved.apiKey,
       headers: resolved.headers,
+      ...(reasoning ? { reasoning } : {}),
       onPayload: (payload: any) => {
-        delete payload.reasoning;
         delete payload.thinking;
-        payload.include_reasoning = false;
+        if (!reasoning) {
+          // Cheap/fast default: fully suppress thinking.
+          delete payload.reasoning;
+          payload.include_reasoning = false;
+        }
         return payload;
       },
     },

@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.log
 *.bak
+*.bak-*
 .DS_Store
 
 # Environment
@@ -17,6 +18,7 @@ site/knowledge_db/
 agent/data/cron.log
 agent/data/reports/
 agent/data/failures/
+agent/data/runs/
 
 # Agent root debug artifacts (leftover from research sessions)
 agent/pi-research-*.md

@@ -23,19 +23,25 @@ audit artifact to `agent/data/runs/run-<timestamp>.json`.
 
 ## Pipeline (golden-quality, three stages — all gemma)
 
-Every stage uses the cheap `gemma-4-26b-a4b-it` model (reasoning off). Cheapness
-is what makes scaling to thousands of entries across many concurrent rounds
-affordable. Big-context pressure in the research stage is bounded by SDK config
-(`MAX_SCRAPE_BATCHES` + the SDK's own context-gating), not by swapping in a
-larger model.
+Every stage uses the cheap `gemma-4-26b-a4b-it` model. Cheapness is what makes
+scaling to thousands of entries across many concurrent rounds affordable. The
+**research** stage runs reasoning off (it drives the SDK's tool loop); the
+**extraction** and **review** stages run at **medium reasoning** — that is what
+produces the golden-era analytical depth (rich, numbered, named-fallacy `whyBad`
+breakdowns with external context). Big-context pressure in the research stage is
+bounded by SDK config (`MAX_SCRAPE_BATCHES` + the SDK's own context-gating), not
+by swapping in a larger model.
 
 1. **Research** — gemma drives the pi-research SDK's multi-source research.
-2. **Extraction** — gemma turns the raw report into structured findings using a
-   strict prompt (verbatim-quote requirement + a 4-part, ≥120-word `whyBad`
-   analysis template).
-3. **Review** — gemma runs a single-pass desk audit (no web tool): it scope-gates
-   each finding (dropping neutral reporting / off-topic), checks every quote and
-   claim against the research report it's given as context, and sharpens `whyBad`.
+2. **Extraction** — gemma (medium reasoning) turns the raw report into structured
+   findings using a strict prompt: verbatim-quote requirement + a numbered,
+   ≥150-word `whyBad` analysis (named fallacies, `External Context:`, and
+   `CONFLICT OF INTEREST:` / `TIMELINESS NOTE:` where applicable) + a severity
+   rubric.
+3. **Review** — gemma (medium reasoning) runs a single-pass desk audit (no web
+   tool): it scope-gates each finding (dropping neutral reporting / off-topic),
+   checks every quote and claim against the research report it's given as context,
+   and **preserves-or-strengthens** `whyBad` to the golden bar (never oversimplify).
    A stealth-browser existence check (`verifyUrl`) then confirms the URL is live
    before the finding is added.
 

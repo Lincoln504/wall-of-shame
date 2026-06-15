@@ -6,14 +6,16 @@
  * 7–9 minutes PER finding, which made scaling to thousands of entries impossible.
  *
  * Grounding is already supplied upstream:
- *   - the deepseek research stage actually scraped the pages,
- *   - the gemma extraction stage required verbatim quotes drawn from that report,
- *   - the merge stage (findings.ts) does a live stealth-browser existence check
- *     (verifyUrl) before anything is written to the wall.
+ *   - the gemma research stage actually scraped the pages (via the pi-research SDK),
+ *   - the gemma extraction stage (medium reasoning) required verbatim quotes drawn
+ *     from that report and produced the rich multi-point whyBad,
+ *   - the merge stage (findings.ts) does a live existence check (verifyUrl) before
+ *     anything is written to the wall.
  *
- * So the reviewer's job is a cheap, deterministic pass: scope-gate (drop neutral
- * reporting / off-topic), verify each quote/claim is consistent with the supplied
- * RESEARCH CONTEXT (no new network calls), and sharpen whyBad to the golden bar.
+ * So the reviewer's job (gemma, medium reasoning, NO web access) is a deterministic
+ * desk audit: scope-gate (drop neutral reporting / off-topic), verify each
+ * quote/claim is consistent with the supplied RESEARCH CONTEXT (no new network
+ * calls), and PRESERVE-or-STRENGTHEN whyBad to the golden bar — never oversimplify.
  */
 
 import { Type } from 'typebox';
@@ -48,13 +50,22 @@ INPUT may be either (A) a JSON array of candidate findings, or (B) a raw researc
 FOR EACH candidate, apply this workflow:
 1. SCOPE GATE — Confirm the source's net effect is to normalize/justify/hide harm. OMIT it if it is neutral reporting, if it actually criticizes the harm, or if it is off-topic for its category.
 2. GROUNDING CHECK — The summary MUST contain at least one verbatim quote. Confirm the quote and the article's described argument are consistent with the RESEARCH CONTEXT. If a claim is NOT supported by the context, OMIT the finding — never invent support or fabricate quotes.
-3. SHARPEN whyBad — Rewrite it into a scathing, evidence-grounded, plain-English numbered breakdown of AT LEAST 120 words:
-   1. cite a specific claim or verbatim quote from the piece;
-   2. name the precise framing technique or logical fallacy in plain English (e.g. "race-to-the-bottom fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking");
+3. PRESERVE-OR-STRENGTHEN whyBad (NEVER oversimplify, NEVER shorten a good analysis):
+   - PRESERVE: if the analysis is already rich (>=150 words, cites a verbatim quote, names specific fallacies, and supplies external context), KEEP IT AS-IS or only correct factual inaccuracies. Do not trim it.
+   - STRENGTHEN: if it is thin, generic, or under-developed, EXPAND it to the full bar below. Adding depth is the goal; collapsing it into two or three sentences is a FAILURE of the audit.
+   The bar — a scathing, evidence-grounded, plain-English breakdown of AT LEAST 150 words (aim 180–280). Begin with the literal token "Analysis: [" and end with "]". Cover in order:
+   1. cite a specific claim or verbatim quote from the piece (in quotation marks);
+   2. name the precise framing technique or logical fallacy in plain English (e.g. "race-to-the-bottom fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "false dichotomy", "loaded language") — list MULTIPLE where present;
    3. explain concretely how it normalizes, justifies, or hides real-world harm;
-   4. supply well-established rebutting context (studies, law, outcomes) and flag any conflict of interest, funding bias, or predictions that aged poorly.
+   4. a sentence beginning "External Context:" with well-established rebutting facts (named studies, laws, agencies, outcomes, dates);
+   5. where applicable, a sentence beginning "CONFLICT OF INTEREST:" (author/publisher funding or institutional stake) and/or "TIMELINESS NOTE:" (a prediction that aged poorly).
    No academic jargon or empty buzzwords — hard-hitting, common-person English.
+   NO FABRICATION: external context must be genuinely well-established public knowledge. Do NOT invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead.
 4. READABILITY — summary and whyBad must be plain and clear.
+5. SEVERITY (calibrate honestly — do not inflate):
+   - high: actively dehumanizes a group, justifies stripping rights/safety/lives, promotes disinformation, or launders extremist ideology into the mainstream;
+   - medium: normalizes regressive policy or economic harm through biased framing, short of dehumanization or disinformation;
+   - low: a contestable position with genuine legal/constitutional or good-faith grounding, but still one-sided enough to qualify (prefer low over omitting when real but mild).
 
 OUTPUT FORMAT:
 Return ONLY a raw JSON array of the APPROVED findings (no markdown, no preamble). Omit anything that fails the gate; an empty array [] is a valid answer.
@@ -65,9 +76,9 @@ Each entry must follow this schema exactly:
   "domain": "...",
   "summary": "- key points in plain language, including at least one verbatim quote.",
   "category": "...",
-  "whyBad": "1. ... 2. ... 3. ... 4. ... (>=120 words, scathing, evidence-grounded)",
+  "whyBad": "Analysis: [1. verbatim quote. 2. named fallacy/framing technique(s). 3. concrete real-world harm. 4. External Context: rebutting facts with dates. 5. CONFLICT OF INTEREST / TIMELINESS NOTE where applicable.] (>=150 words; preserve rich researcher analysis, never shorten it)",
   "severity": "low|medium|high",
-  "verificationLog": "Desk audit: kept/modified — one-line reason and what was checked against the context."
+  "verificationLog": "Desk audit: preserved/strengthened — one-line reason and what was checked against the context."
 }
 
 Severity scale: low | medium | high ONLY.
@@ -113,10 +124,10 @@ export async function runReview(
     .replace('<CONTEXT>', ctx)
     .replace('<FINDINGS_JSON>', inputContent);
 
-  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: false });
+  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
 
   try {
-    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.');
+    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: 'medium' });
     if (!text.trim()) {
       log('  [reviewer] empty response');
       return [];

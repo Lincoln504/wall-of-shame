@@ -55,11 +55,14 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
 5. SELECTIVITY: Only include content where the piece itself acts to NORMALIZE, JUSTIFY, or HIDE the harm of regressive policies — op-eds, "alternative" news, think-tank reports, and industry PR that use biased framing. OMIT neutral, fact-based reporting.
 
 WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigorous):
-The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 120 words, written as a numbered breakdown:
-  1. Cite a specific claim or verbatim quote from the piece.
-  2. Name the precise rhetorical/framing technique or logical fallacy in plain English (e.g. "race-to-the-top fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "historical determinism").
+The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Start it with the literal token "Analysis: [" and end with "]". Cover, in order:
+  1. Cite a specific claim or verbatim quote from the piece (use quotation marks).
+  2. Name the precise rhetorical/framing technique or logical fallacy in plain English (e.g. "race-to-the-top fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "historical determinism", "false dichotomy", "loaded language").
   3. Explain concretely how this normalizes, justifies, or hides real-world harm.
-  4. Supply external rebutting context where well-established (studies, law, outcomes) and flag any conflict of interest or funding (e.g. "the author is a trade-group vendor for the very thing it defends") and any timeliness problem (predictions that aged poorly).
+  4. Add a sentence that BEGINS with "External Context:" supplying well-established rebutting facts (named studies, laws, agencies, outcomes, dates).
+  5. Where applicable, add a sentence beginning "CONFLICT OF INTEREST:" naming the author's/publisher's funding or institutional stake, and/or a sentence beginning "TIMELINESS NOTE:" if a prediction has aged poorly.
+
+DEPTH DISCIPLINE — DO NOT OVERSIMPLIFY. A two- or three-sentence summary is a FAILURE. Match the rigor of a sharp investigative analyst: multiple distinct fallacies where present, concrete external facts, and named conflicts of interest. Never collapse the analysis into a single generic observation.
 
 OUTPUT READABILITY:
 The "summary" and "whyBad" fields must be plain, clear English a common person understands. Identify the issues with analytical depth, then translate into simple, hard-hitting language. No academic jargon or empty buzzwords.
@@ -74,11 +77,16 @@ RETURN ONLY A RAW JSON OBJECT:
       "domain": "example.com",
       "summary": "- 3-5 main points in simple language, including at least one verbatim quote.\\n- The author's intended conclusion, stated neutrally.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "1. ... 2. ... 3. ... 4. ... (>=120 words, scathing, evidence-grounded)",
+      "whyBad": "Analysis: [1. Cite a verbatim quote. 2. Name the specific fallacy/framing technique. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts (studies/laws/outcomes with dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction.] (>=150 words, scathing, evidence-grounded)",
       "severity": "low|medium|high"
     }
   ]
 }
+
+SEVERITY RUBRIC (calibrate honestly — do not inflate):
+- high: actively dehumanizes a group, justifies stripping rights/safety/lives, promotes disinformation, or launders extremist ideology into the mainstream.
+- medium: normalizes a regressive policy or economic harm through biased framing, but stops short of dehumanization or outright disinformation.
+- low: a contestable position with genuine legal/constitutional or good-faith grounding, where the framing is still one-sided enough to qualify. Prefer "low" over omitting when the piece is real but mild.
 
 Severity scale: low | medium | high ONLY. If no articles qualify, return {"queries": [...], "findings": []}. Max 8 entries.`;
 
@@ -157,13 +165,14 @@ async function extractFindings(
   researchReport: string,
   log: (msg: string) => void,
 ): Promise<{ findings: RawFinding[]; queries: string[] }> {
-  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: false });
+  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
 
-  log(`  [pi] extracting structured findings (gemma)...`);
+  log(`  [pi] extracting structured findings (gemma, medium reasoning)...`);
   const text = await completeText(
     model,
     buildExtractionPrompt(categoryKey),
     `RESEARCH DATA:\n\n${researchReport}`,
+    { reasoning: 'medium' },
   );
 
   if (!text) {
