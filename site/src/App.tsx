@@ -14,23 +14,6 @@ async function fetchFindings(): Promise<FindingsStore> {
   return res.json() as Promise<FindingsStore>;
 }
 
-interface KnowledgeItem {
-  url: string;
-  text: string;
-  v: number[];
-  m: { d: string; t: number };
-}
-
-async function fetchKnowledge(): Promise<KnowledgeItem[]> {
-  try {
-    const res = await fetch(`${BASE}knowledge.json`);
-    if (!res.ok) return [];
-    return res.json() as Promise<KnowledgeItem[]>;
-  } catch {
-    return [];
-  }
-}
-
 const SEVERITY_COLOR: Record<string, string> = {
   high: '#d32f2f',
   medium: '#ef6c00',
@@ -115,7 +98,8 @@ let extractor: any = null;
 
 export default function App() {
   const [data] = createResource(fetchFindings);
-  const [knowledge] = createResource(fetchKnowledge);
+  // Semantic search embeds the findings themselves client-side (no knowledge store).
+  const [findingVectors, setFindingVectors] = createSignal<Map<string, number[]>>(new Map());
   const [search, setSearch] = createSignal('');
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
@@ -138,6 +122,29 @@ export default function App() {
       } finally {
         setIsSemanticLoading(false);
       }
+    }
+  });
+
+  // Embed all findings once (client-side) when semantic mode is first active.
+  createEffect(async () => {
+    if (sortOrder() !== 'semantic' || !extractor) return;
+    const d = data();
+    if (!d || d.findings.length === 0 || findingVectors().size > 0) return;
+    setIsSemanticLoading(true);
+    try {
+      const texts = d.findings.map(f => `${f.title}. ${f.summary} ${f.whyBad}`);
+      const out = await extractor(texts, { pooling: 'mean', normalize: true });
+      const dim = out.dims[out.dims.length - 1] as number;
+      const flat = out.data as ArrayLike<number>;
+      const map = new Map<string, number[]>();
+      d.findings.forEach((f, i) => {
+        map.set(f.url, Array.from({ length: dim }, (_, j) => flat[i * dim + j] as number));
+      });
+      setFindingVectors(map);
+    } catch (err) {
+      console.error('Finding embedding failed:', err);
+    } finally {
+      setIsSemanticLoading(false);
     }
   });
 
@@ -167,15 +174,12 @@ export default function App() {
 
   const semanticScores = createMemo(() => {
     const qv = queryVector();
-    const k = knowledge();
-    if (!qv || !k || k.length === 0) return new Map<string, number>();
+    const vecs = findingVectors();
+    if (!qv || vecs.size === 0) return new Map<string, number>();
 
     const scores = new Map<string, number>();
-    for (const item of k) {
-      const score = cosineSimilarity(qv, item.v);
-      // Keep max score per URL
-      const current = scores.get(item.url) || -1;
-      if (score > current) scores.set(item.url, score);
+    for (const [url, v] of vecs) {
+      scores.set(url, cosineSimilarity(qv, v));
     }
     return scores;
   });
