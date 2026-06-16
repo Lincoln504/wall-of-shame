@@ -89,5 +89,26 @@ in CI). Browser scraping uses the Camoufox stealth binary.
 ## Site
 
 `site/` is a static SolidJS app (deployed to GitHub Pages) that renders
-`findings.json` with category/severity filters and a client-side semantic search
-(MiniLM embeddings computed in the browser — no server, no knowledge store).
+`findings.json`. Everything runs in the browser — no server, no knowledge store.
+
+- **Filters + semantic search** — category/severity filters and a client-side
+  MiniLM semantic search (embeddings computed in-browser).
+- **Shuffled, interleaved order** — the default view uses a deterministic,
+  id-hashed order (`order.ts`) that interleaves categories so no two adjacent
+  entries share one. It is stable across loads (an entry keeps its place as the
+  corpus grows), which is what lets a share image hard-code an entry's page.
+- **Pagination** — 12 entries/page via hash routes (`#/page/N`), so deep links
+  resolve client-side on GitHub Pages with no 404 dance.
+- **Knuth-Plass justification** — article text is justified with the TeX total-fit
+  algorithm + en-us hyphenation (`tex-linebreak`), applied after web fonts load and
+  re-run on resize (`justify.ts`), with a CSS `text-align: justify` fallback.
+- **Share as image** — each entry has a Share button that renders a 1080×1350
+  (Instagram-portrait) themed card on a `<canvas>` with the same Knuth-Plass
+  justified body and embedded fonts (`sharecard.ts`), then hands it to the Web
+  Share API (`navigator.share` with a file) or downloads it. The card's footer
+  links to the entry's page. The renderer + fonts are lazily imported on first use.
+- **Visitor counter** — optional total + daily-UTC-reset counts via a tiny free
+  Cloudflare Worker (`worker/`); set `VITE_COUNTER_URL` to enable, otherwise the
+  counter is simply omitted.
+
+Typography is self-hosted (Newsreader + Inter via `@fontsource`, no external CDN).
