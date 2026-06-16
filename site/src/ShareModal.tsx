@@ -1,4 +1,4 @@
-import { createSignal, Show, onCleanup, createEffect } from 'solid-js';
+import { createSignal, Show, onCleanup, createEffect, on } from 'solid-js';
 import type { Finding } from './types.js';
 
 interface Props {
@@ -29,30 +29,35 @@ export default function ShareModal(props: Props) {
   const [status, setStatus] = createSignal('');
   const [generating, setGenerating] = createSignal(false);
 
-  const cleanupUrl = () => { const u = imgUrl(); if (u) URL.revokeObjectURL(u); };
-  onCleanup(cleanupUrl);
+  // The live object URL is held in a PLAIN variable — never read it reactively, or the
+  // generating effect would depend on imgUrl and re-run, revoking each fresh blob (the
+  // bug that left the preview stuck on "…").
+  let objUrl = '';
+  const revoke = () => { if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = ''; } };
+  onCleanup(revoke);
 
-  // Open + (re)generate whenever a finding is supplied.
-  createEffect(() => {
-    const f = props.finding;
+  // Open + (re)generate ONLY when the finding changes (on() scopes the dependency so the
+  // effect never re-fires on its own imgUrl/status writes).
+  createEffect(on(() => props.finding, (f) => {
     if (!f) return;
     if (dialogRef && !dialogRef.open) dialogRef.showModal();
-    cleanupUrl();
+    revoke();
     setBlob(null); setImgUrl(''); setStatus(''); setGenerating(true);
     void (async () => {
       try {
         const { renderShareCard } = await import('./sharecard.js');
         const b = await renderShareCard({ finding: f, page: props.page, pageUrl: props.pageUrl });
+        objUrl = URL.createObjectURL(b);
         setBlob(b);
-        setImgUrl(URL.createObjectURL(b));
+        setImgUrl(objUrl);
       } catch (e) {
         console.error('share card render failed:', e);
         setStatus('Could not generate the image.');
       } finally { setGenerating(false); }
     })();
-  });
+  }));
 
-  const close = () => { cleanupUrl(); setImgUrl(''); dialogRef?.close(); props.onClose(); };
+  const close = () => { revoke(); setImgUrl(''); dialogRef?.close(); props.onClose(); };
 
   const flash = (m: string) => { setStatus(m); window.setTimeout(() => setStatus(s => (s === m ? '' : s)), 2500); };
   const fileOf = (b: Blob) => new File([b], 'wall-of-shame.png', { type: 'image/png' });
