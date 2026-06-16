@@ -13,7 +13,7 @@ import { DATA_DIR } from './findings.js';
 import type { FindingsStore, RunState } from './types.js';
 import { getLegacyLinks } from './legacy.js';
 import { safeParseJson, safeParseValidatedJson } from './utils.js';
-import { RESEARCH_MODEL_ID, GEMMA_MODEL_ID, OPENROUTER_PROVIDER, getOpenRouterModel, completeText } from './models.js';
+import { RESEARCH_MODEL_ID, OPENROUTER_PROVIDER, getOpenRouterModel, completeText, pickModelForContext } from './models.js';
 
 // ── Model policy (see models.ts) ────────────────────────────────────────────────
 //
@@ -170,14 +170,24 @@ async function extractFindings(
   researchReport: string,
   log: (msg: string) => void,
 ): Promise<{ findings: RawFinding[]; queries: string[] }> {
-  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
+  // Context-aware routing: a normal research report is snippet-sized → cheap gemma; an
+  // unusually large report escalates to DeepSeek V4 Pro's 1M window (see models.ts).
+  const modelId = pickModelForContext(researchReport);
+  const model = await getOpenRouterModel(modelId, { reasoning: false });
 
-  log(`  [pi] extracting structured findings (gemma, medium reasoning)...`);
+  // Reasoning is OFF here by deliberate measurement: gemma-4-26b-a4b-it (a small MoE)
+  // is functional but ~20× SLOWER with reasoning enabled on the routed provider (≈37s
+  // even for a trivial prompt, minutes-to-stall on a full extraction) and gives the
+  // SAME text. The detailed prompt enforces analytical depth on its own, so reasoning-off
+  // is both faster and far more reliable at scale. json is left on (with completeText's
+  // automatic no-response_format fallback) so the structured shape is requested when the
+  // provider supports it.
+  log(`  [pi] extracting structured findings (${modelId}, reasoning off)...`);
   const text = await completeText(
     model,
     buildExtractionPrompt(categoryKey),
     `RESEARCH DATA:\n\n${researchReport}`,
-    { reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true },
+    { reasoning: false, temperature: 0.3, topP: 0.9, json: true },
   );
 
   if (!text) {

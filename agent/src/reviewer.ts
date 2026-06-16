@@ -22,7 +22,7 @@ import { Type } from 'typebox';
 import { repairJson } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
 import { safeParseValidatedJson } from './utils.js';
-import { GEMMA_MODEL_ID, getOpenRouterModel, completeText } from './models.js';
+import { getOpenRouterModel, completeText, pickModelForContext } from './models.js';
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
@@ -112,7 +112,7 @@ export async function runReview(
   if (!isRawReport && input.length === 0) return [];
 
   const countLabel = isRawReport ? 'raw report' : `${input.length} findings`;
-  log(`  [reviewer] desk audit (gemma) of ${countLabel}...`);
+  log(`  [reviewer] desk audit of ${countLabel}...`);
 
   const inputContent = isRawReport ? input : JSON.stringify(input, null, 2);
   // When auditing a findings array, ground the audit in the research report.
@@ -126,12 +126,17 @@ export async function runReview(
     .replace('<CONTEXT>', ctx)
     .replace('<FINDINGS_JSON>', inputContent);
 
-  const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
+  // Context-aware routing: the candidates + report context are normally snippet-sized →
+  // cheap gemma; an unusually large audit input escalates to DeepSeek V4 Pro (see models.ts).
+  const modelId = pickModelForContext(inputContent + (context ?? ''));
+  const model = await getOpenRouterModel(modelId, { reasoning: false });
 
   try {
     // Review returns a JSON ARRAY, so json-object mode is not used here (it requires an
-    // object root); the sampling params still reduce fabricated specifics.
-    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: 'medium', temperature: 0.3, topP: 0.9 });
+    // object root); the sampling params still reduce fabricated specifics. Reasoning is
+    // OFF for the same measured reason as extraction (see researcher.ts): medium reasoning
+    // makes this gemma model ~20× slower / prone to stalling for identical output.
+    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: false, temperature: 0.3, topP: 0.9 });
     if (!text.trim()) {
       log('  [reviewer] empty response');
       return [];
