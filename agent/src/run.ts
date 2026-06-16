@@ -31,6 +31,7 @@ import {
 import { getSessionMetrics, extractRunStats } from '@lincoln504/pi-research';
 import { runResearch, initializeResearch } from './researcher.js';
 import { runReview } from './reviewer.js';
+import { groundFindings } from './verify.js';
 import { getLegacySeeds } from './legacy.js';
 import { isGitRepo, remoteExists, hasDataChanges, commitAndPush } from './git.js';
 import { mapWithConcurrency } from './utils.js';
@@ -141,7 +142,13 @@ async function researchAndReview(
   const reviewContext = findings.length > 0 ? report : undefined;
   const reviewStart = Date.now();
   const reviewed = await reviewWithRetries(cat.key, reviewInput, log, reviewContext);
-  return { reviewed, queries, researchMs, reviewMs: Date.now() - reviewStart, candidates: findings.length };
+  // Option B grounding: verify each reviewed finding against its real article text
+  // (re-scraped with pi-research's two-layer scraper). On by default; WOS_GROUND_VERIFY=0
+  // skips it. Never throws — falls back to the desk-audited finding per item.
+  const grounded = process.env['WOS_GROUND_VERIFY'] === '0'
+    ? reviewed
+    : await groundFindings(reviewed, log);
+  return { reviewed: grounded, queries, researchMs, reviewMs: Date.now() - reviewStart, candidates: findings.length };
 }
 
 /**
