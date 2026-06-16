@@ -10,6 +10,8 @@ import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
 // Configuration for transformers.js
 env.allowLocalModels = false;
 env.useBrowserCache = true;
+// Quiet onnxruntime's benign "node not assigned to preferred EP" warnings.
+try { (env.backends as any).onnx.logLevel = 'error'; } catch { /* backend not ready yet */ }
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -111,10 +113,10 @@ export default function App() {
     if (sortOrder() === 'semantic' && !extractor) {
       setIsSemanticLoading(true);
       try {
-        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { device: 'webgpu' as any });
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { device: 'webgpu', dtype: 'fp32' } as any);
       } catch (err) {
-        console.warn('WebGPU failed, falling back to CPU:', err);
-        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        console.warn('WebGPU unavailable, falling back to CPU (wasm):', err);
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { dtype: 'fp32' } as any);
       } finally { setIsSemanticLoading(false); }
     }
   });
