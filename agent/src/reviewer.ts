@@ -26,15 +26,19 @@ import { getOpenRouterModel, completeText, pickModelForContext } from './models.
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
+// Only the fields a finding genuinely cannot exist without are required. domain is
+// derived from the URL downstream (addFindings), severity defaults to 'medium', and
+// verificationLog is informational — making them required caused the reviewer to throw
+// and drop EVERY finding whenever gemma (reasoning-off) omitted one of them.
 const ReviewedFindingSchema = Type.Object({
   url: Type.String(),
   title: Type.String(),
-  domain: Type.String(),
   summary: Type.String(),
   category: Type.String(),
   whyBad: Type.String(),
-  severity: Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')]),
-  verificationLog: Type.String(),
+  domain: Type.Optional(Type.String()),
+  severity: Type.Optional(Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')])),
+  verificationLog: Type.Optional(Type.String()),
 });
 
 const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
