@@ -64,7 +64,7 @@ The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150
 
 DEPTH DISCIPLINE — DO NOT OVERSIMPLIFY. A two- or three-sentence summary is a FAILURE. Match the rigor of a sharp investigative analyst: multiple distinct fallacies where present, concrete external facts, and named conflicts of interest. Never collapse the analysis into a single generic observation.
 
-SUMMARY FORMAT (be consistent): the "summary" MUST be a bulleted list of 3–5 points, EACH line starting with "- ", and MUST include at least one verbatim quote (in quotation marks). Never write the summary as one prose paragraph.
+SUMMARY FORMAT (be consistent): the "summary" MUST be a single flowing descriptive PARAGRAPH (3–5 sentences) in plain language describing what the piece argues and its intended conclusion, and MUST include at least one verbatim quote (in quotation marks). Do NOT use "- " bullets, numbering, or line breaks in the summary — it is one paragraph. (Only the "whyBad" analysis is a numbered list.)
 
 OUTPUT READABILITY (WRITE FOR A LAYMAN):
 The "summary" and "whyBad" fields must be plain, clear English a common person understands on first read. Identify the issues with analytical depth, then translate into simple, hard-hitting language. Avoid academic jargon, rhetoric/debate terminology, and empty buzzwords. If a precise technical or legal term is genuinely needed, EXPLAIN it in plain words in the same sentence the first time it appears — never leave the reader to look it up. Write PLAIN TEXT ONLY — no markdown formatting whatsoever: no asterisk bold or italics, no backtick code spans, no hash headers. Emphasize with word choice, not symbols.
@@ -77,7 +77,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "url": "https://...",
       "title": "Exact Title",
       "domain": "example.com",
-      "summary": "- 3-5 main points in simple language, including at least one verbatim quote.\\n- The author's intended conclusion, stated neutrally.",
+      "summary": "A flowing 3-5 sentence paragraph in plain language describing the piece and its intended conclusion, including at least one verbatim quote in quotation marks. Not a list.",
       "category": "<CATEGORY_KEY>",
       "whyBad": "1. Cite a verbatim quote. 2. Name the manipulation tactic in plain words and explain it in the same sentence. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts stated generally (no fabricated statute numbers, case names, exact stats, or study titles/dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction. (>=150 words, scathing, evidence-grounded, layman-readable; no 'Analysis:' label, no surrounding brackets)",
       "severity": "low|medium|high"

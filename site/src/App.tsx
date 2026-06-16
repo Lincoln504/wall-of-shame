@@ -2,10 +2,10 @@ import { createSignal, createResource, For, Show, createMemo, onCleanup, createE
 import type { FindingsStore, Finding } from './types.js';
 import { canonicalOrder, pageForIndex, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
-import { splitAnalysisPoints, splitBullets } from './format.js';
+import { splitAnalysisPoints } from './format.js';
 import ShareModal from './ShareModal.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
-import { loadDocVectors } from './semantic.js';
+import { loadDocVectors, computeHybridScores } from './semantic.js';
 import type { QueryEmbedder } from './query-embedder.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -46,12 +46,6 @@ function jsonToCsv(findings: Finding[]) {
   return [headers.join(','), ...rows].join('\n');
 }
 
-function cosineSimilarity(v1: number[], v2: number[]): number {
-  let dot = 0, n1 = 0, n2 = 0;
-  for (let i = 0; i < v1.length; i++) { dot += v1[i] * v2[i]; n1 += v1[i] * v1[i]; n2 += v2[i] * v2[i]; }
-  return dot / (Math.sqrt(n1) * Math.sqrt(n2));
-}
-
 function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Finding) => void }) {
   const f = props.finding;
   const color = SEVERITY_COLOR[f.severity] ?? '#757575';
@@ -71,11 +65,7 @@ function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Fin
         <a href={f.url} target="_blank" rel="noopener noreferrer" style={s.titleLink}>{f.title}</a>
       </h3>
       <div style={s.domain}>{f.domain}</div>
-      <ul style={s.summary}>
-        <For each={splitBullets(f.summary)}>
-          {pt => <li class="wos-justify" style={s.summaryBullet}>{pt}</li>}
-        </For>
-      </ul>
+      <p class="wos-justify" style={s.summaryText}>{f.summary}</p>
       <div style={s.whyBadBox}>
         <div style={s.whyBadLabel}>Analysis</div>
         <For each={splitAnalysisPoints(f.whyBad)}>
@@ -101,7 +91,6 @@ export default function App() {
   const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity'>('default');
   const [showDownload, setShowDownload] = createSignal(false);
   const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
-  const [isSemanticLoading, setIsSemanticLoading] = createSignal(false);
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
@@ -132,19 +121,20 @@ export default function App() {
       .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); });
   };
 
-  // Embed the live query whenever it (or model readiness) changes. Both reads happen
-  // before any await so the effect re-runs when the model finishes loading.
-  createEffect(async () => {
+  // Embed the live query (debounced) whenever it or model readiness changes. Keyword
+  // results render instantly and un-debounced via hybridScores; only the semantic
+  // embedding is debounced so fast typing doesn't queue many embeddings.
+  createEffect(() => {
     const q = search().trim();
     const ready = modelState() === 'ready';
     if (q.length > 2) ensureModel();
     if (q.length <= 2) { setQueryVector(null); return; }
     if (!ready || !embedder) return;
-    setIsSemanticLoading(true);
-    try {
-      setQueryVector(await embedder.embed(q));
-    } catch (err) { console.error('Query embedding failed:', err); }
-    finally { setIsSemanticLoading(false); }
+    const handle = setTimeout(async () => {
+      try { setQueryVector(await embedder!.embed(q)); }
+      catch (err) { console.error('Query embedding failed:', err); }
+    }, 180);
+    onCleanup(() => clearTimeout(handle));
   });
 
   const hasQuery = createMemo(() => search().trim().length > 2);
@@ -155,13 +145,13 @@ export default function App() {
     return [...new Set(d.findings.map(f => f.category))].sort();
   });
 
-  const semanticScores = createMemo(() => {
-    const qv = queryVector();
-    const vecs = docVectors();
-    if (!qv || vecs.size === 0) return new Map<string, number>();
-    const scores = new Map<string, number>();
-    for (const [id, v] of vecs) scores.set(id, cosineSimilarity(qv as unknown as number[], v as unknown as number[]));
-    return scores;
+  // Hybrid keyword + semantic relevance (RRF k=60, exact keyword → 100%). Works
+  // lexical-only before the query model loads, then upgrades to full hybrid.
+  const hybridScores = createMemo(() => {
+    const d = data();
+    if (!d || !hasQuery()) return new Map<string, number>();
+    const docs = d.findings.map(f => ({ id: keyOf(f), text: `${f.title} ${f.summary} ${f.whyBad} ${f.domain}` }));
+    return computeHybridScores(docs, search(), queryVector(), docVectors());
   });
 
   // ── Canonical deterministic order (for default view + stable share-page links) ─
@@ -185,17 +175,18 @@ export default function App() {
     if (!d) return [] as (Finding & { score?: number })[];
     const cat = category();
     const sev = severity();
-    const scores = semanticScores();
+    const scores = hybridScores();
     const order = sortOrder();
 
     let list: (Finding & { score?: number })[] = d.findings.map(f => ({ ...f, score: scores.get(keyOf(f)) }));
     if (cat) list = list.filter(f => f.category === cat);
     if (sev) list = list.filter(f => f.severity === sev);
 
-    // Search is always semantic: with a query embedded, rank every entry by relevance
-    // (most-relevant first). No hard score cutoff, so results never silently vanish.
-    if (hasQuery() && queryVector()) {
-      return [...list].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+    // Hybrid search: keep only entries with a relevance score, ranked high→low. Before
+    // the model loads this is keyword-only (exact/partial matches); once it loads, every
+    // entry gets a semantic score so the full corpus ranks.
+    if (hasQuery()) {
+      return list.filter(f => f.score !== undefined).sort((a, b) => (b.score! - a.score!));
     }
     if (order === 'oldest') return [...list].sort((a, b) => a.foundAt.localeCompare(b.foundAt));
     if (order === 'newest') return [...list].sort((a, b) => b.foundAt.localeCompare(a.foundAt));
@@ -314,9 +305,6 @@ export default function App() {
         </div>
       </div>
 
-      <Show when={modelState() === 'loading' || isSemanticLoading()}>
-        <div style={s.semanticLoading}>Semantic search model loading locally…</div>
-      </Show>
       <Show when={data.loading}><div style={s.loading}>Loading…</div></Show>
       <Show when={data.error}><div style={s.error}>Failed to load findings.</div></Show>
 
@@ -325,7 +313,7 @@ export default function App() {
           {filteredList().length} entries · page {page()} of {pageCount()}
         </div>
         <Show when={filteredList().length === 0}>
-          <div style={s.empty}>No entries found.</div>
+          <div style={s.empty}>{hasQuery() && modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
         </Show>
         <main style={s.grid}>
           <For each={paged()}>
@@ -440,8 +428,7 @@ const s: Record<string, any> = {
   cardTitle: { 'font-family': SERIF, 'font-size': '1.65rem', 'font-weight': '700', 'margin-bottom': '0.4rem', 'line-height': 1.25, 'letter-spacing': '-0.01em' },
   titleLink: { color: '#1a1a1a', 'text-decoration': 'none', 'background-image': 'linear-gradient(#e8e6e0,#e8e6e0)', 'background-position': '0 100%', 'background-size': '100% 1px', 'background-repeat': 'no-repeat' },
   domain: { 'font-family': SERIF, 'font-size': '0.92rem', color: '#a09a8e', 'margin-bottom': '1.1rem', 'font-style': 'italic' },
-  summary: { margin: '0 0 1.25rem', 'padding-left': '1.25rem', 'list-style': 'disc outside' },
-  summaryBullet: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', 'margin-bottom': '0.45rem', 'padding-left': '0.25rem' },
+  summaryText: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 1.25rem' },
   whyBadBox: { background: '#fcfbf8', 'border-left': '3px solid #e4e1d9', padding: '1.1rem 1.25rem' },
   whyBadLabel: { 'font-family': UI, 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.7rem', 'text-transform': 'uppercase', 'letter-spacing': '0.08em', 'margin-bottom': '0.6rem' },
   whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'left', margin: '0 0 0.7rem' },

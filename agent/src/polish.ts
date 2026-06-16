@@ -4,7 +4,7 @@
  *
  * Normalizes structure and removes hallucination-risk, grounded ONLY in each
  * entry's own existing content (no web, no new facts):
- *   - summary → a bulleted list of 3–5 points with at least one verbatim quote.
+ *   - summary → a single flowing descriptive paragraph with at least one verbatim quote.
  *   - whyBad  → the numbered "1. … 5." analysis (renumbers prose), with any leaked
  *               verification/audit metadata removed.
  *   - GENERALIZES over-specific citations (statute/section numbers, case names,
@@ -51,8 +51,8 @@ const JARGON = /sympathetic-victim gambit|predator-prey dynamic|race-to-the-(bot
 
 function summaryNeedsWork(s: string): boolean {
   const t = (s || '').trim();
-  if (!/^- /.test(t)) return true;                       // not bulleted
-  if ((t.match(/(^|\n)\s*- /g) || []).length < 2) return true; // <2 bullets
+  if (/^-\s/.test(t) || /\n\s*-\s/.test(t)) return true; // bulleted (should be a paragraph)
+  if (/\n/.test(t)) return true;                         // multi-line (should be one paragraph)
   if (MARKDOWN.test(t)) return true;
   return false;
 }
@@ -73,7 +73,7 @@ const POLISH_PROMPT = `You are the Lead Auditor cleaning up an EXISTING Wall of 
 
 Produce a cleaned "summary" and "whyBad":
 
-SUMMARY: a bulleted list of 3–5 points, EACH line starting with "- ", in plain language, and INCLUDING at least one verbatim quote (in quotation marks) taken from the entry. Preserve the substance of the existing summary; just structure it as clean bullets.
+SUMMARY: a single flowing descriptive paragraph (3–5 sentences, NO bullets, NO line breaks), in plain language, INCLUDING at least one verbatim quote (in quotation marks) taken from the entry. Preserve the substance of the existing summary; just render it as a clean paragraph.
 
 WHYBAD: the numbered analysis, beginning directly with "1." (no "Analysis:" label, no surrounding brackets), covering in order: 1. a verbatim quote and the claim it advances; 2. the named framing technique(s) or fallacy(ies) in plain English; 3. the concrete real-world harm it normalizes/justifies/hides; 4. a sentence beginning "External Context:" with well-established rebutting facts stated GENERALLY; 5. where applicable "CONFLICT OF INTEREST:" and/or "TIMELINESS NOTE:". PRESERVE the depth and reasoning of the existing analysis — only restructure it into this numbered form and fix the problems below. Aim for 150–280 words.
 
@@ -111,10 +111,9 @@ async function polishOne(f: Finding): Promise<{ summary?: string; whyBad?: strin
     out.whyBad = newWhy;
   }
 
-  // summary gate: bulleted, has a quote, not a degradation.
-  const newSum = (obj.summary ?? '').trim().replace(/\r\n?/g, '\n');
-  const bulletCount = (newSum.match(/(^|\n)\s*- /g) || []).length;
-  if (/^- /.test(newSum) && bulletCount >= 2 && /["“”']/.test(newSum) && newSum.length >= Math.min(80, f.summary.length * 0.5)) {
+  // summary gate: a single paragraph (no bullets/newlines), has a quote, not a degradation.
+  const newSum = (obj.summary ?? '').trim();
+  if (!/^-\s/.test(newSum) && !/\n/.test(newSum) && /["“”'’]/.test(newSum) && newSum.length >= Math.min(80, f.summary.length * 0.5)) {
     out.summary = newSum;
   }
 
