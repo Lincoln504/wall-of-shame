@@ -28,6 +28,10 @@ const MAX_ARTICLE_CHARS = 10000; // bound per-article context handed to the mode
 const SCRAPE_CONCURRENCY = 3;    // the browser pool bounds real browsers underneath
 const BATCH_CONCURRENCY = 2;     // concurrent verification batches
 const BATCH_SIZE = Math.max(1, Number(process.env['WOS_VERIFY_BATCH']) || 10);
+// Hard ceiling on a single grounding scrape. The SDK has its own internal scrape
+// timeout, but during an unattended overnight loop one wedged page must never stall
+// a whole category — past this we fall back to standards-only for that entry.
+const SCRAPE_TIMEOUT_MS = Math.max(15000, Number(process.env['WOS_VERIFY_SCRAPE_TIMEOUT_MS']) || 60000);
 
 const BATCH_GROUND_PROMPT = `You are the Lead Auditor performing the FINAL verification of a batch of Wall of Shame entries before they are published. You will receive several numbered entries. For EACH entry, return exactly one result object, echoing back its "id".
 
@@ -121,10 +125,19 @@ async function verifyBatch(
   });
 }
 
-/** Scrape one finding's own article (bounded by the browser pool). */
+/** Scrape one finding's own article (bounded by the browser pool + a hard timeout). */
 async function scrapeOne(f: RawFinding, log: (m: string) => void): Promise<{ f: RawFinding; article: string | null }> {
   try {
-    const res = await scrapeUrl(f.url);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`scrape timeout after ${SCRAPE_TIMEOUT_MS}ms`)), SCRAPE_TIMEOUT_MS);
+    });
+    let res;
+    try {
+      res = await Promise.race([scrapeUrl(f.url), timeout]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) {
       return { f, article: null };
     }
