@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
     <title>Wall of Shame</title>
     <meta name="description" content="A repository of web content judged to be harmful, and why — propaganda and op-eds whose framing normalizes, justifies, or hides the harm of regressive policies. Each entry is dissected with a scathing, evidence-grounded analysis." />
     <!-- Open Graph / social link unfurls. Hash routes (#/page/N) are invisible to
@@ -17,6 +17,21 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Wall of Shame" />
     <meta name="twitter:description" content="Propaganda and op-eds that normalize, justify, or hide the harm of regressive policies — each dissected with a scathing, evidence-grounded analysis." />
+    <!-- GitHub Pages SPA redirect: decode path encoded by 404.html back to real URL. -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          });
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded[0] +
+            (decoded[1] ? '&' + decoded[1] : '') +
+            l.hash
+          );
+        }
+      }(window.location));
+    </script>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html { font-size: 16px; }

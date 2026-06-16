@@ -199,25 +199,42 @@ export default function App() {
     return [...list].sort((a, b) => (ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0));
   });
 
-  // ── Routing via hash, state-preserving (no router remount) ─────────────────────
-  //   #/page/N   — pagination
-  //   #/f/<id>   — STABLE permalink to a single entry (resolved by exact-or-prefix id),
-  //                so a link saved from a share card always finds the same article even
-  //                as pagination shifts under it.
+  // ── Routing via History API (no hash) ─────────────────────────────────────────
+  //   /page/N     — pagination
+  //   /entry/<id> — STABLE permalink to a single entry (resolved by exact-or-prefix id),
+  //                 so a link saved from a share card always finds the same article even
+  //                 as pagination shifts under it.
   const parsePage = () => {
-    const m = /#\/page\/(\d+)/.exec(location.hash);
+    const m = /\/page\/(\d+)/.exec(location.pathname);
     return m ? Math.max(1, parseInt(m[1], 10)) : 1;
   };
   const parseFocus = (): string | null => {
-    const m = /#\/f\/([^/?#]+)/.exec(location.hash);
+    const m = /\/entry\/([^/?#]+)/.exec(location.pathname);
     return m ? decodeURIComponent(m[1]) : null;
   };
   const [rawPage, setRawPage] = createSignal(parsePage());
   const [focusId, setFocusId] = createSignal<string | null>(parseFocus());
+  // Push a new history entry and sync signals immediately (pushState never fires popstate).
+  const navigate = (path: string) => {
+    history.pushState(null, '', path);
+    setRawPage(parsePage());
+    setFocusId(parseFocus());
+  };
   onMount(() => {
-    const onHash = () => { setRawPage(parsePage()); setFocusId(parseFocus()); };
-    window.addEventListener('hashchange', onHash);
-    onCleanup(() => window.removeEventListener('hashchange', onHash));
+    // Migrate old hash-based share links saved before the routing change.
+    const h = window.location.hash;
+    const oldFocus = /#\/f\/([^/?#]+)/.exec(h);
+    const oldPage = /#\/page\/(\d+)/.exec(h);
+    if (oldFocus) {
+      history.replaceState(null, '', `${BASE}entry/${oldFocus[1]}`);
+      setFocusId(oldFocus[1]);
+    } else if (oldPage) {
+      history.replaceState(null, '', `${BASE}page/${oldPage[1]}`);
+      setRawPage(parseInt(oldPage[1], 10));
+    }
+    const onPop = () => { setRawPage(parsePage()); setFocusId(parseFocus()); };
+    window.addEventListener('popstate', onPop);
+    onCleanup(() => window.removeEventListener('popstate', onPop));
   });
 
   // Resolve the focused permalink to a finding (exact id, else short-prefix match).
@@ -229,10 +246,10 @@ export default function App() {
   // Jump to the top whenever a permalink is opened.
   createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
   const clearFocus = () => {
-    if (!location.hash.startsWith('#/f/')) return;
+    if (!/\/entry\//.test(location.pathname)) return;
     const f = focusedFinding();
     const targetPage = f ? (canonicalPage().get(keyOf(f)) ?? 1) : 1;
-    location.hash = `#/page/${targetPage}`;
+    navigate(`${BASE}page/${targetPage}`);
   };
   // Reset to page 1 when the filter/sort changes (but respect the initial URL page).
   createEffect(on([search, category, severity, sortOrder], () => setRawPage(1), { defer: true }));
@@ -243,8 +260,7 @@ export default function App() {
 
   const goToPage = (p: number) => {
     const np = clampPage(p, filteredList().length);
-    if (`#/page/${np}` !== location.hash) location.hash = `#/page/${np}`;
-    setRawPage(np);
+    if (`${BASE}page/${np}` !== location.pathname) navigate(`${BASE}page/${np}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -257,14 +273,14 @@ export default function App() {
   onMount(() => { const dispose = onResizeRejustify(collectJustifyEls); onCleanup(dispose); });
 
   // ── Share ─────────────────────────────────────────────────────────────────────
-  // The shared link is a STABLE per-entry permalink (#/f/<short id>), NOT a page number:
-  // page numbers drift as the corpus grows, so an old #/page/N would later point at the
+  // The shared link is a STABLE per-entry permalink (/entry/<short id>), NOT a page number:
+  // page numbers drift as the corpus grows, so an old /page/N would later point at the
   // wrong entry. The id is assigned once and never changes, so a saved image's link keeps
   // resolving to the same article forever. A short 8-char prefix keeps it clean; the
   // focused view resolves it by exact-or-prefix match.
   const handleShare = (f: Finding) => {
     const shortId = (f.id || '').slice(0, 8) || encodeURIComponent(keyOf(f));
-    const pageUrl = `${location.origin}${BASE}#/f/${shortId}`;
+    const pageUrl = `${location.origin}${BASE}entry/${shortId}`;
     setShareTarget({ finding: f, page: 1, pageUrl });
   };
 

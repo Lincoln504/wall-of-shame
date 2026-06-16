@@ -156,34 +156,47 @@ function layoutSummary(ctx: CanvasRenderingContext2D, text: string, availH: numb
   return { height: 0, draw: () => {} };
 }
 
-// Draw the Wall of Shame mark — a dark brand box with a centred 📍 pin (matches the
-// favicon) — at (x, y) with side `s`.
+// Draw the Wall of Shame mark — a hollow-bordered square with a canvas-drawn pin
+// (matches the favicon: white background, dark outlined square, dark pin tilted 40°
+// with tip at center) — at (x, y) with side `s`.
 function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
-  const box = (rx: number, ry: number, w: number, h: number, rad: number) => {
-    ctx.beginPath();
-    if (typeof (ctx as any).roundRect === 'function') (ctx as any).roundRect(rx, ry, w, h, rad);
-    else ctx.rect(rx, ry, w, h);
-    ctx.fill();
-  };
-  // Dark rounded box + light (paper) inset.
-  ctx.fillStyle = C.ink;
-  box(x, y, s, s, s * 0.14);
-  ctx.fillStyle = C.bg;
-  box(x + s * 0.14, y + s * 0.14, s * 0.72, s * 0.72, s * 0.09);
-  // Pin emoji, centred and scaled to the inset, nudged a hair down so its head sits in
-  // the optical centre of the box.
+  // White background fill inside the box area.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, s, s);
+  // Dark square border (hollow box).
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = Math.max(1, s * 0.08);
+  ctx.strokeRect(x + ctx.lineWidth / 2, y + ctx.lineWidth / 2, s - ctx.lineWidth, s - ctx.lineWidth);
+  // Push-pin: tip fixed at box center, tilted 40°.
+  const cx = x + s / 2;
+  const cy = y + s / 2;
+  const angle = 40 * Math.PI / 180;
+  // Head circle: center offset = s*(11/32) above pivot in unrotated space.
+  const headOffset = s * (11 / 32);
+  const headR = s * (7 / 32);
+  // Shaft: base half-width s*(4/32), base Y offset s*(5/32) above pivot.
+  const shaftHW = s * (4 / 32);
+  const shaftBaseY = s * (5 / 32);
   ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `${Math.round(s * 0.58)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-  ctx.fillText('📍', x + s / 2, y + s / 2 + s * 0.06);
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.fillStyle = C.ink;
+  ctx.beginPath();
+  ctx.arc(0, -headOffset, headR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-shaftHW, -shaftBaseY);
+  ctx.lineTo(shaftHW, -shaftBaseY);
+  ctx.lineTo(0, 0);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
 export interface ShareCardOptions {
   finding: Finding;
   page: number;
-  /** Full stable permalink shown in the footer + share text, e.g. https://…/#/f/43501243 */
+  /** Full stable permalink shown in the footer + share text, e.g. https://…/entry/43501243 */
   pageUrl: string;
 }
 

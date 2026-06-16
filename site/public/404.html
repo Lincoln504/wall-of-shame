@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Wall of Shame</title>
+  <!-- GitHub Pages SPA redirect: encode the path as a query string on the base URL so
+       the SPA can read it back in index.html and push the real history entry.
+       pathSegmentsToKeep=1 preserves the /wall-of-shame/ repo prefix. -->
+  <script>
+    var l = window.location;
+    l.replace(
+      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+      l.pathname.split('/').slice(0, 2).join('/') + '/?/' +
+      l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+      l.hash
+    );
+  </script>
+</head>
+<body></body>
+</html>

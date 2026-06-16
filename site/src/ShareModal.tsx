@@ -71,7 +71,7 @@ export default function ShareModal(props: Props) {
 
   const shareText = () => `${props.finding?.title ?? ''} — on Wall of Shame\n${props.pageUrl}`;
   const mailtoHref = () => {
-    const subject = `${props.finding?.title ?? 'Wall of Shame'} — Wall of Shame`;
+    const subject = props.finding?.title ?? 'Wall of Shame';
     const body = `Flagged on Wall of Shame:\n\n${props.finding?.title ?? ''}\n${props.pageUrl}\n\nThe full breakdown is at the link above.`;
     return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
@@ -80,11 +80,8 @@ export default function ShareModal(props: Props) {
   const shareImage = async () => {
     const b = blob(); if (!b) return;
     const file = fileOf(b);
-    const nav = navigator as any;
-    if (nav.canShare && nav.canShare({ files: [file] })) {
-      try { await nav.share({ files: [file], title: props.finding?.title, text: shareText() }); }
-      catch (e: any) { if (e?.name !== 'AbortError') downloadImage(); }
-    } else downloadImage();
+    try { await (navigator as any).share({ files: [file], title: props.finding?.title, text: shareText() }); }
+    catch (e: any) { if (e?.name !== 'AbortError') flash('Share failed — try Copy link.'); }
   };
   const copyImage = async () => {
     const b = blob(); if (!b) return;
@@ -138,10 +135,10 @@ export default function ShareModal(props: Props) {
         }
       >
         <div style={st.row}>
-          <button style={{ ...st.btn, ...st.primary }} disabled={!blob()} onClick={shareImage}>Share image</button>
-          <button style={st.btn} disabled={!blob()} onClick={copyImage}>Copy image</button>
+          <button style={{ ...st.btn, ...st.primary }} disabled={!blob()} onClick={shareImage}>Share Link</button>
+          <button style={st.btn} disabled={!props.pageUrl} onClick={copyLink}>Copy link</button>
         </div>
-        <p style={st.note}>Shares the image to your phone's share sheet — Messages, Instagram, X, and the rest. The link to this entry is included.</p>
+        <p style={st.note}>Opens your phone's share sheet to Messages, Instagram, X, and others. The link to this entry is in the image.</p>
       </Show>
 
       <Show when={status()}><div style={st.status}>{status()}</div></Show>
