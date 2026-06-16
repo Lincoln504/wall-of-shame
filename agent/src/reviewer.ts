@@ -127,7 +127,9 @@ export async function runReview(
   const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
 
   try {
-    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: 'medium' });
+    // Review returns a JSON ARRAY, so json-object mode is not used here (it requires an
+    // object root); the sampling params still reduce fabricated specifics.
+    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: 'medium', temperature: 0.3, topP: 0.9 });
     if (!text.trim()) {
       log('  [reviewer] empty response');
       return [];

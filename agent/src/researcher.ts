@@ -51,7 +51,7 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
 1. ANALYTICAL SYNTHESIS: Synthesize the findings into a cohesive, analytical report. Every factual claim MUST be directly supported by a page scraped in this research session.
 2. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
 3. NO HALLUCINATED CONTEXT — STATE FACTS GENERALLY: You MAY cite well-established public context to rebut a claim, but do NOT invent or cite OVERLY SPECIFIC identifiers that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics or percentages, no specific study titles or dates you are not certain of. Instead, assert that such laws/research/agencies/outcomes exist in GENERAL terms ("long-standing federal law already criminalizes this"; "extensive peer-reviewed research finds the opposite"; "the agency's own data contradicts this"). You may name only extremely well-known institutions you are sure of (e.g. the ADA, OSHA, the Civil Rights Act, the EPA). When unsure of a specific, argue from the piece's own logic instead.
-4. QUOTE REQUIREMENT: Every finding MUST include at least one direct, verbatim quote (in the summary) showing the article's primary argument or how it frames the issue.
+4. QUOTE REQUIREMENT — ANCHOR IN THE RESEARCH DATA: Every finding MUST include at least one direct, verbatim quote (in the summary) showing the article's primary argument. That quote MUST be copied WORD-FOR-WORD from the RESEARCH DATA provided in the user message — never paraphrase it into quotation marks and never invent a quote. Every claim you make about an article must be supported by text that actually appears in the RESEARCH DATA; if the data does not contain it, do not assert it.
 5. SELECTIVITY: Only include content where the piece itself acts to NORMALIZE, JUSTIFY, or HIDE the harm of regressive policies — op-eds, "alternative" news, think-tank reports, and industry PR that use biased framing. OMIT neutral, fact-based reporting.
 
 WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigorous):
@@ -176,7 +176,7 @@ async function extractFindings(
     model,
     buildExtractionPrompt(categoryKey),
     `RESEARCH DATA:\n\n${researchReport}`,
-    { reasoning: 'medium' },
+    { reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true },
   );
 
   if (!text) {

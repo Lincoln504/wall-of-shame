@@ -91,10 +91,26 @@ export async function completeText(
   resolved: ResolvedModel,
   systemPrompt: string,
   userText: string,
-  opts: { reasoning?: ThinkingLevel | false } = {},
+  opts: {
+    reasoning?: ThinkingLevel | false;
+    /** Sampling temperature. Lower (≈0.3) for structured/analytical stages reduces
+     *  fabricated specifics; omit to use the model default. */
+    temperature?: number;
+    /** Nucleus sampling. ≈0.9 measurably cuts hallucinated named entities. */
+    topP?: number;
+    /** Request OpenRouter JSON-object mode (response_format) for OBJECT-returning
+     *  stages. If the routed provider rejects it, we transparently retry without it,
+     *  so it can never break the pipeline (safeParseJson remains the parser). */
+    json?: boolean;
+  } = {},
 ): Promise<string> {
   const reasoning = opts.reasoning ?? false;
-  const res = await completeSimple(
+  const extract = (res: any) =>
+    res.content.find((c: any): c is { type: 'text'; text: string } => c.type === 'text')?.text ?? '';
+
+  // pi-ai forwards the onPayload result verbatim to OpenRouter (no key stripping), so
+  // temperature/top_p/response_format can be injected directly into the request body.
+  const run = (useJson: boolean) => completeSimple(
     resolved.model,
     {
       systemPrompt,
@@ -113,9 +129,20 @@ export async function completeText(
           delete payload.reasoning;
           payload.include_reasoning = false;
         }
+        if (opts.temperature !== undefined) payload.temperature = opts.temperature;
+        if (opts.topP !== undefined) payload.top_p = opts.topP;
+        if (useJson) payload.response_format = { type: 'json_object' };
         return payload;
       },
     },
   );
-  return res.content.find((c: any): c is { type: 'text'; text: string } => c.type === 'text')?.text ?? '';
+
+  try {
+    return extract(await run(opts.json === true));
+  } catch (err) {
+    // response_format is provider-dependent for gemma; degrade gracefully to a plain
+    // completion (prompt-driven JSON + safeParseJson) rather than failing the stage.
+    if (opts.json === true) return extract(await run(false));
+    throw err;
+  }
 }

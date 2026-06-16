@@ -76,7 +76,7 @@ function buildUserText(f: Finding): string {
 
 async function enrichOne(f: Finding, log: (m: string) => void): Promise<string | null> {
   const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
-  const text = await completeText(model, BACKFILL_PROMPT, buildUserText(f), { reasoning: 'medium' });
+  const text = await completeText(model, BACKFILL_PROMPT, buildUserText(f), { reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true });
   if (!text?.trim()) return null;
   let whyBad = '';
   try {

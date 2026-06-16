@@ -97,7 +97,7 @@ function buildUserText(f: Finding): string {
 
 async function polishOne(f: Finding): Promise<{ summary?: string; whyBad?: string } | null> {
   const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
-  const text = await completeText(model, POLISH_PROMPT, buildUserText(f), { reasoning: 'medium' });
+  const text = await completeText(model, POLISH_PROMPT, buildUserText(f), { reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true });
   if (!text?.trim()) return null;
   let obj: { summary?: string; whyBad?: string };
   try { obj = safeParseJson<{ summary?: string; whyBad?: string }>(text); } catch { return null; }
