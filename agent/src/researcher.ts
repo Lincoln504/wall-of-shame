@@ -116,15 +116,18 @@ let isSDKInitialized = false;
 export async function initializeResearch(log: (msg: string) => void) {
   if (isSDKInitialized) return;
 
-  // Full INFO+DEBUG diagnostics to /tmp/pi-research.log for post-hoc investigation
-  // of the tool under audit. The SDK reads PI_RESEARCH_DEBUG when constructing each
-  // (per-run, concurrent) logger, so setting the env var — not just the `verbose`
-  // option — is what reliably enables debug across all concurrent research runs.
-  process.env['PI_RESEARCH_DEBUG'] = 'true';
-  const logPath = join(tmpdir(), 'pi-research.log');
+  // Verbose SDK debug logging is OPT-IN (WOS_PI_DEBUG=1) and OFF by default.
+  // It was previously forced on, streaming INFO+DEBUG to /tmp/pi-research.log — but
+  // /tmp is tmpfs (RAM) on this host, so during a sustained high-concurrency loop
+  // that log grew in RAM and helped push the machine into a memory-pressure freeze.
+  // Keep it off for scaling; enable it only when actively diagnosing the SDK.
+  const debug = process.env['WOS_PI_DEBUG'] === '1';
+  if (debug) {
+    process.env['PI_RESEARCH_DEBUG'] = 'true';
+    log(`  [pi] SDK debug logging ON → ${join(tmpdir(), 'pi-research.log')} (WOS_PI_DEBUG=1)`);
+  }
 
   log('  [pi] initializing research SDK (all-gemma pipeline, knowledge_store=none)...');
-  log(`  [pi] SDK debug logging ON → ${logPath}`);
 
   await initResearchSDK({
     model: `${OPENROUTER_PROVIDER}/${RESEARCH_MODEL_ID}`,
@@ -136,10 +139,9 @@ export async function initializeResearch(log: (msg: string) => void) {
       MAX_SCRAPE_BATCHES: 4,
       // Generous per-researcher budget (config range is 180000–1800000 ms).
       RESEARCHER_TIMEOUT_MS: 900000,
-      // Emit INFO+DEBUG to the log file (kept in sync with PI_RESEARCH_DEBUG).
-      DEBUG: true,
+      DEBUG: debug,
     },
-    verbose: true,
+    verbose: debug,
   });
 
   isSDKInitialized = true;

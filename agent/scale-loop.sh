@@ -1,32 +1,50 @@
 #!/bin/bash
 # Sustained discovery loop toward the target corpus size. Each round is a full
-# all-category, high-concurrency discovery pass that commits+pushes its data (and
-# thus deploys the site) and then exits deterministically. Rounds are SEQUENTIAL,
-# so there are no git push races. A per-round `timeout` is a belt-and-suspenders
-# guard in case any future regression reintroduces a hang.
+# all-category discovery pass; rounds are SEQUENTIAL (no git push races).
 #
-# Usage: bash scale-loop.sh [target] [max_rounds] [concurrency]
+# SAFETY (after a memory-pressure freeze on 2026-06-15):
+#   - Default concurrency is LOW (3). Each concurrent category spawns a camoufox
+#     (Firefox) stealth browser; ~13 at once exhausted RAM on a 6-core/31GB host
+#     that also runs other heavy services, thrashing swap until the machine froze.
+#     Keep this small; raise only with headroom to spare.
+#   - The log goes to DISK (next to this script), never /tmp — /tmp is tmpfs (RAM).
+#   - A pre-round MemAvailable guard waits if free memory is low, so a round never
+#     starts into a near-OOM condition.
+#   - Verbose SDK debug logging stays OFF (set WOS_PI_DEBUG=1 only when diagnosing).
+#
+# Usage: bash scale-loop.sh [target] [max_rounds] [concurrency] [min_avail_mb]
 set -u
 cd "$(dirname "$0")"
 
 TARGET="${1:-1500}"
 MAX_ROUNDS="${2:-300}"
-CONC="${3:-13}"
-LOG=/tmp/wos-loop.log
+CONC="${3:-3}"
+MIN_AVAIL_MB="${4:-6000}"   # don't start a round unless this many MB are available
+LOG="$(cd "$(dirname "$0")" && pwd)/scale-loop.log"   # on disk, *.log is gitignored
 
 count() { node -e "console.log(require('./data/findings.json').totalFindings||0)" 2>/dev/null || echo 0; }
+avail_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 999999; }
 
-echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC" | tee -a "$LOG"
+echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC min_avail=${MIN_AVAIL_MB}MB" | tee -a "$LOG"
 for i in $(seq 1 "$MAX_ROUNDS"); do
   C=$(count)
   echo "[loop] ── round $i — current findings=$C / $TARGET ──" | tee -a "$LOG"
   if [ "$C" -ge "$TARGET" ]; then echo "[loop] TARGET REACHED ($C >= $TARGET)" | tee -a "$LOG"; break; fi
+
+  # Memory guard: wait (up to ~5 min) for headroom before starting a browser-heavy round.
+  waited=0
+  while [ "$(avail_mb)" -lt "$MIN_AVAIL_MB" ]; do
+    echo "[loop] low memory ($(avail_mb)MB < ${MIN_AVAIL_MB}MB) — waiting 30s before round $i" | tee -a "$LOG"
+    sleep 30; waited=$((waited+30))
+    [ "$waited" -ge 300 ] && { echo "[loop] still low after 5min — skipping round $i" | tee -a "$LOG"; break; }
+  done
+
   START=$(date +%s)
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \
-    timeout 1200 npx tsx src/main.ts --all --concurrency "$CONC" >> "$LOG" 2>&1
+    timeout 1500 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
   RC=$?
-  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s findings=$(count)" | tee -a "$LOG"
-  [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 1200s timeout guard" | tee -a "$LOG"
-  sleep 3
+  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s findings=$(count) avail=$(avail_mb)MB" | tee -a "$LOG"
+  [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 1500s timeout guard" | tee -a "$LOG"
+  sleep 5
 done
 echo "[loop] done $(date -u +%FT%TZ) final findings=$(count)" | tee -a "$LOG"
