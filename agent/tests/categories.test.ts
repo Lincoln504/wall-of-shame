@@ -46,8 +46,8 @@ describe('CATEGORIES', () => {
     }
   });
 
-  it('has exactly 15 categories as currently defined', () => {
-    expect(CATEGORIES.length).toBe(15);
+  it('has exactly 19 categories as currently defined', () => {
+    expect(CATEGORIES.length).toBe(19);
   });
 
   it('has diverse category types covering multiple areas', () => {
@@ -57,6 +57,10 @@ describe('CATEGORIES', () => {
     expect(keys).toContain('race');
     expect(keys).toContain('technology');
     expect(keys).toContain('climate');
+    expect(keys).toContain('corruption');
+    expect(keys).toContain('media');
+    expect(keys).toContain('healthcare');
+    expect(keys).toContain('oligarchy');
   });
 });
 

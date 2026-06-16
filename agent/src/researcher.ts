@@ -80,7 +80,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "domain": "example.com",
       "summary": "A flowing 3-5 sentence paragraph in plain language describing the piece and its intended conclusion, including at least one verbatim quote in quotation marks. Not a list.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "1. Cite a verbatim quote. 2. Name the manipulation tactic in plain words and explain it in the same sentence. 3. Explain the concrete real-world harm it normalizes. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. CONFLICT OF INTEREST / TIMELINESS NOTE where it genuinely applies.) End at your last real point — never pad or write 'No additional context'. (>=150 words, scathing, evidence-grounded, layman-readable; no 'Analysis:' label, no surrounding brackets)",
+      "whyBad": "1. Cite a verbatim quote. 2. Name the manipulation tactic in plain words and explain it in the same sentence. 3. Explain the concrete real-world harm it normalizes. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. Conflict of interest / Timeliness note where it genuinely applies.) End at your last real point — never pad or write 'No additional context'. (>=150 words, scathing, evidence-grounded, layman-readable; no 'Analysis:' label, no surrounding brackets)",
       "severity": "low|medium|high"
     }
   ]

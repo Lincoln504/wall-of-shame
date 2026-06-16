@@ -51,7 +51,9 @@ function ensureFonts(): Promise<void> {
         ['Inter', in600, '600'],
         ['Inter', in700, '700'],
       ];
-      await Promise.all(
+      // Resilient: one font that fails to load must not abort the whole render —
+      // the canvas falls back to the @fontsource Inter already loaded via CSS.
+      await Promise.allSettled(
         defs.map(async ([family, url, weight]) => {
           const face = new FontFace(family, `url(${url})`, { weight });
           await face.load();
@@ -210,7 +212,11 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillStyle = sev;
   const r = 8;
   ctx.beginPath();
-  ctx.roundRect(MARGIN, y - pillH + 10, pillW, pillH, r);
+  if (typeof (ctx as any).roundRect === 'function') {
+    (ctx as any).roundRect(MARGIN, y - pillH + 10, pillW, pillH, r);
+  } else {
+    ctx.rect(MARGIN, y - pillH + 10, pillW, pillH); // older browsers: square pill
+  }
   ctx.fill();
   ctx.fillStyle = '#ffffff';
   ctx.fillText(sevText, MARGIN + pillPadX, y);

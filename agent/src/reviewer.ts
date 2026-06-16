@@ -78,7 +78,7 @@ Each entry must follow this schema exactly:
   "domain": "...",
   "summary": "A flowing 3-5 sentence paragraph in plain language, including at least one verbatim quote in quotation marks. Not a list.",
   "category": "...",
-  "whyBad": "1. verbatim quote. 2. named fallacy/framing technique(s) in plain words. 3. concrete real-world harm. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. CONFLICT OF INTEREST / TIMELINESS NOTE where it genuinely applies.) End at the last real point — never pad or write 'No additional context'. (>=150 words; preserve rich researcher analysis, never shorten it; no 'Analysis:' label, no brackets, no audit metadata)",
+  "whyBad": "1. verbatim quote. 2. named fallacy/framing technique(s) in plain words. 3. concrete real-world harm. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. Conflict of interest / Timeliness note where it genuinely applies.) End at the last real point — never pad or write 'No additional context'. (>=150 words; preserve rich researcher analysis, never shorten it; no 'Analysis:' label, no brackets, no audit metadata)",
   "severity": "low|medium|high",
   "verificationLog": "Desk audit: preserved/strengthened — one-line reason and what was checked against the context."
 }

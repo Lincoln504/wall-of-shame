@@ -198,6 +198,7 @@ export const CATEGORIES: Category[] = [
     - WAR AS JOBS: Presenting the sale of weapons as a "jobs program" or a way to keep the world "stable."
     - DOMESTIC MILITARISM: Bringing military gear and tactics into local policing and government.
     - INEVITABLE CONFLICT: Framing global fights as "unavoidable" to justify spending forever on the military.
+    - STATE-VIOLENCE WHITEWASHING: Opinion and PR that justifies, sanitizes, or denies the documented human cost of a state's military actions and occupations — including content that reframes the harm of the State of Israel's military operations in Gaza and the occupied territories as necessary, proportionate, or fabricated, the same way it treats any government laundering the toll of its own armed force.
     - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
   {
@@ -228,6 +229,7 @@ export const CATEGORIES: Category[] = [
     - RULING & LEGISLATION SPIN: Celebrating a recent court ruling, law, or executive action that strips rights or protections as a victory for freedom or order.
     - FLOOD-THE-ZONE: Reactive hot-takes that bury context and dissent under a wave of framing tied to the day's headlines.
     - HORSE-RACE DISTRACTION: Treating a current political fight as pure spectacle or strategy to avoid examining who actually gets hurt by the outcome.
+    - STATE-VIOLENCE & ATROCITY SPIN: Reactive op-eds and PR that justify, sanitize, or deny the human cost of a state's military actions, occupations, or crackdowns as they dominate the news — including, but not limited to, content that reframes the harm of the State of Israel's operations in Gaza and the occupied territories (as with any government laundering the toll of its own armed force) as necessary, proportionate, or fabricated.
     - AND OTHER strategies: These are just starting points; find whatever is currently in the news being used to normalize harm, and the mechanism of the framing.`,
   },
   {

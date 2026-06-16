@@ -50,7 +50,7 @@ HOUSE STANDARDS — enforce on EVERY entry:
 - NO ALL-CAPS words or labels in the output: write labels in sentence case ("External Context:", "Conflict of interest:", "Timeliness note:"), never shouting capitals, and rewrite any all-caps emphasis in the draft into normal case (ordinary acronyms like the ADA, OSHA, the EPA are fine).
 
 OUTPUT: return ONLY a raw JSON object, no markdown, no preamble:
-{"results": [{"id": "<echo the entry id>", "valid": true, "summary": "<cleaned paragraph>", "whyBad": "1. ... 2. ... 3. ..."}, ...]}
+{"results": [{"id": "<echo the entry id>", "valid": true, "summary": "<cleaned paragraph>", "whyBad": "1. ... 2. ... 3. ... (optional 4. External Context: ...; 5. Conflict of interest: / Timeliness note: ...) — end at the last real point, never pad"}, ...]}
 Return one object per input entry, in any order, each with the matching id.`;
 
 function buildBatchUserText(items: { f: RawFinding; article: string | null }[]): string {
