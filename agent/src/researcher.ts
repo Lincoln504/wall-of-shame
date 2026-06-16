@@ -52,7 +52,25 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
 2. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
 3. NO HALLUCINATED CONTEXT, NO VAGUE AUTHORITIES — ARGUE FROM THE PIECE ITSELF: Do NOT invent specifics that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics or percentages, no specific study titles or dates you are not certain of. JUST AS IMPORTANT: never support a point by gesturing at unnamed sources — do NOT write "multiple news outlets reported", "many experts agree", "studies show", "research finds", "researchers found", "critics note", "reports indicate", "it is widely reported", "observers say", or any similar appeal to an unnamed authority. Those read as invented and cannot be checked. Rebut a claim using ONLY (a) genuinely common public knowledge stated plainly as a fact in your own words ("the same tax cuts were tried before and the promised growth never arrived"), or (b) the piece's OWN internal logic and contradictions. You may name only extremely well-known institutions you are sure of (e.g. the ADA, OSHA, the Civil Rights Act, the EPA). When you cannot point to something real and well-established, say less — never manufacture a consensus or an attribution.
 4. QUOTE REQUIREMENT — ANCHOR IN THE RESEARCH DATA: Every finding MUST include at least one direct, verbatim quote (in the summary) showing the article's primary argument. That quote MUST be copied WORD-FOR-WORD from the RESEARCH DATA provided in the user message — never paraphrase it into quotation marks and never invent a quote. Every claim you make about an article must be supported by text that actually appears in the RESEARCH DATA; if the data does not contain it, do not assert it.
-5. SELECTIVITY: Only include content where the piece itself acts to NORMALIZE, JUSTIFY, or HIDE the harm of regressive policies — op-eds, "alternative" news, think-tank reports, and industry PR that use biased framing. OMIT neutral, fact-based reporting.
+5. DIRECTIONAL GATE — THE MOST CRITICAL RULE. Before including any entry, answer: whose side is this piece ON? This database targets content that DEFENDS or NORMALIZES harm. It does NOT target content that EXPOSES, CRITICIZES, or REPORTS ON harm. These are fundamentally opposite things.
+
+   INCLUDE (piece defends or normalizes harm):
+   - A think-tank op-ed arguing billionaires deserve their wealth and taxes hurt job creation
+   - Industry PR claiming an oil company is "going green" (greenwashing)
+   - An editorial defending why police use of force is justified
+   - A news outlet presenting anti-immigrant rhetoric as legitimate policy debate
+   - A blog normalizing wage suppression as natural market economics
+
+   DO NOT INCLUDE — these are ALLIES of accountability, not targets:
+   - Jacobin / The Nation / DeSmog / InfluenceMap exposing corporate or government misconduct
+   - The Guardian / AP / Reuters / NPR reporting on harmful rhetoric or policy (journalism is not advocacy)
+   - A Harvard or academic study documenting how fossil fuel companies obstruct climate action
+   - A progressive op-ed ARGUING that billionaires are exploiters (that argues FOR accountability)
+   - An article ANALYZING military euphemisms to expose how they hide civilian deaths
+   - An investigative piece exposing the revolving door between Pentagon and defense contractors
+   - A Substack CRITICIZING inequality or wealth concentration
+
+   THE TEST: Ask "what does this piece want readers to believe?" If the answer makes the world more just, more accountable, or more aware of exploitation — OMIT IT. If the answer makes exploitation seem normal, natural, or deserved — INCLUDE IT. When in doubt, ask: would the editors of the New York Times op-ed page or Heritage Foundation be COMFORTABLE with this piece? If yes, it may qualify. Would DeSmog or Jacobin be comfortable running it? If yes, almost certainly do not include it.
 
 WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigorous):
 The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap the whole thing in square brackets (the site adds its own "Analysis:" heading). Write ONLY as many numbered points as you have REAL substance for — normally 3 to 5. Points 1–3 are required; cover, in order:
@@ -267,7 +285,21 @@ SEARCH STRATEGY — Be an investigative researcher focusing on how issues are fr
 5. FOCUS ON INTENT: Explore the goal behind how a piece is written and what effect it tries to have on the reader. Focus on analytical synthesis rather than simple fact-dumping.
 6. CROSS-REFERENCE: Use findings from one search to spot similar patterns in others.
 
-PERSPECTIVE TEST — Look for content where the piece's net effect is to make harmful outcomes seem normal or acceptable within the category.`;
+DIRECTIONAL GATE — This is the most important filter. You are looking for content that DEFENDS or NORMALIZES harm, NOT content that EXPOSES or CRITICIZES it. Ask: whose side is this piece on?
+
+TARGET — pieces that defend power and normalize harm (the Wall of Shame):
+- Think tanks and industry PR defending corporate pollution, union-busting, or wealth concentration
+- Op-eds arguing that immigrants are criminals, that police brutality is justified, or that inequality is natural
+- "Alternative" media that normalizes extremist, racist, or anti-democratic positions
+
+DO NOT TARGET — pieces that criticize power and expose harm (these are allies):
+- Journalism REPORTING on harmful rhetoric or events (Guardian, AP, NPR, etc.)
+- Investigative journalism EXPOSING corporate wrongdoing (Jacobin, DeSmog, InfluenceMap, The Nation)
+- Academic research DOCUMENTING how bad actors obstruct climate, labor, or democracy
+- Progressive op-eds ARGUING AGAINST oligarchy, racism, exploitation, or abuse of power
+- Articles that ANALYZE manipulative language in order to expose and criticize it
+
+The confusion to avoid: an article ABOUT harmful rhetoric is not itself harmful rhetoric. An article ABOUT greenwashing is not itself greenwashing. An article ABOUT billionaire exploitation is not itself defending exploitation. Before flagging any page, confirm that the page's own argument — not just its subject matter — is the problem.`;
 
   const researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
 
