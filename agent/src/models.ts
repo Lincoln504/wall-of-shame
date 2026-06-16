@@ -31,11 +31,27 @@ import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai';
 
 export const OPENROUTER_PROVIDER = 'openrouter';
 
-/** The single cheap workhorse model used by EVERY stage. */
-export const GEMMA_MODEL_ID = 'google/gemma-4-26b-a4b-it';
+/**
+ * Structured-stage workhorse (EXTRACTION + REVIEW) = Qwen3.6-35B-A3B — a 35B-total /
+ * 3B-active MoE on OpenRouter (even leaner active-param count than gemma's 4B). Chosen
+ * over gemma after a head-to-head bake-off on a real 35K-char report: gemma reasoning-off
+ * intermittently returns NON-JSON (it stalled to the 180s timeout on 1 of 2 trials,
+ * exactly the ~12-failures/round drag that was silently tanking yield), while
+ * Qwen3.6-35B-A3B returned valid JSON on 2/2 trials with higher, fuller finding yield.
+ * Run reasoning OFF for speed; the detailed stage prompts carry the analytical depth.
+ */
+export const WORKHORSE_MODEL_ID = 'qwen/qwen3.6-35b-a3b';
 
-/** Research stage = gemma (same as everything else). */
-export const RESEARCH_MODEL_ID = GEMMA_MODEL_ID;
+/**
+ * Research/discovery stage = gemma. This model drives the pi-research SDK's multi-source
+ * search/scrape/synthesis (many small calls); gemma is fast and was measured at 100%
+ * research success, so it stays here deliberately. Only the JSON-structured stages moved
+ * to Qwen, where gemma's non-JSON flakiness actually hurt.
+ */
+export const RESEARCH_MODEL_ID = 'google/gemma-4-26b-a4b-it';
+
+/** Back-compat alias for the old name (still referenced by the one-off backfill tool). */
+export const GEMMA_MODEL_ID = RESEARCH_MODEL_ID;
 
 /** Documented manual escalation lever only — not used by default. */
 export const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
@@ -74,7 +90,7 @@ export const CONTEXT_ESCALATION_TOKENS = Math.max(
  * input (e.g. many full articles dumped together) routes to DeepSeek V4 Pro's 1M window.
  */
 export function pickModelForContext(inputText: string): string {
-  return estimateTokens(inputText) > CONTEXT_ESCALATION_TOKENS ? VERIFY_MODEL_ID : GEMMA_MODEL_ID;
+  return estimateTokens(inputText) > CONTEXT_ESCALATION_TOKENS ? VERIFY_MODEL_ID : WORKHORSE_MODEL_ID;
 }
 
 export interface ResolvedModel {
@@ -133,8 +149,16 @@ export async function completeText(
     /** Sampling temperature. Lower (≈0.3) for structured/analytical stages reduces
      *  fabricated specifics; omit to use the model default. */
     temperature?: number;
-    /** Nucleus sampling. ≈0.9 measurably cuts hallucinated named entities. */
+    /** Nucleus sampling. Qwen3.6 thinking mode recommends top_p=0.95. */
     topP?: number;
+    /** Top-k sampling. Qwen3.6 recommends top_k=20 in every mode. */
+    topK?: number;
+    /** Min-p floor. Qwen3.6 recommends min_p=0.0. */
+    minP?: number;
+    /** Presence penalty. Qwen3.6's precise-thinking profile uses 0.0; the vendor warns
+     *  that penalties >0 can cause language-mixing and a slight quality drop, and verbatim
+     *  quoting needs token reuse, so we keep this at 0 for extraction/review. */
+    presencePenalty?: number;
     /** Request OpenRouter JSON-object mode (response_format) for OBJECT-returning
      *  stages. If the routed provider rejects it, we transparently retry without it,
      *  so it can never break the pipeline (safeParseJson remains the parser). */
@@ -171,12 +195,20 @@ export async function completeText(
       onPayload: (payload: any) => {
         delete payload.thinking;
         if (!reasoning) {
-          // Cheap/fast default: fully suppress thinking.
-          delete payload.reasoning;
+          // Non-thinking mode. Qwen3.6 THINKS BY DEFAULT, so omitting `reasoning` is not
+          // enough — we must explicitly disable it. OpenRouter's unified switch is
+          // reasoning:{enabled:false}; we also pass chat_template_kwargs.enable_thinking
+          // for providers (DeepInfra/vLLM/SGLang) that key off the chat template. Both are
+          // ignored harmlessly by models/providers that don't use them.
+          payload.reasoning = { enabled: false };
           payload.include_reasoning = false;
+          payload.chat_template_kwargs = { ...(payload.chat_template_kwargs ?? {}), enable_thinking: false };
         }
         if (opts.temperature !== undefined) payload.temperature = opts.temperature;
         if (opts.topP !== undefined) payload.top_p = opts.topP;
+        if (opts.topK !== undefined) payload.top_k = opts.topK;
+        if (opts.minP !== undefined) payload.min_p = opts.minP;
+        if (opts.presencePenalty !== undefined) payload.presence_penalty = opts.presencePenalty;
         if (useJson) payload.response_format = { type: 'json_object' };
         return payload;
       },

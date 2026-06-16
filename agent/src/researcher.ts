@@ -130,7 +130,7 @@ export async function initializeResearch(log: (msg: string) => void) {
     log(`  [pi] SDK debug logging ON → ${join(tmpdir(), 'pi-research.log')} (WOS_PI_DEBUG=1)`);
   }
 
-  log('  [pi] initializing research SDK (all-gemma pipeline, knowledge_store=none)...');
+  log('  [pi] initializing research SDK (gemma research + Qwen3.6-35B-A3B extraction/review, knowledge_store=none)...');
 
   await initResearchSDK({
     model: `${OPENROUTER_PROVIDER}/${RESEARCH_MODEL_ID}`,
@@ -170,24 +170,23 @@ async function extractFindings(
   researchReport: string,
   log: (msg: string) => void,
 ): Promise<{ findings: RawFinding[]; queries: string[] }> {
-  // Context-aware routing: a normal research report is snippet-sized → cheap gemma; an
-  // unusually large report escalates to DeepSeek V4 Pro's 1M window (see models.ts).
+  // Context-aware routing: a normal research report is snippet-sized → the Qwen3.6-35B-A3B
+  // workhorse; an unusually large report escalates to DeepSeek V4 Pro's 1M window (models.ts).
   const modelId = pickModelForContext(researchReport);
   const model = await getOpenRouterModel(modelId, { reasoning: false });
 
-  // Reasoning is OFF here by deliberate measurement: gemma-4-26b-a4b-it (a small MoE)
-  // is functional but ~20× SLOWER with reasoning enabled on the routed provider (≈37s
-  // even for a trivial prompt, minutes-to-stall on a full extraction) and gives the
-  // SAME text. The detailed prompt enforces analytical depth on its own, so reasoning-off
-  // is both faster and far more reliable at scale. json is left on (with completeText's
-  // automatic no-response_format fallback) so the structured shape is requested when the
-  // provider supports it.
-  log(`  [pi] extracting structured findings (${modelId}, reasoning off)...`);
+  // NON-THINKING (instruct) mode (per project direction): Qwen3.6-35B-A3B runs with thinking
+  // disabled — fastest path, and the detailed extraction prompt carries the analytical depth
+  // on its own. Sampling follows Qwen's OFFICIAL instruct-mode profile (temp 0.7, top_p 0.80,
+  // top_k 20, min_p 0, presence_penalty 1.5); the vendor specifically warns against very-low
+  // temperature in this family (repetition/quality loss), so we use 0.7, not 0.3. json mode
+  // is on, with completeText's automatic no-response_format fallback.
+  log(`  [pi] extracting structured findings (${modelId}, non-thinking)...`);
   const text = await completeText(
     model,
     buildExtractionPrompt(categoryKey),
     `RESEARCH DATA:\n\n${researchReport}`,
-    { reasoning: false, temperature: 0.3, topP: 0.9, json: true },
+    { reasoning: false, temperature: 0.7, topP: 0.8, topK: 20, minP: 0, presencePenalty: 1.5, json: true },
   );
 
   if (!text) {

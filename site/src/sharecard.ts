@@ -8,8 +8,8 @@
  * Knuth-Plass algorithm (tex-linebreak + TeX en-us hyphenation), measuring with the
  * same ctx.measureText used to draw, so justification is exact. A very subtle,
  * blurred drop shadow sits under the text to give a little depth. The footer carries
- * the Wall-of-Shame mark and the deep link to the exact page the entry lives on, so
- * anyone who sees the image can find the full analysis.
+ * the Wall of Shame mark and a STABLE permalink to the exact entry (by id, so it keeps
+ * resolving as the corpus grows), so anyone who sees the image can find the full analysis.
  *
  * This module is loaded lazily (dynamic import on first share) so neither the fonts
  * nor tex-linebreak weigh on initial page load. It runs purely in the browser — no
@@ -156,21 +156,34 @@ function layoutSummary(ctx: CanvasRenderingContext2D, text: string, availH: numb
   return { height: 0, draw: () => {} };
 }
 
-// Draw the Wall-of-Shame mark (the favicon geometry) at (x, y) with side `s`.
+// Draw the Wall of Shame mark — a dark brand box with a centred 📍 pin (matches the
+// favicon) — at (x, y) with side `s`.
 function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
-  const u = s / 32;
+  const box = (rx: number, ry: number, w: number, h: number, rad: number) => {
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === 'function') (ctx as any).roundRect(rx, ry, w, h, rad);
+    else ctx.rect(rx, ry, w, h);
+    ctx.fill();
+  };
+  // Dark rounded box + light (paper) inset.
   ctx.fillStyle = C.ink;
-  ctx.fillRect(x, y, s, s);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x + 6 * u, y + 6 * u, 20 * u, 20 * u);
-  ctx.fillStyle = C.ink;
-  ctx.fillRect(x + 10 * u, y + 10 * u, 12 * u, 12 * u);
+  box(x, y, s, s, s * 0.14);
+  ctx.fillStyle = C.bg;
+  box(x + s * 0.14, y + s * 0.14, s * 0.72, s * 0.72, s * 0.09);
+  // Pin emoji, centred and scaled to the inset, nudged a hair down so its head sits in
+  // the optical centre of the box.
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${Math.round(s * 0.58)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.fillText('📍', x + s / 2, y + s / 2 + s * 0.06);
+  ctx.restore();
 }
 
 export interface ShareCardOptions {
   finding: Finding;
   page: number;
-  /** Full URL shown in the footer + the link target, e.g. https://…/#/page/10 */
+  /** Full stable permalink shown in the footer + share text, e.g. https://…/#/f/43501243 */
   pageUrl: string;
 }
 
@@ -194,16 +207,10 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillStyle = sev;
   ctx.fillRect(0, 0, W, 12);
 
-  let y = MARGIN + 24;
+  let y = MARGIN + 44;
 
-  // Kicker.
-  ctx.fillStyle = C.faint;
-  ctx.font = '700 24px Inter, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('THE WALL OF SHAME', MARGIN, y);
-  y += 48;
-
-  // Badges: severity pill + category.
+  // Badges: severity pill + category. The severity "warning" stays at the top; the old
+  // "THE WALL OF SHAME" kicker is gone (the brand now lives only in the footer).
   ctx.font = '700 26px Inter, sans-serif';
   const sevText = f.severity.toUpperCase();
   const pillPadX = 18;
@@ -256,30 +263,40 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   y += 48;
 
   // Body: the descriptive summary (the hook + its verbatim quote), justified.
-  const footerY = H - MARGIN - 16;
+  const footerRule = H - MARGIN - 100;   // divider above the footer block
   const bodyTop = y;
-  const bodyAvailH = footerY - 70 - bodyTop;
+  const bodyAvailH = footerRule - 28 - bodyTop;
   const body = layoutSummary(ctx, f.summary, bodyAvailH);
   body.draw(MARGIN, bodyTop);
 
-  // Footer: mark + url/page (the deep link to the entry's page).
+  // Footer — the brand mark and a stable "read more" permalink to this exact entry, in a
+  // light gray (never solid dark). The mark + wordmark sit on one row; the permalink on
+  // the next, prefixed "Read more at:".
   ctx.strokeStyle = C.divider;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(MARGIN, footerY - 56);
-  ctx.lineTo(W - MARGIN, footerY - 56);
+  ctx.moveTo(MARGIN, footerRule);
+  ctx.lineTo(W - MARGIN, footerRule);
   ctx.stroke();
 
-  drawMark(ctx, MARGIN, footerY - 38, 40);
-  ctx.fillStyle = C.ink;
-  ctx.font = '700 27px Inter, sans-serif';
+  const markS = 38;
+  const brandY = footerRule + 42;
+  drawMark(ctx, MARGIN, brandY - markS + 4, markS);
+  ctx.fillStyle = C.muted;                       // lighter gray — same family as the link
+  ctx.font = '700 26px Inter, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('Wall of Shame', MARGIN + 56, footerY - 16);
+  ctx.fillText('Wall of Shame', MARGIN + markS + 16, brandY);
 
+  // "Read more at: <link>" — label muted, link the same color but slightly larger.
+  const linkY = brandY + 42;
+  const label = 'Read more at: ';
   ctx.fillStyle = C.muted;
   ctx.font = '400 24px Inter, sans-serif';
-  const foot = pageUrl.replace(/^https?:\/\//, '');
-  ctx.textAlign = 'right';
-  ctx.fillText(foot, W - MARGIN, footerY - 16);
+  ctx.fillText(label, MARGIN, linkY);
+  const labelW = ctx.measureText(label).width;
+  ctx.font = '600 28px Inter, sans-serif';       // link slightly larger
+  const link = pageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  ctx.fillText(link, MARGIN + labelW, linkY);
 
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),

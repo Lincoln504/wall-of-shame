@@ -69,10 +69,10 @@ export default function ShareModal(props: Props) {
     catch { return false; }
   };
 
-  const shareText = () => `${props.finding?.title ?? ''} — on the Wall of Shame\n${props.pageUrl}`;
+  const shareText = () => `${props.finding?.title ?? ''} — on Wall of Shame\n${props.pageUrl}`;
   const mailtoHref = () => {
     const subject = `${props.finding?.title ?? 'Wall of Shame'} — Wall of Shame`;
-    const body = `Flagged on the Wall of Shame:\n\n${props.finding?.title ?? ''}\n${props.pageUrl}\n\nThe full breakdown is at the link above.`;
+    const body = `Flagged on Wall of Shame:\n\n${props.finding?.title ?? ''}\n${props.pageUrl}\n\nThe full breakdown is at the link above.`;
     return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 

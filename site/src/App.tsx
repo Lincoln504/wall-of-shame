@@ -199,17 +199,41 @@ export default function App() {
     return [...list].sort((a, b) => (ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0));
   });
 
-  // ── Pagination via hash (#/page/N), state-preserving (no router remount) ───────
+  // ── Routing via hash, state-preserving (no router remount) ─────────────────────
+  //   #/page/N   — pagination
+  //   #/f/<id>   — STABLE permalink to a single entry (resolved by exact-or-prefix id),
+  //                so a link saved from a share card always finds the same article even
+  //                as pagination shifts under it.
   const parsePage = () => {
     const m = /#\/page\/(\d+)/.exec(location.hash);
     return m ? Math.max(1, parseInt(m[1], 10)) : 1;
   };
+  const parseFocus = (): string | null => {
+    const m = /#\/f\/([^/?#]+)/.exec(location.hash);
+    return m ? decodeURIComponent(m[1]) : null;
+  };
   const [rawPage, setRawPage] = createSignal(parsePage());
+  const [focusId, setFocusId] = createSignal<string | null>(parseFocus());
   onMount(() => {
-    const onHash = () => setRawPage(parsePage());
+    const onHash = () => { setRawPage(parsePage()); setFocusId(parseFocus()); };
     window.addEventListener('hashchange', onHash);
     onCleanup(() => window.removeEventListener('hashchange', onHash));
   });
+
+  // Resolve the focused permalink to a finding (exact id, else short-prefix match).
+  const focusedFinding = createMemo<Finding | null>(() => {
+    const id = focusId(); const d = data();
+    if (!id || !d) return null;
+    return d.findings.find(f => f.id === id) ?? d.findings.find(f => (f.id || '').startsWith(id)) ?? null;
+  });
+  // Jump to the top whenever a permalink is opened.
+  createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
+  const clearFocus = () => {
+    if (!location.hash.startsWith('#/f/')) return;
+    const f = focusedFinding();
+    const targetPage = f ? (canonicalPage().get(keyOf(f)) ?? 1) : 1;
+    location.hash = `#/page/${targetPage}`;
+  };
   // Reset to page 1 when the filter/sort changes (but respect the initial URL page).
   createEffect(on([search, category, severity, sortOrder], () => setRawPage(1), { defer: true }));
 
@@ -227,17 +251,21 @@ export default function App() {
   // ── Knuth-Plass justification of the analysis text on each rendered page ───────
   const collectJustifyEls = () => Array.from(document.querySelectorAll('.wos-justify')) as HTMLElement[];
   createEffect(() => {
-    paged(); // re-run whenever the visible cards change
+    paged(); focusedFinding(); // re-run whenever the visible cards (or focused entry) change
     requestAnimationFrame(() => void justifyElements(collectJustifyEls()));
   });
   onMount(() => { const dispose = onResizeRejustify(collectJustifyEls); onCleanup(dispose); });
 
   // ── Share ─────────────────────────────────────────────────────────────────────
+  // The shared link is a STABLE per-entry permalink (#/f/<short id>), NOT a page number:
+  // page numbers drift as the corpus grows, so an old #/page/N would later point at the
+  // wrong entry. The id is assigned once and never changes, so a saved image's link keeps
+  // resolving to the same article forever. A short 8-char prefix keeps it clean; the
+  // focused view resolves it by exact-or-prefix match.
   const handleShare = (f: Finding) => {
-    const id = keyOf(f);
-    const p = canonicalPage().get(id) ?? 1;
-    const pageUrl = `${location.origin}${BASE}#/page/${p}`;
-    setShareTarget({ finding: f, page: p, pageUrl });
+    const shortId = (f.id || '').slice(0, 8) || encodeURIComponent(keyOf(f));
+    const pageUrl = `${location.origin}${BASE}#/f/${shortId}`;
+    setShareTarget({ finding: f, page: 1, pageUrl });
   };
 
   // ── Downloads ───────────────────────────────────────────────────────────────
@@ -255,7 +283,7 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          A repository of web content judged to be harmful, and why.
+          A search engine of bad content — web sources judged harmful and why.
           <br />
           Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
         </p>
@@ -272,57 +300,82 @@ export default function App() {
         </Show>
       </header>
 
+      <Show when={!focusId()}>
       <div style={s.controls}>
         <input type="search"
-          placeholder={modelState() === 'loading' ? 'Semantic search model loading locally…' : 'Semantic search query…'}
+          placeholder={modelState() === 'loading' ? 'Loading search model…' : 'Search entries…'}
           value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
-        <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
-          <option value="">All categories</option>
-          <For each={categories()}>{cat => <option value={cat}>{categoryLabel(cat)}</option>}</For>
-        </select>
-        <select value={severity()} onChange={e => setSeverity(e.currentTarget.value)} style={s.select}>
-          <option value="">All severities</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
-          <option value="default">Default</option>
-          <option value="newest">Newest</option>
-          <option value="oldest">Oldest</option>
-          <option value="severity">By Severity</option>
-        </select>
-        <div class="download-container" style={s.downloadContainer}>
-          <button onClick={() => setShowDownload(!showDownload())} style={s.downloadBtn}>Download ↓</button>
-          <Show when={showDownload()}>
-            <div style={s.dropdown}>
-              <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
-              <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
-            </div>
-          </Show>
+        <div style={s.filterRow}>
+          <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
+            <option value="">All categories</option>
+            <For each={categories()}>{cat => <option value={cat}>{categoryLabel(cat)}</option>}</For>
+          </select>
+          <select value={severity()} onChange={e => setSeverity(e.currentTarget.value)} style={s.select}>
+            <option value="">All severities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
+            <option value="default">Default</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="severity">By Severity</option>
+          </select>
         </div>
       </div>
+      </Show>
 
       <Show when={data.loading}><div style={s.loading}>Loading…</div></Show>
       <Show when={data.error}><div style={s.error}>Failed to load findings.</div></Show>
 
       <Show when={data()}>
-        <div style={s.resultsBar}>
-          {filteredList().length} entries · page {page()} of {pageCount()}
-        </div>
-        <Show when={filteredList().length === 0}>
-          <div style={s.empty}>{hasQuery() && modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
-        </Show>
-        <main style={s.grid}>
-          <For each={paged()}>
-            {item => <FindingCard finding={item} score={item.score} onShare={handleShare} />}
-          </For>
-        </main>
+        <Show
+          when={!focusId()}
+          fallback={
+            <Show
+              when={focusedFinding()}
+              fallback={
+                <div style={s.empty}>
+                  That entry could not be found — it may have been removed.
+                  <div style={{ 'margin-top': '1rem' }}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
+                </div>
+              }
+            >
+              <div style={s.backRow}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
+              <main style={s.grid}>
+                <FindingCard finding={focusedFinding()!} onShare={handleShare} />
+              </main>
+            </Show>
+          }
+        >
+          <div style={s.resultsBar}>
+            {filteredList().length} entries · page {page()} of {pageCount()}
+          </div>
+          <Show when={filteredList().length === 0}>
+            <div style={s.empty}>{hasQuery() && modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
+          </Show>
+          <main style={s.grid}>
+            <For each={paged()}>
+              {item => <FindingCard finding={item} score={item.score} onShare={handleShare} />}
+            </For>
+          </main>
 
-        <Show when={pageCount() > 1}>
-          <Pagination page={page()} pageCount={pageCount()} onGo={goToPage} />
+          <Show when={pageCount() > 1}>
+            <Pagination page={page()} pageCount={pageCount()} onGo={goToPage} />
+          </Show>
         </Show>
       </Show>
+
+      <div style={s.downloadArea} class="download-container">
+        <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download content ↓</button>
+        <Show when={showDownload()}>
+          <div style={s.dropdown}>
+            <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
+            <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
+          </div>
+        </Show>
+      </div>
 
       <footer style={s.footer}>
         Built with{' '}
@@ -388,35 +441,42 @@ const s: Record<string, any> = {
   stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   stat: { 'font-size': '0.72rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.7rem', 'border-radius': '4px', 'font-weight': '500' },
   controls: {
-    display: 'flex', gap: '0.5rem', 'flex-wrap': 'wrap', 'margin-bottom': '2rem',
+    display: 'flex', 'flex-direction': 'column', gap: '0.65rem', 'margin-bottom': '2rem',
     padding: '1.5rem 0', 'border-top': '1px solid #eee', 'border-bottom': '1px solid #eee',
   },
+  filterRow: { display: 'flex', gap: '0.5rem', 'flex-wrap': 'wrap' },
   searchInput: {
-    flex: '1 1 200px', padding: '0.5rem 0.75rem', 'border-radius': '6px',
-    border: '1px solid #ddd', background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', outline: 'none', 'font-family': UI,
+    width: '100%', 'box-sizing': 'border-box', padding: '0.75rem 1.1rem', 'border-radius': '8px',
+    border: '1.5px solid #ccc', background: '#fff', color: '#1a1a1a', 'font-size': '1.05rem',
+    outline: 'none', 'font-family': UI,
+    'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
   },
   select: {
     padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
     background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer', 'font-family': UI,
   },
-  downloadContainer: { position: 'relative' },
-  downloadBtn: {
-    padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #1a1a1a',
-    background: '#1a1a1a', color: '#fff', 'font-size': '0.9rem', cursor: 'pointer', 'font-weight': '500', 'font-family': UI,
+  downloadArea: { position: 'relative', 'text-align': 'center', 'margin-top': '3rem', 'margin-bottom': '1rem' },
+  downloadAreaBtn: {
+    padding: '0.45rem 1rem', 'border-radius': '6px', border: '1px solid #ccc',
+    background: '#faf9f6', color: '#888', 'font-size': '0.8rem', cursor: 'pointer', 'font-weight': '500', 'font-family': UI,
   },
   dropdown: {
-    position: 'absolute', top: '100%', right: '0', 'margin-top': '0.5rem', background: '#fff',
+    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', 'margin-top': '0.4rem', background: '#fff',
     border: '1px solid #ddd', 'border-radius': '6px', 'box-shadow': '0 4px 12px rgba(0,0,0,0.1)', 'z-index': 10,
     display: 'flex', 'flex-direction': 'column', 'min-width': '100px', overflow: 'hidden',
   },
   dropdownItem: { padding: '0.6rem 1rem', background: 'none', border: 'none', 'text-align': 'left', cursor: 'pointer', 'font-size': '0.85rem', color: '#333', 'font-family': UI },
   semanticLoading: { 'font-size': '0.8rem', color: '#ef6c00', 'margin-bottom': '1rem', 'text-align': 'center', 'font-weight': '500' },
   resultsBar: { 'font-size': '0.8rem', color: '#999', 'margin-bottom': '1.5rem', 'text-align': 'center', 'letter-spacing': '0.02em' },
-  grid: { display: 'flex', 'flex-direction': 'column', gap: '3rem' },
+  grid: { display: 'flex', 'flex-direction': 'column', gap: '1.25rem' },
   loading: { color: '#999', padding: '4rem', 'text-align': 'center' },
   error: { color: '#d32f2f', padding: '2rem', 'text-align': 'center' },
   empty: { color: '#999', padding: '4rem', 'text-align': 'center' },
-  card: { background: 'transparent' },
+  card: {
+    background: '#fff', 'border-radius': '10px', border: '1px solid #ebe9e3',
+    padding: '1.4rem 1.6rem',
+    'box-shadow': '0 2px 10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+  },
   cardHeader: { display: 'flex', gap: '0.75rem', 'align-items': 'center', 'margin-bottom': '0.85rem' },
   badge: { 'font-size': '0.62rem', 'font-weight': '700', padding: '0.18rem 0.5rem', 'border-radius': '3px', color: '#fff', 'text-transform': 'uppercase', 'letter-spacing': '0.06em' },
   categoryBadge: { 'font-size': '0.68rem', color: '#888', 'font-weight': '600', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' },
@@ -441,6 +501,8 @@ const s: Record<string, any> = {
   },
   pageBtnActive: { background: '#1a1a1a', color: '#fff', 'border-color': '#1a1a1a', 'font-weight': '700' },
   pageEllipsis: { color: '#bbb', padding: '0 0.2rem' },
+  backRow: { 'margin-bottom': '1.5rem' },
+  backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
   footer: { padding: '8rem 0 4rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
   footerLink: { color: '#bbb', 'text-decoration': 'underline' },
 };

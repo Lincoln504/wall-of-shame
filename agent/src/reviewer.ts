@@ -131,16 +131,17 @@ export async function runReview(
     .replace('<FINDINGS_JSON>', inputContent);
 
   // Context-aware routing: the candidates + report context are normally snippet-sized →
-  // cheap gemma; an unusually large audit input escalates to DeepSeek V4 Pro (see models.ts).
+  // the Qwen3.6-35B-A3B workhorse; an unusually large audit input escalates to DeepSeek
+  // V4 Pro (see models.ts).
   const modelId = pickModelForContext(inputContent + (context ?? ''));
   const model = await getOpenRouterModel(modelId, { reasoning: false });
 
   try {
     // Review returns a JSON ARRAY, so json-object mode is not used here (it requires an
-    // object root); the sampling params still reduce fabricated specifics. Reasoning is
-    // OFF for the same measured reason as extraction (see researcher.ts): medium reasoning
-    // makes this gemma model ~20× slower / prone to stalling for identical output.
-    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: false, temperature: 0.3, topP: 0.9 });
+    // object root). NON-THINKING (instruct) mode like extraction: Qwen3.6-35B-A3B with
+    // thinking disabled, on Qwen's official instruct sampling profile (temp 0.7, top_p 0.80,
+    // top_k 20, min_p 0, presence_penalty 1.5 — vendor-recommended, and not below temp 0.6).
+    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: false, temperature: 0.7, topP: 0.8, topK: 20, minP: 0, presencePenalty: 1.5 });
     if (!text.trim()) {
       log('  [reviewer] empty response');
       return [];
