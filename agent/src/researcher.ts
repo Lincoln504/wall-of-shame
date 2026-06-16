@@ -50,22 +50,24 @@ const EXTRACTION_PROMPT = `Analyze the research results and extract findings for
 CRITICAL GROUNDING & SYNTHESIS RULES:
 1. ANALYTICAL SYNTHESIS: Synthesize the findings into a cohesive, analytical report. Every factual claim MUST be directly supported by a page scraped in this research session.
 2. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
-3. NO HALLUCINATED CONTEXT: Do NOT invent external statistics or legal precedents. You MAY cite well-established public context to rebut a claim, but never fabricate facts or attribute claims without evidence.
+3. NO HALLUCINATED CONTEXT — STATE FACTS GENERALLY: You MAY cite well-established public context to rebut a claim, but do NOT invent or cite OVERLY SPECIFIC identifiers that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics or percentages, no specific study titles or dates you are not certain of. Instead, assert that such laws/research/agencies/outcomes exist in GENERAL terms ("long-standing federal law already criminalizes this"; "extensive peer-reviewed research finds the opposite"; "the agency's own data contradicts this"). You may name only extremely well-known institutions you are sure of (e.g. the ADA, OSHA, the Civil Rights Act, the EPA). When unsure of a specific, argue from the piece's own logic instead.
 4. QUOTE REQUIREMENT: Every finding MUST include at least one direct, verbatim quote (in the summary) showing the article's primary argument or how it frames the issue.
 5. SELECTIVITY: Only include content where the piece itself acts to NORMALIZE, JUSTIFY, or HIDE the harm of regressive policies — op-eds, "alternative" news, think-tank reports, and industry PR that use biased framing. OMIT neutral, fact-based reporting.
 
 WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigorous):
 The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap the whole thing in square brackets (the site adds its own "Analysis:" heading). Cover, in order:
   1. Cite a specific claim or verbatim quote from the piece (use quotation marks).
-  2. Name the precise rhetorical/framing technique or logical fallacy in plain English (e.g. "race-to-the-top fallacy", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "historical determinism", "false dichotomy", "loaded language").
+  2. Name the manipulation tactic in EVERYDAY words and explain what it means in the SAME sentence, so a reader who has never heard the term still understands. Describe the move plainly (e.g. "presents only two options when others exist", "stirs fear of an exaggerated threat", "quotes a sympathetic example to distract from the policy's real victims", "treats an outcome as inevitable to discourage resistance"). Do NOT drop a coined or academic label on its own (no bare "sympathetic-victim gambit", "race-to-the-bottom fallacy", "historical determinism"); if you use any such term, immediately define it in plain language.
   3. Explain concretely how this normalizes, justifies, or hides real-world harm.
-  4. Add a sentence that BEGINS with "External Context:" supplying well-established rebutting facts (named studies, laws, agencies, outcomes, dates).
+  4. Add a sentence that BEGINS with "External Context:" supplying well-established rebutting facts stated in GENERAL terms (NOT fabricated statute numbers, case names, exact statistics, or specific study titles — assert the well-known fact, not a precise citation you might be inventing).
   5. Where applicable, add a sentence beginning "CONFLICT OF INTEREST:" naming the author's/publisher's funding or institutional stake, and/or a sentence beginning "TIMELINESS NOTE:" if a prediction has aged poorly.
 
 DEPTH DISCIPLINE — DO NOT OVERSIMPLIFY. A two- or three-sentence summary is a FAILURE. Match the rigor of a sharp investigative analyst: multiple distinct fallacies where present, concrete external facts, and named conflicts of interest. Never collapse the analysis into a single generic observation.
 
-OUTPUT READABILITY:
-The "summary" and "whyBad" fields must be plain, clear English a common person understands. Identify the issues with analytical depth, then translate into simple, hard-hitting language. No academic jargon or empty buzzwords. Write PLAIN TEXT ONLY — no markdown formatting whatsoever: no asterisk bold or italics, no backtick code spans, no hash headers. Emphasize with word choice, not symbols.
+SUMMARY FORMAT (be consistent): the "summary" MUST be a bulleted list of 3–5 points, EACH line starting with "- ", and MUST include at least one verbatim quote (in quotation marks). Never write the summary as one prose paragraph.
+
+OUTPUT READABILITY (WRITE FOR A LAYMAN):
+The "summary" and "whyBad" fields must be plain, clear English a common person understands on first read. Identify the issues with analytical depth, then translate into simple, hard-hitting language. Avoid academic jargon, rhetoric/debate terminology, and empty buzzwords. If a precise technical or legal term is genuinely needed, EXPLAIN it in plain words in the same sentence the first time it appears — never leave the reader to look it up. Write PLAIN TEXT ONLY — no markdown formatting whatsoever: no asterisk bold or italics, no backtick code spans, no hash headers. Emphasize with word choice, not symbols.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -77,7 +79,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "domain": "example.com",
       "summary": "- 3-5 main points in simple language, including at least one verbatim quote.\\n- The author's intended conclusion, stated neutrally.",
       "category": "<CATEGORY_KEY>",
-      "whyBad": "1. Cite a verbatim quote. 2. Name the specific fallacy/framing technique. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts (studies/laws/outcomes with dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction. (>=150 words, scathing, evidence-grounded; no 'Analysis:' label, no surrounding brackets)",
+      "whyBad": "1. Cite a verbatim quote. 2. Name the manipulation tactic in plain words and explain it in the same sentence. 3. Explain the concrete real-world harm it normalizes. 4. External Context: well-established rebutting facts stated generally (no fabricated statute numbers, case names, exact stats, or study titles/dates). 5. CONFLICT OF INTEREST: funding/institutional stake, and/or TIMELINESS NOTE: aged-poorly prediction. (>=150 words, scathing, evidence-grounded, layman-readable; no 'Analysis:' label, no surrounding brackets)",
       "severity": "low|medium|high"
     }
   ]

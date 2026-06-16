@@ -54,12 +54,12 @@ Write a whyBad that:
 - begins the text directly with "1." — NO "Analysis:" label and NO surrounding square brackets (the site adds its own "Analysis:" heading);
 - is 180–280 words, written as an explicitly NUMBERED breakdown;
 1. cite the verbatim quote (in quotation marks) and the claim it advances;
-2. name the precise framing technique or logical fallacy in plain English (e.g. "false dichotomy", "loaded language", "sympathetic-victim gambit", "manufactured doubt", "cherry-picking", "just-world fallacy") — list MULTIPLE where present;
+2. describe the manipulation tactic in EVERYDAY words and explain what it means in the SAME sentence (e.g. "presents only two options when others exist", "stirs fear of an exaggerated threat", "blames victims for their own hardship") — list MULTIPLE where present. Do NOT drop a bare coined/academic label (no lone "sympathetic-victim gambit", "just-world fallacy"); if any such term is used, define it in plain words immediately;
 3. explain concretely how it normalizes, justifies, or hides real-world harm;
-4. a sentence beginning "External Context:" supplying well-established rebutting facts (named studies, laws, agencies, outcomes, dates);
+4. a sentence beginning "External Context:" supplying well-established rebutting facts stated in GENERAL terms;
 5. where applicable, a sentence beginning "CONFLICT OF INTEREST:" (author/publisher funding or institutional stake) and/or "TIMELINESS NOTE:" (a prediction that aged poorly).
 
-NO FABRICATION: external context must be genuinely well-established public knowledge. Never invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead. Plain hard-hitting English, no academic jargon. PLAIN TEXT ONLY — no markdown: no asterisk bold or italics, no backtick code spans, no hash headers.
+NO FABRICATION / NO OVER-SPECIFICITY: external context must be genuinely well-established public knowledge, stated GENERALLY. Do NOT invent or include over-specific identifiers that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics/percentages, no specific study titles or uncertain dates. Assert the fact generally ("long-standing federal law already prohibits this") instead of a precise citation; name only extremely well-known institutions you are sure of (ADA, OSHA). If unsure, argue from the piece's own logic. Plain hard-hitting English, no academic jargon. PLAIN TEXT ONLY — no markdown: no asterisk bold or italics, no backtick code spans, no hash headers.
 
 Return ONLY a raw JSON object: {"whyBad": "1. ... 2. ... 3. ... 4. External Context: ... 5. CONFLICT OF INTEREST / TIMELINESS NOTE: ..."}`;
 

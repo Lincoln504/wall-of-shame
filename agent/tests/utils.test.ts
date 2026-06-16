@@ -34,6 +34,16 @@ describe('normalizeWhyBad', () => {
     expect(normalizeWhyBad('1. The `term` is __bold__ here.')).toBe('1. The term is bold here.');
   });
 
+  it('strips leaked verification/audit metadata from the front of the analysis', () => {
+    const raw = 'Audit VERIFIED. URL accessible (200). Content confirmed. 1. The report claims X. 2. This is loaded language.';
+    expect(normalizeWhyBad(raw)).toBe('1. The report claims X. 2. This is loaded language.');
+  });
+
+  it('keeps real analysis that merely mentions a url-like word', () => {
+    const s = '1. The site argues against the agency. 2. It hides the harm.';
+    expect(normalizeWhyBad(s)).toBe(s);
+  });
+
   it('is idempotent on already-clean text', () => {
     const clean = '1. The author asserts X. 2. This is loaded language. 3. It hides harm.';
     expect(normalizeWhyBad(clean)).toBe(clean);

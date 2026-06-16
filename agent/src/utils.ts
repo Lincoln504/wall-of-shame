@@ -205,6 +205,22 @@ export function normalizeWhyBad(input: unknown): string {
   // A second label can hide behind the bracket ("[Analysis: ...]").
   s = s.replace(/^(?:Analysis:\s*)+/i, '').trim();
 
+  // Strip leading verification/audit metadata that an older reviewer leaked into
+  // whyBad — it belongs in verificationLog, not the analysis. Only removes whole
+  // leading sentences that BEGIN with an audit phrase, so real analysis is untouched.
+  {
+    const parts = s.split(/(?<=[.!?])\s+/);
+    let removed = 0;
+    while (
+      parts.length > 1 && removed < 6 &&
+      /^(Audit VERIFIED|URL\b|PDF\b|Content confirmed|Verified\b|Text extraction confirms|Accessible\b)/i.test(parts[0].trim())
+    ) {
+      parts.shift();
+      removed++;
+    }
+    if (removed) s = parts.join(' ').trim();
+  }
+
   // Strip markdown formatting — the site renders whyBad as PLAIN TEXT, so any
   // **bold**, *italic*, `code`, or # headers the model emits would show literally.
   s = s
