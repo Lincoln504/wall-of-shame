@@ -25,3 +25,17 @@ export function splitAnalysisPoints(text: string): string[] {
     .map(p => p.trim())
     .filter(Boolean);
 }
+
+/**
+ * Split a "- a\n- b\n- c" summary into its bullet points (markers removed). If the
+ * summary isn't dash-bulleted, returns it as a single block so it still renders.
+ */
+export function splitBullets(text: string): string[] {
+  const t = stripMarkdown((text || '').trim());
+  if (!t) return [];
+  if (!/^-\s|\n\s*-\s/.test(t)) return [t];
+  return t
+    .split(/\n+/)
+    .map(line => line.replace(/^\s*-\s+/, '').trim())
+    .filter(Boolean);
+}

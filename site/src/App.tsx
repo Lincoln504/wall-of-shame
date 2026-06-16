@@ -1,17 +1,12 @@
 import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect, onMount, on } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
-import { pipeline, env } from '@huggingface/transformers';
 import { canonicalOrder, pageForIndex, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
-import { splitAnalysisPoints } from './format.js';
+import { splitAnalysisPoints, splitBullets } from './format.js';
 import ShareModal from './ShareModal.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
-
-// Configuration for transformers.js
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-// Quiet onnxruntime's benign "node not assigned to preferred EP" warnings.
-try { (env.backends as any).onnx.logLevel = 'error'; } catch { /* backend not ready yet */ }
+import { loadDocVectors } from './semantic.js';
+import type { QueryEmbedder } from './query-embedder.js';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -76,11 +71,15 @@ function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Fin
         <a href={f.url} target="_blank" rel="noopener noreferrer" style={s.titleLink}>{f.title}</a>
       </h3>
       <div style={s.domain}>{f.domain}</div>
-      <p style={s.summary}>{f.summary}</p>
+      <ul style={s.summary}>
+        <For each={splitBullets(f.summary)}>
+          {pt => <li class="wos-justify" style={s.summaryBullet}>{pt}</li>}
+        </For>
+      </ul>
       <div style={s.whyBadBox}>
         <div style={s.whyBadLabel}>Analysis</div>
         <For each={splitAnalysisPoints(f.whyBad)}>
-          {pt => <p class="wos-justify" style={s.whyBadText}>{pt}</p>}
+          {pt => <p style={s.whyBadText}>{pt}</p>}
         </For>
       </div>
       <div style={s.actions}>
@@ -92,65 +91,63 @@ function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Fin
   );
 }
 
-let extractor: any = null;
-
 export default function App() {
   const [data] = createResource(fetchFindings);
-  const [findingVectors, setFindingVectors] = createSignal<Map<string, number[]>>(new Map());
+  const [docVectors, setDocVectors] = createSignal<Map<string, Float32Array>>(new Map());
   const [search, setSearch] = createSignal('');
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
-  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity' | 'semantic'>('default');
+  // Sorting controls the order ONLY when there is no search query; search is always semantic.
+  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity'>('default');
   const [showDownload, setShowDownload] = createSignal(false);
+  const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
   const [isSemanticLoading, setIsSemanticLoading] = createSignal(false);
-  const [queryVector, setQueryVector] = createSignal<number[] | null>(null);
+  const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
   const counts = useVisitCounts();
 
-  // ── Semantic search (unchanged) ──────────────────────────────────────────────
-  createEffect(async () => {
-    if (sortOrder() === 'semantic' && !extractor) {
-      setIsSemanticLoading(true);
-      try {
-        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { device: 'webgpu', dtype: 'fp32' } as any);
-      } catch (err) {
-        console.warn('WebGPU unavailable, falling back to CPU (wasm):', err);
-        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { dtype: 'fp32' } as any);
-      } finally { setIsSemanticLoading(false); }
-    }
+  // ── Semantic search ──────────────────────────────────────────────────────────
+  // Document vectors are PRECOMPUTED (scripts/embed.mjs, granite-r2 q8) and shipped as
+  // a static artifact — the browser never embeds the corpus, only the short query. This
+  // is what removes the WebGPU out-of-memory cascade entirely.
+  let embedder: QueryEmbedder | null = null;
+  onCleanup(() => embedder?.dispose());
+
+  onMount(() => {
+    loadDocVectors(BASE)
+      .then(setDocVectors)
+      .catch(err => console.error('Failed to load precomputed embeddings:', err));
   });
 
+  // Load the (small, q8, CPU/WASM) query model on first intent to search. The whole ML
+  // bundle is dynamically imported here, so visitors who never search never download it —
+  // keeping the footprint minimal and the placeholder honest.
+  const ensureModel = () => {
+    if (modelState() !== 'idle') return;
+    setModelState('loading');
+    import('./query-embedder.js')
+      .then(async m => { embedder = new m.QueryEmbedder(); await embedder.load(); })
+      .then(() => setModelState('ready'))
+      .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); });
+  };
+
+  // Embed the live query whenever it (or model readiness) changes. Both reads happen
+  // before any await so the effect re-runs when the model finishes loading.
   createEffect(async () => {
-    if (sortOrder() !== 'semantic' || !extractor) return;
-    const d = data();
-    if (!d || d.findings.length === 0 || findingVectors().size > 0) return;
+    const q = search().trim();
+    const ready = modelState() === 'ready';
+    if (q.length > 2) ensureModel();
+    if (q.length <= 2) { setQueryVector(null); return; }
+    if (!ready || !embedder) return;
     setIsSemanticLoading(true);
     try {
-      const texts = d.findings.map(f => `${f.title}. ${f.summary} ${f.whyBad}`);
-      const out = await extractor(texts, { pooling: 'mean', normalize: true });
-      const dim = out.dims[out.dims.length - 1] as number;
-      const flat = out.data as ArrayLike<number>;
-      const map = new Map<string, number[]>();
-      d.findings.forEach((f, i) => {
-        map.set(f.url, Array.from({ length: dim }, (_, j) => flat[i * dim + j] as number));
-      });
-      setFindingVectors(map);
-    } catch (err) { console.error('Finding embedding failed:', err); }
+      setQueryVector(await embedder.embed(q));
+    } catch (err) { console.error('Query embedding failed:', err); }
     finally { setIsSemanticLoading(false); }
   });
 
-  createEffect(async () => {
-    const q = search();
-    if (sortOrder() === 'semantic' && extractor && q.trim().length > 2) {
-      setIsSemanticLoading(true);
-      try {
-        const output = await extractor(q, { pooling: 'mean', normalize: true });
-        setQueryVector(Array.from(output.data as number[]));
-      } catch (err) { console.error('Embedding failed:', err); }
-      finally { setIsSemanticLoading(false); }
-    } else if (q.trim().length <= 2) { setQueryVector(null); }
-  });
+  const hasQuery = createMemo(() => search().trim().length > 2);
 
   const categories = createMemo(() => {
     const d = data();
@@ -160,10 +157,10 @@ export default function App() {
 
   const semanticScores = createMemo(() => {
     const qv = queryVector();
-    const vecs = findingVectors();
+    const vecs = docVectors();
     if (!qv || vecs.size === 0) return new Map<string, number>();
     const scores = new Map<string, number>();
-    for (const [url, v] of vecs) scores.set(url, cosineSimilarity(qv, v));
+    for (const [id, v] of vecs) scores.set(id, cosineSimilarity(qv as unknown as number[], v as unknown as number[]));
     return scores;
   });
 
@@ -186,25 +183,19 @@ export default function App() {
   const filteredList = createMemo(() => {
     const d = data();
     if (!d) return [] as (Finding & { score?: number })[];
-    const q = search().toLowerCase();
     const cat = category();
     const sev = severity();
     const scores = semanticScores();
     const order = sortOrder();
 
-    let list: (Finding & { score?: number })[] = d.findings.map(f => ({ ...f, score: scores.get(f.url) }));
+    let list: (Finding & { score?: number })[] = d.findings.map(f => ({ ...f, score: scores.get(keyOf(f)) }));
     if (cat) list = list.filter(f => f.category === cat);
     if (sev) list = list.filter(f => f.severity === sev);
-    if (order !== 'semantic' && q) {
-      list = list.filter(f =>
-        f.title.toLowerCase().includes(q) ||
-        f.summary.toLowerCase().includes(q) ||
-        f.whyBad.toLowerCase().includes(q) ||
-        f.domain.toLowerCase().includes(q));
-    }
 
-    if (order === 'semantic' && queryVector()) {
-      return list.filter(f => f.score !== undefined && f.score > 0.1).sort((a, b) => (b.score || 0) - (a.score || 0));
+    // Search is always semantic: with a query embedded, rank every entry by relevance
+    // (most-relevant first). No hard score cutoff, so results never silently vanish.
+    if (hasQuery() && queryVector()) {
+      return [...list].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
     }
     if (order === 'oldest') return [...list].sort((a, b) => a.foundAt.localeCompare(b.foundAt));
     if (order === 'newest') return [...list].sort((a, b) => b.foundAt.localeCompare(a.foundAt));
@@ -293,8 +284,9 @@ export default function App() {
       </header>
 
       <div style={s.controls}>
-        <input type="search" placeholder={sortOrder() === 'semantic' ? 'Semantic search query…' : 'Search…'}
-          value={search()} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
+        <input type="search"
+          placeholder={modelState() === 'loading' ? 'Semantic search model loading locally…' : 'Semantic search query…'}
+          value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
         <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
           <option value="">All categories</option>
           <For each={categories()}>{cat => <option value={cat}>{categoryLabel(cat)}</option>}</For>
@@ -310,7 +302,6 @@ export default function App() {
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="severity">By Severity</option>
-          <option value="semantic">Semantic (AI)</option>
         </select>
         <div class="download-container" style={s.downloadContainer}>
           <button onClick={() => setShowDownload(!showDownload())} style={s.downloadBtn}>Download ↓</button>
@@ -323,8 +314,8 @@ export default function App() {
         </div>
       </div>
 
-      <Show when={isSemanticLoading()}>
-        <div style={s.semanticLoading}>AI model loading/processing… (uses WebGPU)</div>
+      <Show when={modelState() === 'loading' || isSemanticLoading()}>
+        <div style={s.semanticLoading}>Semantic search model loading locally…</div>
       </Show>
       <Show when={data.loading}><div style={s.loading}>Loading…</div></Show>
       <Show when={data.error}><div style={s.error}>Failed to load findings.</div></Show>
@@ -449,10 +440,11 @@ const s: Record<string, any> = {
   cardTitle: { 'font-family': SERIF, 'font-size': '1.65rem', 'font-weight': '700', 'margin-bottom': '0.4rem', 'line-height': 1.25, 'letter-spacing': '-0.01em' },
   titleLink: { color: '#1a1a1a', 'text-decoration': 'none', 'background-image': 'linear-gradient(#e8e6e0,#e8e6e0)', 'background-position': '0 100%', 'background-size': '100% 1px', 'background-repeat': 'no-repeat' },
   domain: { 'font-family': SERIF, 'font-size': '0.92rem', color: '#a09a8e', 'margin-bottom': '1.1rem', 'font-style': 'italic' },
-  summary: { 'font-family': SERIF, 'font-size': '1.08rem', color: '#3a3a3a', 'line-height': 1.6, 'margin-bottom': '1.25rem' },
+  summary: { margin: '0 0 1.25rem', 'padding-left': '1.25rem', 'list-style': 'disc outside' },
+  summaryBullet: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', 'margin-bottom': '0.45rem', 'padding-left': '0.25rem' },
   whyBadBox: { background: '#fcfbf8', 'border-left': '3px solid #e4e1d9', padding: '1.1rem 1.25rem' },
   whyBadLabel: { 'font-family': UI, 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.7rem', 'text-transform': 'uppercase', 'letter-spacing': '0.08em', 'margin-bottom': '0.6rem' },
-  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 0.7rem' },
+  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'left', margin: '0 0 0.7rem' },
   actions: { display: 'flex', 'justify-content': 'flex-end', 'margin-top': '0.85rem' },
   shareBtn: {
     'font-family': UI, 'font-size': '0.78rem', 'font-weight': '600', color: '#1a1a1a',

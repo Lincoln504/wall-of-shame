@@ -48,6 +48,14 @@ jobs:
         run: npm ci
         working-directory: site
 
+      # Regenerate the precomputed semantic-search vectors so they always match the
+      # deployed corpus. continue-on-error: a transient model-download failure degrades
+      # to the last committed embeddings rather than blocking a content deploy.
+      - name: Precompute semantic embeddings
+        run: node scripts/embed.mjs
+        working-directory: site
+        continue-on-error: true
+
       - name: Build site
         run: npm run build
         working-directory: site
