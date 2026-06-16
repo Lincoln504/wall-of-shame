@@ -29,6 +29,11 @@ describe('normalizeWhyBad', () => {
     expect(normalizeWhyBad(raw)).toBe("1. It is a 'public-health' framing. 2. Harm.");
   });
 
+  it('strips markdown emphasis the model emits (site renders plain text)', () => {
+    expect(normalizeWhyBad('1. It uses **loaded language** and *cherry-picking*.')).toBe('1. It uses loaded language and cherry-picking.');
+    expect(normalizeWhyBad('1. The `term` is __bold__ here.')).toBe('1. The term is bold here.');
+  });
+
   it('is idempotent on already-clean text', () => {
     const clean = '1. The author asserts X. 2. This is loaded language. 3. It hides harm.';
     expect(normalizeWhyBad(clean)).toBe(clean);

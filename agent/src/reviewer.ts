@@ -61,7 +61,7 @@ FOR EACH candidate, apply this workflow:
    5. where applicable, a sentence beginning "CONFLICT OF INTEREST:" (author/publisher funding or institutional stake) and/or "TIMELINESS NOTE:" (a prediction that aged poorly).
    No academic jargon or empty buzzwords — hard-hitting, common-person English.
    NO FABRICATION: external context must be genuinely well-established public knowledge. Do NOT invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead.
-4. READABILITY — summary and whyBad must be plain and clear.
+4. READABILITY — summary and whyBad must be plain and clear. PLAIN TEXT ONLY — no markdown: no asterisk bold or italics, no backtick code spans, no hash headers. Emphasize with word choice, not symbols.
 5. SEVERITY (calibrate honestly — do not inflate):
    - high: actively dehumanizes a group, justifies stripping rights/safety/lives, promotes disinformation, or launders extremist ideology into the mainstream;
    - medium: normalizes regressive policy or economic harm through biased framing, short of dehumanization or disinformation;

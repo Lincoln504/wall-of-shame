@@ -205,6 +205,15 @@ export function normalizeWhyBad(input: unknown): string {
   // A second label can hide behind the bracket ("[Analysis: ...]").
   s = s.replace(/^(?:Analysis:\s*)+/i, '').trim();
 
+  // Strip markdown formatting — the site renders whyBad as PLAIN TEXT, so any
+  // **bold**, *italic*, `code`, or # headers the model emits would show literally.
+  s = s
+    .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
+    .replace(/__([^_]+)__/g, '$1')       // __bold__
+    .replace(/\*([^*\n]+)\*/g, '$1')     // *italic* (after bold removal)
+    .replace(/`([^`]+)`/g, '$1')         // `code`
+    .replace(/^\s{0,3}#{1,6}\s+/gm, ''); // # headings
+
   // Normalize line endings; do not otherwise reflow the analysis.
   s = s.replace(/\r\n?/g, '\n').trim();
 

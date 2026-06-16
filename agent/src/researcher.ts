@@ -65,7 +65,7 @@ The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150
 DEPTH DISCIPLINE — DO NOT OVERSIMPLIFY. A two- or three-sentence summary is a FAILURE. Match the rigor of a sharp investigative analyst: multiple distinct fallacies where present, concrete external facts, and named conflicts of interest. Never collapse the analysis into a single generic observation.
 
 OUTPUT READABILITY:
-The "summary" and "whyBad" fields must be plain, clear English a common person understands. Identify the issues with analytical depth, then translate into simple, hard-hitting language. No academic jargon or empty buzzwords.
+The "summary" and "whyBad" fields must be plain, clear English a common person understands. Identify the issues with analytical depth, then translate into simple, hard-hitting language. No academic jargon or empty buzzwords. Write PLAIN TEXT ONLY — no markdown formatting whatsoever: no asterisk bold or italics, no backtick code spans, no hash headers. Emphasize with word choice, not symbols.
 
 RETURN ONLY A RAW JSON OBJECT:
 {

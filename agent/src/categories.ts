@@ -198,6 +198,36 @@ export const CATEGORIES: Category[] = [
     - INEVITABLE CONFLICT: Framing global fights as "unavoidable" to justify spending forever on the military.
     - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
+  {
+    key: 'spectacle',
+    name: 'Sports, Spectacle & Sportswashing',
+    description: 'Coverage tied to whatever major sporting or entertainment spectacle is in the news now that launders the image of repressive regimes, normalizes nationalism and militarism, or hides the exploitation behind the show.',
+    researchQuery: `Focus: Opinion, PR, and "alternative" coverage tied to whatever major sporting or entertainment spectacle is happening RIGHT NOW that works to normalize, justify, or hide harm. First find what big events are currently in the news, then target the harm-normalizing framing around them — do NOT limit yourself to any single event or assume a specific one.
+
+    Strategies to explore:
+    - SPORTSWASHING: Coverage that helps an authoritarian or repressive host look modern, open, or benevolent by association with a marquee event, while ignoring its rights record.
+    - NATIONALISM & JINGOISM: Treating flag-waving "national pride" and us-vs-them framing around competition as pure and beyond criticism, sliding into xenophobia or militarism.
+    - HIDDEN WORKER EXPLOITATION: Celebrating stadiums, venues, and spectacles while ignoring or excusing the migrant/gig/temporary workers who built and ran them — their wages, safety, or deaths.
+    - DISPLACEMENT & PUBLIC COST: Framing mega-event spending, evictions, surveillance, and "cleanup" of the poor as worth it for prestige or growth.
+    - CELEBRITY DISTRACTION: Using spectacle and star power to launder a sponsor, regime, or policy, or to crowd out coverage of harm.
+    - MANUFACTURED UNITY: Presenting an event as proof that "we are all together now," erasing real conflicts and inequalities.
+    - AND OTHER strategies: These are just starting points; find whatever current spectacle is being used to normalize harm, and the mechanism of the framing.`,
+  },
+  {
+    key: 'current_affairs',
+    name: 'Current Affairs & the News Cycle',
+    description: 'Op-eds and hot-takes reacting to whatever is dominating the news right now — recent rulings, legislation, elections, disasters, or economic shocks — that frame a regressive response as common sense or inevitable.',
+    researchQuery: `Focus: Find the major news stories breaking RIGHT NOW and target the opinion/advocacy coverage that uses them to normalize, justify, or hide the harm of regressive policy. First identify what is currently in the headlines, then find the framing — do NOT hardcode or assume a specific topic.
+
+    Strategies to explore:
+    - CRISIS OPPORTUNISM: Using a fresh disaster, attack, or economic scare to push cuts, crackdowns, deregulation, or rollbacks as the "only responsible" response.
+    - MANUFACTURED INEVITABILITY: Framing a regressive reaction to a current event as common sense, unavoidable, or what "everyone now agrees" on.
+    - SELECTIVE OUTRAGE: Amplifying a trending grievance to justify punishing a vulnerable group, while ignoring the powerful actors involved.
+    - RULING & LEGISLATION SPIN: Celebrating a recent court ruling, law, or executive action that strips rights or protections as a victory for freedom or order.
+    - FLOOD-THE-ZONE: Reactive hot-takes that bury context and dissent under a wave of framing tied to the day's headlines.
+    - HORSE-RACE DISTRACTION: Treating a current political fight as pure spectacle or strategy to avoid examining who actually gets hurt by the outcome.
+    - AND OTHER strategies: These are just starting points; find whatever is currently in the news being used to normalize harm, and the mechanism of the framing.`,
+  },
 ];
 
 export function getBatch(index: number, size: number = 3): Category[] {

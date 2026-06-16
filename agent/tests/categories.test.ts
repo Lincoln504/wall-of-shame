@@ -46,8 +46,8 @@ describe('CATEGORIES', () => {
     }
   });
 
-  it('has exactly 13 categories as currently defined', () => {
-    expect(CATEGORIES.length).toBe(13);
+  it('has exactly 15 categories as currently defined', () => {
+    expect(CATEGORIES.length).toBe(15);
   });
 
   it('has diverse category types covering multiple areas', () => {
@@ -79,16 +79,17 @@ describe('getBatch', () => {
   });
 
   it('wraps around when index + size exceeds CATEGORY_COUNT', () => {
-    // For 13 categories, idx=11, size=3 should return 11, 12, 0
-    const batch = getBatch(11, 3);
-    expect(batch[0].key).toBe(CATEGORIES[11].key);
-    expect(batch[1].key).toBe(CATEGORIES[12].key);
-    expect(batch[2].key).toBe(CATEGORIES[0].key);
+    // Starting at the last index, size=3 should wrap: last, 0, 1.
+    const last = CATEGORIES.length - 1;
+    const batch = getBatch(last, 3);
+    expect(batch[0].key).toBe(CATEGORIES[last].key);
+    expect(batch[1].key).toBe(CATEGORIES[0].key);
+    expect(batch[2].key).toBe(CATEGORIES[1].key);
   });
 
   it('handles batch index where start wraps', () => {
     const batch = getBatch(CATEGORY_COUNT, 2);
-    // index=13 => start = 13 % 13 = 0
+    // index=CATEGORY_COUNT => start = CATEGORY_COUNT % CATEGORY_COUNT = 0
     expect(batch[0].key).toBe(CATEGORIES[0].key);
     expect(batch[1].key).toBe(CATEGORIES[1].key);
   });

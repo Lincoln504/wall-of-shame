@@ -59,7 +59,7 @@ Write a whyBad that:
 4. a sentence beginning "External Context:" supplying well-established rebutting facts (named studies, laws, agencies, outcomes, dates);
 5. where applicable, a sentence beginning "CONFLICT OF INTEREST:" (author/publisher funding or institutional stake) and/or "TIMELINESS NOTE:" (a prediction that aged poorly).
 
-NO FABRICATION: external context must be genuinely well-established public knowledge. Never invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead. Plain hard-hitting English, no academic jargon.
+NO FABRICATION: external context must be genuinely well-established public knowledge. Never invent specific statistics, study names, or figures you are not confident are real; if unsure, argue from the piece's own logic instead. Plain hard-hitting English, no academic jargon. PLAIN TEXT ONLY — no markdown: no asterisk bold or italics, no backtick code spans, no hash headers.
 
 Return ONLY a raw JSON object: {"whyBad": "1. ... 2. ... 3. ... 4. External Context: ... 5. CONFLICT OF INTEREST / TIMELINESS NOTE: ..."}`;
 
