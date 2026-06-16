@@ -3,7 +3,8 @@ import type { FindingsStore, Finding } from './types.js';
 import { pipeline, env } from '@huggingface/transformers';
 import { canonicalOrder, pageForIndex, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
-import { shareFinding } from './share.js';
+import { splitAnalysisPoints } from './format.js';
+import ShareModal from './ShareModal.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
 
 // Configuration for transformers.js
@@ -54,7 +55,7 @@ function cosineSimilarity(v1: number[], v2: number[]): number {
   return dot / (Math.sqrt(n1) * Math.sqrt(n2));
 }
 
-function FindingCard(props: { finding: Finding; score?: number; sharing: boolean; onShare: (f: Finding) => void }) {
+function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Finding) => void }) {
   const f = props.finding;
   const color = SEVERITY_COLOR[f.severity] ?? '#757575';
   const date = f.foundAt ? new Date(f.foundAt).toLocaleDateString() : '';
@@ -76,16 +77,13 @@ function FindingCard(props: { finding: Finding; score?: number; sharing: boolean
       <p style={s.summary}>{f.summary}</p>
       <div style={s.whyBadBox}>
         <div style={s.whyBadLabel}>Analysis</div>
-        <p class="wos-justify" style={s.whyBadText}>{f.whyBad}</p>
+        <For each={splitAnalysisPoints(f.whyBad)}>
+          {pt => <p class="wos-justify" style={s.whyBadText}>{pt}</p>}
+        </For>
       </div>
       <div style={s.actions}>
-        <button
-          style={{ ...s.shareBtn, opacity: props.sharing ? 0.55 : 1 }}
-          disabled={props.sharing}
-          onClick={() => props.onShare(f)}
-          title="Share this entry as an image"
-        >
-          {props.sharing ? 'Generating…' : 'Share ↗'}
+        <button style={s.shareBtn} onClick={() => props.onShare(f)} title="Share this entry as an image">
+          Share ↗
         </button>
       </div>
     </article>
@@ -100,11 +98,11 @@ export default function App() {
   const [search, setSearch] = createSignal('');
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
-  const [sortOrder, setSortOrder] = createSignal<'shuffled' | 'newest' | 'oldest' | 'severity' | 'semantic'>('shuffled');
+  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity' | 'semantic'>('default');
   const [showDownload, setShowDownload] = createSignal(false);
   const [isSemanticLoading, setIsSemanticLoading] = createSignal(false);
   const [queryVector, setQueryVector] = createSignal<number[] | null>(null);
-  const [sharingId, setSharingId] = createSignal<string | null>(null);
+  const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
   const counts = useVisitCounts();
 
@@ -251,16 +249,11 @@ export default function App() {
   onMount(() => { const dispose = onResizeRejustify(collectJustifyEls); onCleanup(dispose); });
 
   // ── Share ─────────────────────────────────────────────────────────────────────
-  const handleShare = async (f: Finding) => {
+  const handleShare = (f: Finding) => {
     const id = keyOf(f);
-    setSharingId(id);
-    try {
-      const p = canonicalPage().get(id) ?? 1;
-      const pageUrl = `${location.origin}${BASE}#/page/${p}`;
-      await shareFinding(f, p, pageUrl);
-    } catch (err) {
-      console.error('share failed:', err);
-    } finally { setSharingId(null); }
+    const p = canonicalPage().get(id) ?? 1;
+    const pageUrl = `${location.origin}${BASE}#/page/${p}`;
+    setShareTarget({ finding: f, page: p, pageUrl });
   };
 
   // ── Downloads ───────────────────────────────────────────────────────────────
@@ -311,7 +304,7 @@ export default function App() {
           <option value="low">Low</option>
         </select>
         <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
-          <option value="shuffled">Shuffled</option>
+          <option value="default">Default</option>
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="severity">By Severity</option>
@@ -343,7 +336,7 @@ export default function App() {
         </Show>
         <main style={s.grid}>
           <For each={paged()}>
-            {item => <FindingCard finding={item} score={item.score} sharing={sharingId() === keyOf(item)} onShare={handleShare} />}
+            {item => <FindingCard finding={item} score={item.score} onShare={handleShare} />}
           </For>
         </main>
 
@@ -357,6 +350,13 @@ export default function App() {
         <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
         {' '}· Data updated via GitHub Actions
       </footer>
+
+      <ShareModal
+        finding={shareTarget()?.finding ?? null}
+        page={shareTarget()?.page ?? 1}
+        pageUrl={shareTarget()?.pageUrl ?? ''}
+        onClose={() => setShareTarget(null)}
+      />
     </div>
   );
 }
@@ -397,7 +397,8 @@ function Pagination(props: { page: number; pageCount: number; onGo: (p: number) 
 // ── Inline styles ────────────────────────────────────────────────────────────
 
 const UI = `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-const SERIF = `Newsreader, Georgia, "Times New Roman", serif`;
+// Reverted to sans-serif per direction: headings/body all use the Inter (sans) stack.
+const SERIF = UI;
 
 const s: Record<string, any> = {
   root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI },
@@ -449,7 +450,7 @@ const s: Record<string, any> = {
   summary: { 'font-family': SERIF, 'font-size': '1.08rem', color: '#3a3a3a', 'line-height': 1.6, 'margin-bottom': '1.25rem' },
   whyBadBox: { background: '#fcfbf8', 'border-left': '3px solid #e4e1d9', padding: '1.1rem 1.25rem' },
   whyBadLabel: { 'font-family': UI, 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.7rem', 'text-transform': 'uppercase', 'letter-spacing': '0.08em', 'margin-bottom': '0.6rem' },
-  whyBadText: { 'font-family': SERIF, 'font-size': '1rem', color: '#444', 'line-height': 1.65, 'text-align': 'justify', hyphens: 'auto', margin: 0 },
+  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 0.7rem' },
   actions: { display: 'flex', 'justify-content': 'flex-end', 'margin-top': '0.85rem' },
   shareBtn: {
     'font-family': UI, 'font-size': '0.78rem', 'font-weight': '600', color: '#1a1a1a',

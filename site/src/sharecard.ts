@@ -4,7 +4,7 @@
  *
  * The analysis body is justified with the Knuth-Plass algorithm (tex-linebreak +
  * TeX en-us hyphenation) — measuring with the same ctx.measureText used to draw,
- * so the justification is exact. Theme fonts (Newsreader serif, Inter sans) are
+ * so the justification is exact. Theme font (Inter sans) are
  * embedded via FontFace so the image renders identically on every device. The
  * footer carries the Wall-of-Shame mark and the deep link to the entry's page.
  *
@@ -15,9 +15,8 @@
 import { layoutText, createHyphenator } from 'tex-linebreak';
 import enUsPatterns from 'hyphenation.en-us';
 import type { Finding } from './types.js';
+import { splitAnalysisPoints } from './format.js';
 
-import nr400 from '@fontsource/newsreader/files/newsreader-latin-400-normal.woff2?url';
-import nr700 from '@fontsource/newsreader/files/newsreader-latin-700-normal.woff2?url';
 import in400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import in600 from '@fontsource/inter/files/inter-latin-600-normal.woff2?url';
 import in700 from '@fontsource/inter/files/inter-latin-700-normal.woff2?url';
@@ -44,8 +43,6 @@ function ensureFonts(): Promise<void> {
   if (!fontsReady) {
     fontsReady = (async () => {
       const defs: Array<[string, string, string]> = [
-        ['Newsreader', nr400, '400'],
-        ['Newsreader', nr700, '700'],
         ['Inter', in400, '400'],
         ['Inter', in600, '600'],
         ['Inter', in700, '700'],
@@ -90,69 +87,61 @@ interface BodyLayout {
   fontPx: number;
 }
 
-/**
- * Lay out the justified analysis body, auto-fitting the font size so it fits the
- * available height; truncates with an ellipsis if even the smallest size overflows.
- */
-function layoutBody(ctx: CanvasRenderingContext2D, text: string, availH: number): BodyLayout {
-  for (let fontPx = 30; fontPx >= 23; fontPx -= 1) {
-    const lineH = Math.round(fontPx * 1.5);
-    const maxLines = Math.max(1, Math.floor(availH / lineH));
-    ctx.font = `400 ${fontPx}px Newsreader, serif`;
-    const measure = (w: string) => ctx.measureText(w).width;
+interface ParaLayout { draws: { t: string; x: number; line: number }[]; lines: number }
 
-    let positions: { item: number; line: number; xOffset: number }[];
-    let items: any[];
-    try {
-      const out = layoutText(text, CONTENT_W, measure, hyphenate);
-      positions = out.positions as any;
-      items = out.items as any;
-    } catch {
-      // K-P could not satisfy the spacing constraints — fall back to greedy wrap.
-      const lines = wrapGreedy(ctx, text, CONTENT_W);
-      const used = lines.slice(0, maxLines);
-      if (used.length < lines.length) used[used.length - 1] = used[used.length - 1].replace(/\s+\S*$/, '') + ' …';
-      const fits = lines.length <= maxLines;
-      if (!fits && fontPx > 23) continue;
+/** Lay out one paragraph with Knuth-Plass justification (greedy fallback). */
+function layoutParagraph(ctx: CanvasRenderingContext2D, text: string, width: number): ParaLayout {
+  const measure = (w: string) => ctx.measureText(w).width;
+  try {
+    const out = layoutText(text, width, measure, hyphenate);
+    const draws = (out.positions as any[]).map(p => {
+      const it = (out.items as any[])[p.item];
+      const t = it.type === 'box' ? it.text : (it.type === 'penalty' ? '-' : '');
+      return { t, x: p.xOffset, line: p.line };
+    }).filter(d => d.t);
+    const lines = (out.positions as any[]).reduce((m, p) => Math.max(m, p.line), 0) + 1;
+    return { draws, lines };
+  } catch {
+    const wrapped = wrapGreedy(ctx, text, width);
+    return { draws: wrapped.map((t, i) => ({ t, x: 0, line: i })), lines: wrapped.length };
+  }
+}
+
+/**
+ * Lay out the analysis body as SEPARATE justified paragraphs (one per numbered
+ * point), auto-fitting the font size so the stack fits the available height; any
+ * overflow past the bottom is cleanly clipped.
+ */
+function layoutBody(ctx: CanvasRenderingContext2D, points: string[], availH: number): BodyLayout {
+  const pts = points.length ? points : [''];
+  for (let fontPx = 28; fontPx >= 21; fontPx -= 1) {
+    const lineH = Math.round(fontPx * 1.45);
+    const gap = Math.round(fontPx * 0.6);
+    ctx.font = `400 ${fontPx}px Inter, sans-serif`;
+    const paras = pts.map(p => layoutParagraph(ctx, p, CONTENT_W));
+    const totalH = paras.reduce((a, pa) => a + pa.lines * lineH, 0) + gap * Math.max(0, pts.length - 1);
+    if (totalH <= availH || fontPx === 21) {
       return {
         fontPx,
-        height: used.length * lineH,
+        height: Math.min(totalH, availH),
         draw: (x, top) => {
           ctx.fillStyle = C.body;
-          ctx.font = `400 ${fontPx}px Newsreader, serif`;
+          ctx.font = `400 ${fontPx}px Inter, sans-serif`;
           ctx.textAlign = 'left';
-          used.forEach((ln, i) => ctx.fillText(ln, x, top + i * lineH + fontPx));
+          let y = top;
+          for (const pa of paras) {
+            for (const d of pa.draws) {
+              const yy = y + d.line * lineH + fontPx;
+              if (yy <= top + availH) ctx.fillText(d.t, x + d.x, yy);
+            }
+            y += pa.lines * lineH + gap;
+            if (y > top + availH) break; // clip remaining points
+          }
         },
       };
     }
-
-    const lineCount = positions.reduce((m, p) => Math.max(m, p.line), 0) + 1;
-    if (lineCount > maxLines && fontPx > 23) continue;
-
-    const visible = Math.min(lineCount, maxLines);
-    const truncated = lineCount > maxLines;
-    return {
-      fontPx,
-      height: visible * lineH,
-      draw: (x, top) => {
-        ctx.fillStyle = C.body;
-        ctx.font = `400 ${fontPx}px Newsreader, serif`;
-        ctx.textAlign = 'left';
-        for (const p of positions) {
-          if (p.line >= visible) continue;
-          const it = items[p.item];
-          const y = top + p.line * lineH + fontPx;
-          if (it.type === 'box') ctx.fillText(it.text, x + p.xOffset, y);
-          else if (it.type === 'penalty') ctx.fillText('-', x + p.xOffset, y); // hyphen at break
-        }
-        if (truncated) {
-          ctx.fillText('…', x + CONTENT_W - ctx.measureText('…').width, top + (visible - 1) * lineH + fontPx);
-        }
-      },
-    };
   }
-  // Unreachable in practice; satisfies the type checker.
-  return { fontPx: 23, height: 0, draw: () => {} };
+  return { fontPx: 21, height: 0, draw: () => {} };
 }
 
 // Draw the Wall-of-Shame mark (the favicon geometry) at (x, y) with side `s`.
@@ -220,11 +209,11 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillText(categoryLabel(f.category).toUpperCase(), MARGIN + pillW + 22, y);
   y += 60;
 
-  // Title (Newsreader bold, wrapped, max 4 lines).
+  // Title (Inter bold, wrapped, max 4 lines).
   ctx.fillStyle = C.ink;
-  const titlePx = 56;
-  const titleLineH = Math.round(titlePx * 1.12);
-  ctx.font = `700 ${titlePx}px Newsreader, serif`;
+  const titlePx = 52;
+  const titleLineH = Math.round(titlePx * 1.16);
+  ctx.font = `700 ${titlePx}px Inter, sans-serif`;
   let titleLines = wrapGreedy(ctx, f.title, CONTENT_W);
   if (titleLines.length > 4) {
     titleLines = titleLines.slice(0, 4);
@@ -235,7 +224,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
 
   // Domain.
   ctx.fillStyle = C.muted;
-  ctx.font = 'italic 400 28px Newsreader, serif';
+  ctx.font = 'italic 400 26px Inter, sans-serif';
   ctx.fillText(f.domain, MARGIN, y);
   y += 40;
 
@@ -259,7 +248,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   const bodyTop = y;
   const bodyAvailH = footerY - 70 - bodyTop;
 
-  const body = layoutBody(ctx, f.whyBad, bodyAvailH);
+  const body = layoutBody(ctx, splitAnalysisPoints(f.whyBad), bodyAvailH);
   body.draw(MARGIN, bodyTop);
 
   // Footer: mark + url/page.
