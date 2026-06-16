@@ -1,52 +1,72 @@
 /**
- * verify.ts — per-link grounding & verification (Option B).
+ * verify.ts — final grounding & standards verification before entry.
  *
- * After review, each candidate finding is checked against the ACTUAL article text,
- * not the multi-source research synthesis it was written from. We re-scrape the
- * finding's own URL using pi-research's SAME two-layer scraper (fast HTTP fetch, then
- * stealth-browser fallback) exposed via the SDK's scrapeUrl(), then run one grounded
- * gemma pass that:
- *   - confirms the summary's verbatim quote actually appears in the article (replacing
- *     it with a real one if the model had drifted),
- *   - verifies each analytical claim is supported by the real text (softening/removing
- *     unsupported ones, and adding concrete specifics that ARE in the article),
- *   - drops an entry the article does not actually support (valid:false).
+ * Two phases:
+ *   1. SCRAPE — re-fetch each candidate's OWN article using pi-research's two-layer
+ *      scraper (fast HTTP fetch, then stealth-browser fallback) exposed via the SDK's
+ *      scrapeUrl(). This is what makes the grounding real: we check the draft against
+ *      the page itself, not the multi-source synthesis it was written from.
+ *   2. VERIFY (batched) — group ~10 candidates (each with its scraped article text)
+ *      into ONE DeepSeek V4 Pro call (1M-token context, cheap). For each entry the
+ *      model GROUNDS it against the real article AND enforces every house standard
+ *      (paragraph summary, numbered analysis, no vague unnamed-authority appeals, no
+ *      filler points, no over-specificity, layman plain text). Entries the article
+ *      verifiably does not support are dropped.
  *
- * It NEVER breaks the pipeline: if the page can't be scraped (paywall/Cloudflare/dead),
- * or the grounded output fails a quality gate, the desk-audited finding is kept as-is.
- * Requires the research SDK to be initialized (it is, by the time review runs).
+ * It NEVER breaks the pipeline. If a page can't be scraped the entry is still
+ * standards-cleaned from its draft (never dropped for missing text); if the batch
+ * call fails or an item fails a quality gate, the desk-audited finding is kept as-is.
+ * Per-item fallback is keyed on the stable finding id the model echoes back.
  */
 import { scrapeUrl } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
-import { GEMMA_MODEL_ID, getOpenRouterModel, completeText } from './models.js';
+import { VERIFY_MODEL_ID, getOpenRouterModel, completeText } from './models.js';
 import { safeParseJson, normalizeWhyBad, mapWithConcurrency } from './utils.js';
 
 const MIN_ARTICLE_CHARS = 400;   // below this the scrape is too thin to ground on
-const MAX_ARTICLE_CHARS = 12000; // bound the context handed to gemma
-const GROUND_CONCURRENCY = 2;    // per category; the browser pool bounds real browsers
+const MAX_ARTICLE_CHARS = 10000; // bound per-article context handed to the model
+const SCRAPE_CONCURRENCY = 3;    // the browser pool bounds real browsers underneath
+const BATCH_CONCURRENCY = 2;     // concurrent verification batches
+const BATCH_SIZE = Math.max(1, Number(process.env['WOS_VERIFY_BATCH']) || 10);
 
-const GROUND_PROMPT = `You are the Lead Auditor VERIFYING a Wall of Shame entry against the ACTUAL article text provided below. The draft summary and analysis were written from a multi-source synthesis; your job is to ground them in what the article REALLY says. Use ONLY the ARTICLE TEXT — no web access, no outside facts.
+const BATCH_GROUND_PROMPT = `You are the Lead Auditor performing the FINAL verification of a batch of Wall of Shame entries before they are published. You will receive several numbered entries. For EACH entry, return exactly one result object, echoing back its "id".
 
-Do all of the following:
-1. VERIFY THE QUOTE: confirm the verbatim quote in the draft summary actually appears in the ARTICLE TEXT. If it does not appear (the model paraphrased or invented it), replace it with a real verbatim quote taken word-for-word from the ARTICLE TEXT.
-2. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT. Remove or soften any claim the article does not support. Keep the critical verdict ONLY if the article genuinely exhibits the harmful framing.
-3. GROUND THE SPECIFICS: where the ARTICLE TEXT contains a concrete, real detail that sharpens the analysis, you MAY use it (it is grounded, not invented). Still do NOT add outside citations — no statute/section numbers, case names, statistics, or study titles UNLESS they literally appear in the ARTICLE TEXT.
-4. VALIDITY: if the ARTICLE TEXT does NOT actually support this entry belonging on a Wall of Shame — it is neutral/factual reporting, argues the opposite, or the page is an error/unrelated page — set "valid": false.
+Each entry gives you: id, TITLE, URL, ARTICLE TEXT (the real scraped page — or the literal word UNAVAILABLE), DRAFT SUMMARY, and DRAFT ANALYSIS. The drafts were written from a multi-source synthesis; your job is to ground them in what the page REALLY says and to enforce the house standards.
 
-Keep the EXACT format and standards:
-- "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, no bullets, no line breaks) in plain layman language, including at least one verbatim quote (in quotation marks) that appears in the ARTICLE TEXT.
-- "whyBad": the numbered analysis beginning directly with "1." (no "Analysis:" label, no brackets), covering the quote+claim, the manipulation tactic explained in plain everyday words, the concrete harm, an "External Context:" sentence stated generally, and any "CONFLICT OF INTEREST:"/"TIMELINESS NOTE:". 150–280 words. Plain layman English, NO markdown, NO audit/verification metadata.
+PER ENTRY:
+A) IF ARTICLE TEXT is provided (not UNAVAILABLE):
+   1. VERIFY THE QUOTE: confirm the summary's verbatim quote actually appears in the ARTICLE TEXT. If it does not, replace it with a real quote copied word-for-word from the ARTICLE TEXT.
+   2. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT; remove or soften anything the article does not support. Keep the critical verdict ONLY if the article genuinely exhibits the harmful framing.
+   3. GROUND THE SPECIFICS: where the ARTICLE TEXT contains a concrete real detail that sharpens the analysis, use it (it is grounded, not invented). You MAY include a specific (a number, name, statute) ONLY if it literally appears in the ARTICLE TEXT.
+   4. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it is neutral/factual reporting, argues the opposite, or the page is an error/unrelated/blocked page — set "valid": false (leave summary/whyBad as the cleaned draft).
+B) IF ARTICLE TEXT is UNAVAILABLE: do NOT invent facts and do NOT set valid:false for the missing text. Simply enforce the standards below on the existing draft.
 
-Return ONLY a raw JSON object: {"valid": true, "summary": "...", "whyBad": "1. ... 2. ... 3. ..."}`;
+HOUSE STANDARDS — enforce on EVERY entry:
+- "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, NO bullets, NO line breaks), plain layman language, including at least one verbatim quote in quotation marks.
+- "whyBad": a NUMBERED analysis beginning directly with "1." (no "Analysis:" label, no brackets), of ONLY as many points as carry real substance — normally 3 to 5. REQUIRED: 1. the quote + the claim it advances; 2. the manipulation tactic in EVERYDAY words, explained in the same sentence (never a bare academic label); 3. the concrete real-world harm it normalizes/justifies/hides. OPTIONAL: 4. a sentence beginning "External Context:" with a real, well-established fact stated generally — include ONLY if you genuinely have one; 5. "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply. NEVER pad to a fixed count and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — end at the last real point.
+- NO VAGUE AUTHORITIES: never support a point by gesturing at unnamed sources — no "multiple news outlets reported", "studies show", "many experts agree", "research finds", "researchers found", "critics note", "reports indicate", "widely reported" — UNLESS that exact statement appears in the ARTICLE TEXT. Otherwise state a plain common fact in your own words, argue from the piece's own logic, or say nothing.
+- NO OVER-SPECIFICITY: no fabricated statute/section numbers, case names, precise statistics/percentages, or study titles/dates unless they literally appear in the ARTICLE TEXT. Name only extremely well-known institutions you are sure of (ADA, OSHA, the Civil Rights Act, the EPA).
+- Plain layman English, 150–280 words for whyBad, PLAIN TEXT ONLY (no markdown), and NO audit/verification metadata ("URL accessible", "Content confirmed", etc.).
+- NO ALL-CAPS words or labels in the output: write labels in sentence case ("External Context:", "Conflict of interest:", "Timeliness note:"), never shouting capitals, and rewrite any all-caps emphasis in the draft into normal case (ordinary acronyms like the ADA, OSHA, the EPA are fine).
 
-function buildUserText(f: RawFinding, article: string): string {
-  return [
-    `ARTICLE TITLE: ${f.title}`,
-    `URL: ${f.url}`,
-    `\nARTICLE TEXT (scraped):\n${article}`,
-    `\nDRAFT SUMMARY:\n${f.summary}`,
-    `\nDRAFT ANALYSIS:\n${f.whyBad}`,
-  ].join('\n');
+OUTPUT: return ONLY a raw JSON object, no markdown, no preamble:
+{"results": [{"id": "<echo the entry id>", "valid": true, "summary": "<cleaned paragraph>", "whyBad": "1. ... 2. ... 3. ..."}, ...]}
+Return one object per input entry, in any order, each with the matching id.`;
+
+function buildBatchUserText(items: { f: RawFinding; article: string | null }[]): string {
+  const blocks = items.map((it, i) => {
+    const art = it.article ? it.article : 'UNAVAILABLE';
+    return [
+      `[ENTRY ${i + 1}]`,
+      `id: ${it.f.url}`,
+      `TITLE: ${it.f.title}`,
+      `URL: ${it.f.url}`,
+      `ARTICLE TEXT:\n${art}`,
+      `DRAFT SUMMARY:\n${it.f.summary}`,
+      `DRAFT ANALYSIS:\n${it.f.whyBad}`,
+    ].join('\n');
+  });
+  return `Verify the following ${items.length} entr${items.length === 1 ? 'y' : 'ies'} and return one result object per entry (echo each id).\n\n${blocks.join('\n\n')}`;
 }
 
 /** A grounded summary must still be a single paragraph with a quote. */
@@ -60,72 +80,99 @@ function whyBadOk(w: string): boolean {
   return /^1\.\s/.test(t) && t.length >= 150;
 }
 
+interface BatchResult { id?: string; valid?: boolean; summary?: string; whyBad?: string }
+
 /**
- * Ground a single finding against its scraped article. Returns the grounded finding,
- * the unchanged finding (scrape/gate failure → keep desk audit), or null (article
- * verified NOT to support the entry → drop it).
+ * Verify one batch in a single DeepSeek V4 Pro call. Returns, aligned to `items`,
+ * the grounded finding, the unchanged finding (gate/parse miss → keep desk audit),
+ * or null (article verified NOT to support the entry → drop).
  */
-async function groundOne(f: RawFinding, log: (m: string) => void): Promise<RawFinding | null> {
-  let article: string;
+async function verifyBatch(
+  items: { f: RawFinding; article: string | null }[],
+  log: (m: string) => void,
+): Promise<(RawFinding | null)[]> {
+  let byId = new Map<string, BatchResult>();
+  try {
+    const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: true });
+    const text = await completeText(model, BATCH_GROUND_PROMPT, buildBatchUserText(items), {
+      reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true,
+    });
+    const parsed = safeParseJson<{ results?: BatchResult[] }>(text);
+    const results = Array.isArray(parsed?.results) ? parsed.results : [];
+    byId = new Map(results.filter(r => r && typeof r.id === 'string').map(r => [r.id as string, r]));
+  } catch (err) {
+    log(`    [verify] batch error (${String(err).slice(0, 60)}) — keeping desk audit for ${items.length} entr${items.length === 1 ? 'y' : 'ies'}`);
+    return items.map(it => it.f); // failure isolation: never lose the batch
+  }
+
+  return items.map((it) => {
+    const r = byId.get(it.f.url);
+    if (!r) return it.f; // model omitted it — keep the desk audit
+    if (r.valid === false) {
+      log(`    [verify] ${it.f.domain ?? it.f.url}: article does not support the entry — DROPPED`);
+      return null;
+    }
+    const summary = (r.summary ?? '').trim();
+    const whyBad = normalizeWhyBad(r.whyBad ?? '');
+    if (summaryOk(summary) && whyBadOk(whyBad)) {
+      return { ...it.f, summary, whyBad };
+    }
+    return it.f; // returned output failed a gate — keep the desk audit
+  });
+}
+
+/** Scrape one finding's own article (bounded by the browser pool). */
+async function scrapeOne(f: RawFinding, log: (m: string) => void): Promise<{ f: RawFinding; article: string | null }> {
   try {
     const res = await scrapeUrl(f.url);
     if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) {
-      log(`    [ground] ${f.domain ?? f.url}: page not scrapable — keeping desk audit`);
-      return f;
+      return { f, article: null };
     }
-    article = res.markdown.trim().slice(0, MAX_ARTICLE_CHARS);
+    return { f, article: res.markdown.trim().slice(0, MAX_ARTICLE_CHARS) };
   } catch (err) {
-    log(`    [ground] ${f.domain ?? f.url}: scrape error (${String(err).slice(0, 60)}) — keeping desk audit`);
-    return f;
-  }
-
-  try {
-    const model = await getOpenRouterModel(GEMMA_MODEL_ID, { reasoning: true });
-    const text = await completeText(model, GROUND_PROMPT, buildUserText(f, article), {
-      reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true,
-    });
-    const obj = safeParseJson<{ valid?: boolean; summary?: string; whyBad?: string }>(text);
-
-    if (obj.valid === false) {
-      log(`    [ground] ${f.domain ?? f.url}: article does not support the entry — DROPPED`);
-      return null;
-    }
-    const summary = (obj.summary ?? '').trim();
-    const whyBad = normalizeWhyBad(obj.whyBad ?? '');
-    if (summaryOk(summary) && whyBadOk(whyBad)) {
-      log(`    [ground] ${f.domain ?? f.url}: grounded ✓`);
-      return { ...f, summary, whyBad };
-    }
-    log(`    [ground] ${f.domain ?? f.url}: grounded output failed gate — keeping desk audit`);
-    return f;
-  } catch (err) {
-    log(`    [ground] ${f.domain ?? f.url}: grounding error (${String(err).slice(0, 60)}) — keeping desk audit`);
-    return f;
+    log(`    [verify] ${f.domain ?? f.url}: scrape error (${String(err).slice(0, 50)}) — standards-only`);
+    return { f, article: null };
   }
 }
 
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 /**
- * Ground a batch of reviewed findings against their real article text. Drops only the
- * entries an article verifiably contradicts; keeps everything else (grounded or
- * desk-audited). Bounded concurrency so it adds little load on top of the run.
+ * Ground + standards-verify a list of reviewed findings before entry. Scrapes each
+ * article, then runs batched DeepSeek verification. Drops only entries an article
+ * verifiably contradicts; keeps everything else (grounded, standards-cleaned, or
+ * desk-audited on any failure).
  */
 export async function groundFindings(
   findings: RawFinding[],
   log: (m: string) => void,
 ): Promise<RawFinding[]> {
   if (findings.length === 0) return findings;
-  log(`  [ground] verifying ${findings.length} finding(s) against live article text...`);
-  const settled = await mapWithConcurrency(findings, GROUND_CONCURRENCY, (f) => groundOne(f, log));
+  log(`  [verify] grounding ${findings.length} finding(s) against live article text (batched via ${VERIFY_MODEL_ID})...`);
+
+  // Phase 1 — scrape every article concurrently.
+  const scraped = await mapWithConcurrency(findings, SCRAPE_CONCURRENCY, (f) => scrapeOne(f, log));
+  const items = scraped.map((r, i) => (r.ok ? r.value : { f: findings[i]!, article: null }));
+  const scrapedCount = items.filter(it => it.article).length;
+  log(`  [verify] scraped ${scrapedCount}/${items.length} article(s); verifying in batches of ${BATCH_SIZE}...`);
+
+  // Phase 2 — verify in batches (each batch = one big-context call).
+  const batches = chunk(items, BATCH_SIZE);
+  const settled = await mapWithConcurrency(batches, BATCH_CONCURRENCY, (b) => verifyBatch(b, log));
+
   const out: RawFinding[] = [];
-  let dropped = 0, kept = 0;
-  settled.forEach((r, i) => {
+  let dropped = 0;
+  settled.forEach((r, bi) => {
     if (r.ok) {
-      if (r.value === null) dropped++;
-      else { out.push(r.value); kept++; }
+      r.value.forEach((v) => { if (v === null) dropped++; else out.push(v); });
     } else {
-      out.push(findings[i]!); kept++; // failure isolation: never lose a finding to an error
+      batches[bi]!.forEach(it => out.push(it.f)); // batch threw entirely — keep originals
     }
   });
-  log(`  [ground] kept ${kept}, dropped ${dropped} (unsupported by source)`);
+  log(`  [verify] kept ${out.length}, dropped ${dropped} (unsupported by source)`);
   return out;
 }

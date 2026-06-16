@@ -30,6 +30,8 @@ export const CATEGORIES: Category[] = [
     - MONOPOLY DEFENSE: Presenting market domination as "efficiency" and treating rules against it as government overreach.
     - ONE-SIDED DEREGULATION: Highlighting the costs of rules for businesses while ignoring the benefits to the public.
     - INVESTOR OVER WORKERS: Prioritizing payments to shareholders over investments in workers and defending massive executive pay gaps.
+    - WALL STREET & BAILOUTS: Defending public rescues of banks and large firms ("too big to fail") while opposing the same help for ordinary people, and framing the safety rules put in place after financial crises as needless red tape.
+    - FINANCIAL EXTRACTION: Presenting the private-equity model that loads companies, housing, and hospitals with debt and strips them as "efficiency," and excusing predatory lending and junk fees as just the market at work.
     - IDEOLOGICAL SHIELDS: New ways of framing the economy that protect concentrated wealth from being challenged.
     - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
   },
@@ -227,6 +229,66 @@ export const CATEGORIES: Category[] = [
     - FLOOD-THE-ZONE: Reactive hot-takes that bury context and dissent under a wave of framing tied to the day's headlines.
     - HORSE-RACE DISTRACTION: Treating a current political fight as pure spectacle or strategy to avoid examining who actually gets hurt by the outcome.
     - AND OTHER strategies: These are just starting points; find whatever is currently in the news being used to normalize harm, and the mechanism of the framing.`,
+  },
+  {
+    key: 'corruption',
+    name: 'Money in Politics & Corruption',
+    description: 'Defending the flow of private money into politics, treating legalized influence-buying as normal, and dismissing efforts to get money out of government.',
+    researchQuery: `Focus: Content that defends or normalizes the buying of political influence — corporate money, lobbying, dark money, and the revolving door between government and the industries it regulates — and that mocks or dismisses efforts to clean it up.
+
+    Strategies to explore:
+    - MONEY AS SPEECH: Defending unlimited and anonymous political spending as a free-speech right, and presenting limits on it as censorship.
+    - LOBBYING AS NORMAL: Treating the paid access of corporations and the wealthy to lawmakers as a healthy, ordinary part of governing rather than a corruption of it.
+    - REVOLVING DOOR: Excusing officials who move straight into the industries they used to regulate, or industry insiders placed in charge of regulating their own former employers.
+    - REGULATORY CAPTURE: Framing the takeover of an agency by the very business it is supposed to oversee as "expertise" or "cooperation."
+    - REFORM AS NAIVE: Mocking efforts to get money out of politics or end legalized bribery as hopeless, extreme, or a distraction.
+    - BOTH-SIDES LAUNDERING: Using "everyone does it" to wave away specific, documented corruption and discourage accountability.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+  },
+  {
+    key: 'media',
+    name: 'Corporate Media & Manufactured Narratives',
+    description: 'Coverage that serves the powerful while posing as neutral — laundering elite and corporate interests through access journalism, false balance, and manufactured consensus.',
+    researchQuery: `Focus: Opinion and "news" content where the outlet itself works to protect powerful and corporate interests while presenting itself as objective — manufacturing a narrative that serves the people it should be holding to account.
+
+    Strategies to explore:
+    - ACCESS JOURNALISM: Going soft on the powerful to keep access, repeating official talking points as fact, and treating press releases as reporting.
+    - FALSE BALANCE: Presenting a settled question as a 50-50 debate, or giving fringe and bad-faith positions equal weight to mislead the audience about where the truth lies.
+    - MANUFACTURED CONSENSUS: Declaring that "everyone now agrees" on a convenient elite position to make dissent look unreasonable.
+    - OWNER INTEREST: Coverage that quietly serves the financial or political stake of a billionaire owner, advertiser, or parent company.
+    - SAVVY-STYLE DISTRACTION: Covering politics as pure strategy and horse-race spectacle to avoid examining who actually gets hurt.
+    - MANUFACTURING CONSENT FOR HARM: Cheerleading war, austerity, or crackdowns by amplifying official sources and sidelining the people harmed.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+  },
+  {
+    key: 'healthcare',
+    name: 'Healthcare & For-Profit Medicine',
+    description: 'Defending a healthcare system run for profit — insurer and drug-industry framing that treats denied care, medical debt, and high prices as natural or deserved.',
+    researchQuery: `Focus: Content that defends the for-profit healthcare system and attacks efforts to make care universal or affordable, framing a system that profits from sickness as the only realistic option. (This is the political economy of healthcare — distinct from health misinformation about treatments.)
+
+    Strategies to explore:
+    - DEFENDING DENIED CARE: Presenting insurance denials, prior authorization, and narrow networks as responsible "cost control" rather than profit-driven rationing.
+    - SINGLE-PAYER FEARMONGERING: Framing public or universal healthcare as "socialized medicine," rationing, or ruin, while ignoring that other wealthy countries cover everyone for less.
+    - PRICE APOLOGETICS: Justifying high drug prices and surprise medical bills as the necessary cost of innovation or the free market.
+    - BLAMING THE PATIENT: Treating medical debt and going without care as personal failures of responsibility rather than failures of the system.
+    - INDUSTRY AS REFORMER: Letting insurers, hospital chains, and drug companies pose as the solution to the very problems they profit from.
+    - MARKET MAGIC: Claiming "competition" and "choice" will fix healthcare while ignoring how sick people cannot shop around in an emergency.
+    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+  },
+  {
+    key: 'oligarchy',
+    name: 'Oligarchy & Concentrated Power',
+    description: 'The broad pattern of a tiny class of billionaires and corporations converting wealth into political power — and the framing that treats their rule over public life as natural, earned, or good for everyone.',
+    researchQuery: `Focus: The big-picture framing that normalizes rule by the very rich — content that treats the concentration of wealth and power in a handful of billionaires and corporations as natural, earned, or beneficial, across whatever issue is in the news. This is a broad lens: find the underlying "the powerful should run things" message wherever it appears.
+
+    Strategies to explore:
+    - BILLIONAIRE WORSHIP: Presenting extreme wealth as proof of wisdom or virtue, and treating the opinions of billionaires as more important than everyone else's.
+    - WEALTH BUYS GOVERNANCE: Normalizing the rich and corporations effectively writing the rules — through donations, think tanks, ownership, and lobbying — as just how things work.
+    - DEMOCRACY AS OBSTACLE: Framing ordinary people having a real say over the economy as dangerous "populism," mob rule, or a threat to stability.
+    - PLUTOCRACY AS MERITOCRACY: Claiming the current order is a fair race everyone could win, to make vast inherited and extracted power look earned.
+    - THERE IS NO ALTERNATIVE: Insisting that concentrated private power is permanent and unchangeable so people stop trying to challenge it.
+    - SHARED-INTEREST MYTH: Pretending what is good for the richest is automatically good for everyone ("job creators," "trickle-down").
+    - AND OTHER strategies: These are just starting points; find whatever framing is being used to make rule by the wealthy seem natural, and the mechanism behind it.`,
   },
 ];
 

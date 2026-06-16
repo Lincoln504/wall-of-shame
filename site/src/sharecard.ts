@@ -2,20 +2,24 @@
  * sharecard.ts — render an entry to a shareable 1080×1350 (Instagram portrait)
  * PNG, entirely client-side on a <canvas>.
  *
- * The analysis body is justified with the Knuth-Plass algorithm (tex-linebreak +
- * TeX en-us hyphenation) — measuring with the same ctx.measureText used to draw,
- * so the justification is exact. Theme font (Inter sans) are
- * embedded via FontFace so the image renders identically on every device. The
- * footer carries the Wall-of-Shame mark and the deep link to the entry's page.
+ * The card mirrors the web page's look: the same warm paper background, severity
+ * accent, serif-free Inter type, the entry title, source, and the descriptive
+ * summary (the hook, with its verbatim quote). The body is justified with the
+ * Knuth-Plass algorithm (tex-linebreak + TeX en-us hyphenation), measuring with the
+ * same ctx.measureText used to draw, so justification is exact. A very subtle,
+ * blurred drop shadow sits under the text to give a little depth. The footer carries
+ * the Wall-of-Shame mark and the deep link to the exact page the entry lives on, so
+ * anyone who sees the image can find the full analysis.
  *
- * This module is loaded lazily (dynamic import on first share) so neither the
- * fonts nor tex-linebreak weigh on initial page load.
+ * This module is loaded lazily (dynamic import on first share) so neither the fonts
+ * nor tex-linebreak weigh on initial page load. It runs purely in the browser — no
+ * server, no native code — which is why it is canvas/TypeScript and not napi-rs.
  */
 
 import { layoutText, createHyphenator } from 'tex-linebreak';
 import enUsPatterns from 'hyphenation.en-us';
 import type { Finding } from './types.js';
-import { splitAnalysisPoints } from './format.js';
+import { stripMarkdown } from './format.js';
 
 import in400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import in600 from '@fontsource/inter/files/inter-latin-600-normal.woff2?url';
@@ -63,6 +67,22 @@ function categoryLabel(key: string): string {
   return key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
+/** Run `fn` with a very subtle blurred drop shadow under whatever it draws (depth). */
+function withDepth(
+  ctx: CanvasRenderingContext2D,
+  fn: () => void,
+  opts: { blur?: number; alpha?: number; dy?: number } = {},
+): void {
+  const { blur = 14, alpha = 0.08, dy = 5 } = opts;
+  ctx.save();
+  ctx.shadowColor = `rgba(20,18,16,${alpha})`;
+  ctx.shadowBlur = blur;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = dy;
+  fn();
+  ctx.restore();
+}
+
 // Greedy word wrap (used for the title and as a fallback for the body).
 function wrapGreedy(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(/\s+/);
@@ -79,12 +99,6 @@ function wrapGreedy(ctx: CanvasRenderingContext2D, text: string, maxW: number): 
   }
   if (line) lines.push(line);
   return lines;
-}
-
-interface BodyLayout {
-  draw: (x: number, top: number) => void;
-  height: number;
-  fontPx: number;
 }
 
 interface ParaLayout { draws: { t: string; x: number; line: number }[]; lines: number }
@@ -107,41 +121,37 @@ function layoutParagraph(ctx: CanvasRenderingContext2D, text: string, width: num
   }
 }
 
+interface BodyLayout { draw: (x: number, top: number) => void; height: number }
+
 /**
- * Lay out the analysis body as SEPARATE justified paragraphs (one per numbered
- * point), auto-fitting the font size so the stack fits the available height; any
- * overflow past the bottom is cleanly clipped.
+ * Lay out the summary as one justified paragraph, auto-fitting the font size so it
+ * fits the available height (it is short enough that it never needs to clip).
  */
-function layoutBody(ctx: CanvasRenderingContext2D, points: string[], availH: number): BodyLayout {
-  const pts = points.length ? points : [''];
-  for (let fontPx = 28; fontPx >= 21; fontPx -= 1) {
-    const lineH = Math.round(fontPx * 1.45);
-    const gap = Math.round(fontPx * 0.6);
+function layoutSummary(ctx: CanvasRenderingContext2D, text: string, availH: number): BodyLayout {
+  const clean = stripMarkdown(text).replace(/\s+/g, ' ').trim() || ' ';
+  for (let fontPx = 34; fontPx >= 22; fontPx -= 1) {
+    const lineH = Math.round(fontPx * 1.5);
     ctx.font = `400 ${fontPx}px Inter, sans-serif`;
-    const paras = pts.map(p => layoutParagraph(ctx, p, CONTENT_W));
-    const totalH = paras.reduce((a, pa) => a + pa.lines * lineH, 0) + gap * Math.max(0, pts.length - 1);
-    if (totalH <= availH || fontPx === 21) {
+    const para = layoutParagraph(ctx, clean, CONTENT_W);
+    const totalH = para.lines * lineH;
+    if (totalH <= availH || fontPx === 22) {
       return {
-        fontPx,
         height: Math.min(totalH, availH),
         draw: (x, top) => {
           ctx.fillStyle = C.body;
           ctx.font = `400 ${fontPx}px Inter, sans-serif`;
           ctx.textAlign = 'left';
-          let y = top;
-          for (const pa of paras) {
-            for (const d of pa.draws) {
-              const yy = y + d.line * lineH + fontPx;
-              if (yy <= top + availH) ctx.fillText(d.t, x + d.x, yy);
+          withDepth(ctx, () => {
+            for (const d of para.draws) {
+              const yy = top + d.line * lineH + fontPx;
+              if (yy <= top + availH + fontPx) ctx.fillText(d.t, x + d.x, yy);
             }
-            y += pa.lines * lineH + gap;
-            if (y > top + availH) break; // clip remaining points
-          }
+          }, { blur: 10, alpha: 0.06, dy: 4 });
         },
       };
     }
   }
-  return { fontPx: 21, height: 0, draw: () => {} };
+  return { height: 0, draw: () => {} };
 }
 
 // Draw the Wall-of-Shame mark (the favicon geometry) at (x, y) with side `s`.
@@ -164,7 +174,7 @@ export interface ShareCardOptions {
 
 /** Render the card and resolve to a PNG Blob. */
 export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
-  const { finding: f, page, pageUrl } = opts;
+  const { finding: f, pageUrl } = opts;
   await ensureFonts();
 
   const canvas = document.createElement('canvas');
@@ -209,7 +219,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillText(categoryLabel(f.category).toUpperCase(), MARGIN + pillW + 22, y);
   y += 60;
 
-  // Title (Inter bold, wrapped, max 4 lines).
+  // Title (Inter bold, wrapped, max 4 lines) with a subtle depth shadow.
   ctx.fillStyle = C.ink;
   const titlePx = 52;
   const titleLineH = Math.round(titlePx * 1.16);
@@ -219,7 +229,9 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
     titleLines = titleLines.slice(0, 4);
     titleLines[3] = titleLines[3].replace(/\s+\S*$/, '') + '…';
   }
-  titleLines.forEach((ln, i) => ctx.fillText(ln, MARGIN, y + i * titleLineH + titlePx));
+  withDepth(ctx, () => {
+    titleLines.forEach((ln, i) => ctx.fillText(ln, MARGIN, y + i * titleLineH + titlePx));
+  }, { blur: 16, alpha: 0.1, dy: 6 });
   y += titleLines.length * titleLineH + titlePx + 8;
 
   // Domain.
@@ -235,23 +247,16 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.moveTo(MARGIN, y);
   ctx.lineTo(W - MARGIN, y);
   ctx.stroke();
-  y += 44;
+  y += 48;
 
-  // "Analysis" label.
-  ctx.fillStyle = sev;
-  ctx.font = '700 24px Inter, sans-serif';
-  ctx.fillText('ANALYSIS', MARGIN, y);
-  y += 40;
-
-  // Footer geometry (reserve space at the bottom).
+  // Body: the descriptive summary (the hook + its verbatim quote), justified.
   const footerY = H - MARGIN - 16;
   const bodyTop = y;
   const bodyAvailH = footerY - 70 - bodyTop;
-
-  const body = layoutBody(ctx, splitAnalysisPoints(f.whyBad), bodyAvailH);
+  const body = layoutSummary(ctx, f.summary, bodyAvailH);
   body.draw(MARGIN, bodyTop);
 
-  // Footer: mark + url/page.
+  // Footer: mark + url/page (the deep link to the entry's page).
   ctx.strokeStyle = C.divider;
   ctx.beginPath();
   ctx.moveTo(MARGIN, footerY - 56);
@@ -269,7 +274,6 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   const foot = pageUrl.replace(/^https?:\/\//, '');
   ctx.textAlign = 'right';
   ctx.fillText(foot, W - MARGIN, footerY - 16);
-  void page;
 
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),

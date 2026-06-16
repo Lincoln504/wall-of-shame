@@ -40,6 +40,15 @@ export const RESEARCH_MODEL_ID = GEMMA_MODEL_ID;
 /** Documented manual escalation lever only — not used by default. */
 export const DEEPSEEK_MODEL_ID = 'deepseek/deepseek-v4-flash';
 
+/**
+ * Verification/grounding stage = DeepSeek V4 Pro. The final pass before entry runs
+ * a big-context model so a whole batch of entries (each with its scraped article
+ * text) fits in one call, and because this correctness-critical step rewards a
+ * stronger instruction-follower. 1.05M-token context, cheap on OpenRouter.
+ * Overridable via WOS_VERIFY_MODEL.
+ */
+export const VERIFY_MODEL_ID = process.env['WOS_VERIFY_MODEL'] || 'deepseek/deepseek-v4-pro';
+
 export interface ResolvedModel {
   model: any;
   apiKey?: string;
