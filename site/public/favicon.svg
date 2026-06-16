@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="3" fill="#1a1a1a"/>
-  <rect x="5" y="5" width="22" height="22" rx="2" fill="#faf9f6"/>
-  <text x="16" y="16.5" font-size="16" text-anchor="middle" dominant-baseline="central">📍</text>
+  <!-- Black box: smaller (2px inset), no rounded corners -->
+  <rect x="2" y="2" width="28" height="28" fill="#1a1a1a"/>
+  <!-- Push-pin: tip fixed at center (16,16), tilted 40° (head upper-right, tip at center pointing lower-left) -->
+  <g transform="rotate(40, 16, 16)">
+    <!-- Pin head (disc) -->
+    <circle cx="16" cy="5" r="5.5" fill="white"/>
+    <!-- Pin shaft tapering to point at (16,16) -->
+    <polygon points="14,9 18,9 16,16" fill="white"/>
+  </g>
 </svg>

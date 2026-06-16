@@ -37,13 +37,37 @@ const BATCH_GROUND_PROMPT = `You are the Lead Auditor performing the FINAL verif
 
 Each entry gives you: id, TITLE, URL, ARTICLE TEXT (the real scraped page — or the literal word UNAVAILABLE), DRAFT SUMMARY, and DRAFT ANALYSIS. The drafts were written from a multi-source synthesis; your job is to ground them in what the page REALLY says and to enforce the house standards.
 
+DIRECTIONAL TEST — APPLY FIRST, BEFORE ANYTHING ELSE. The Wall of Shame targets content that in any way props up, advances, sanitizes, launders, rationalizes, excuses, normalizes, or defends harmful power. It does NOT target content that EXPOSES, DOCUMENTS, REPORTS ON, or CRITICIZES harm. These are fundamentally opposite things, and confusing them is the most dangerous error.
+
+Ask for each entry: "Whose side is this piece on?" and "What does it do to harm?" — the range is wide, from mild to severe:
+- Mild end: softens or sugarcoats exploitation, treats injustice as inevitable, minimizes documented harm
+- Middle: rationalizes regressive policy, launders corporate or government wrongdoing as reasonable, excuses dehumanization as policy necessity
+- Severe end: outright advocates for stripping rights, serves as propaganda for extremist ideology, provides explicit cover for atrocities or disinformation
+
+KEEP (set valid:true) if the piece performs any of the above — if it is on the side of those who exploit, dehumanize, restrict rights, or obstruct accountability.
+DROP (set valid:false) if the piece is on the side of victims, critics, journalists, or reformers — even if its subject matter overlaps exactly with our categories.
+
+CRITICAL FAILURE MODE TO AVOID: Research reports and academic studies that DOCUMENT problems are not targets. If a piece CONCLUDES that a policy is bad, unjust, or harmful — it is criticizing power, not defending it.
+- A study showing school vouchers mainly benefit already-wealthy families → EXPOSING a problem → set valid:false
+- An op-ed arguing school vouchers empower parents and expand freedom → DEFENDING the policy → valid:true
+- A Georgetown report revealing that 64% of voucher recipients were already in private school → that piece CRITICIZES vouchers → set valid:false
+- An industry brief claiming drug price controls will kill innovation → DEFENDING high prices → valid:true
+- A public health study documenting how insurers deny claims → EXPOSING harm → set valid:false
+- A journalism piece reporting that a politician used dehumanizing language → CRITICIZING that language → set valid:false
+
+Red flags in the DRAFT that suggest a misclassified entry (apply even when ARTICLE TEXT is UNAVAILABLE):
+- Summary uses "examines," "reveals," "documents," "shows," "analyzes," "investigates," "finds that" followed by a CRITICAL conclusion — this is journalism or research EXPOSING harm, not defending it
+- WhyBad describes the HARM OF THE TOPIC (e.g., "vouchers divert public money") rather than the HARM COMMITTED BY THE PIECE (e.g., "piece argues vouchers are good")
+- The piece's apparent conclusion is that the policy/practice is BAD — that is accountability, not normalization
+
 PER ENTRY:
 A) IF ARTICLE TEXT is provided (not UNAVAILABLE):
+   0. DIRECTIONAL CHECK: apply the directional test above using the real article text. If the article's own argument DEFENDS or NORMALIZES harm — proceed. If the article EXPOSES, CRITICIZES, or DOCUMENTS harm — set "valid": false immediately; do not proceed to grounding steps.
    1. VERIFY THE QUOTE: confirm the summary's verbatim quote actually appears in the ARTICLE TEXT. If it does not, replace it with a real quote copied word-for-word from the ARTICLE TEXT.
    2. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT; remove or soften anything the article does not support. Keep the critical verdict ONLY if the article genuinely exhibits the harmful framing.
    3. GROUND THE SPECIFICS: where the ARTICLE TEXT contains a concrete real detail that sharpens the analysis, use it (it is grounded, not invented). You MAY include a specific (a number, name, statute) ONLY if it literally appears in the ARTICLE TEXT.
-   4. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it is neutral/factual reporting, argues the opposite, or the page is an error/unrelated/blocked page — set "valid": false (leave summary/whyBad as the cleaned draft).
-B) IF ARTICLE TEXT is UNAVAILABLE: do NOT invent facts and do NOT set valid:false for the missing text. Simply enforce the standards below on the existing draft.
+   4. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it argues the opposite of harmful framing, or the page is an error/unrelated/blocked page — set "valid": false.
+B) IF ARTICLE TEXT is UNAVAILABLE: apply the directional test to the DRAFT SUMMARY and DRAFT ANALYSIS. Default to "valid": false — set valid:true and proceed to standards enforcement ONLY IF the draft clearly and unambiguously describes a piece that DEFENDS or NORMALIZES harm (i.e., it argues the harmful thing is justified, natural, or good). If there is any doubt — if the draft reads like journalism, research, or criticism — set valid:false.
 
 HOUSE STANDARDS — enforce on EVERY entry:
 - "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, NO bullets, NO line breaks), plain layman language, including at least one verbatim quote in quotation marks.

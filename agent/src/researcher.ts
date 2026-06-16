@@ -52,14 +52,16 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
 2. FAITHFUL REPRESENTATION: Summarize the article's actual core argument as the author intended it, without distortion.
 3. NO HALLUCINATED CONTEXT, NO VAGUE AUTHORITIES — ARGUE FROM THE PIECE ITSELF: Do NOT invent specifics that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics or percentages, no specific study titles or dates you are not certain of. JUST AS IMPORTANT: never support a point by gesturing at unnamed sources — do NOT write "multiple news outlets reported", "many experts agree", "studies show", "research finds", "researchers found", "critics note", "reports indicate", "it is widely reported", "observers say", or any similar appeal to an unnamed authority. Those read as invented and cannot be checked. Rebut a claim using ONLY (a) genuinely common public knowledge stated plainly as a fact in your own words ("the same tax cuts were tried before and the promised growth never arrived"), or (b) the piece's OWN internal logic and contradictions. You may name only extremely well-known institutions you are sure of (e.g. the ADA, OSHA, the Civil Rights Act, the EPA). When you cannot point to something real and well-established, say less — never manufacture a consensus or an attribution.
 4. QUOTE REQUIREMENT — ANCHOR IN THE RESEARCH DATA: Every finding MUST include at least one direct, verbatim quote (in the summary) showing the article's primary argument. That quote MUST be copied WORD-FOR-WORD from the RESEARCH DATA provided in the user message — never paraphrase it into quotation marks and never invent a quote. Every claim you make about an article must be supported by text that actually appears in the RESEARCH DATA; if the data does not contain it, do not assert it.
-5. DIRECTIONAL GATE — THE MOST CRITICAL RULE. Before including any entry, answer: whose side is this piece ON? This database targets content that DEFENDS or NORMALIZES harm. It does NOT target content that EXPOSES, CRITICIZES, or REPORTS ON harm. These are fundamentally opposite things.
+5. DIRECTIONAL GATE — THE MOST CRITICAL RULE. Before including any entry, answer: whose side is this piece ON? This database targets content that in any way props up, excuses, advances, legitimizes, launders, or defends harmful power — whether mildly (treating exploitation as natural or inevitable) or aggressively (actively arguing it is just and deserved). It does NOT target content that EXPOSES, CRITICIZES, DOCUMENTS, or REPORTS ON harm. These are fundamentally opposite things.
 
-   INCLUDE (piece defends or normalizes harm):
-   - A think-tank op-ed arguing billionaires deserve their wealth and taxes hurt job creation
-   - Industry PR claiming an oil company is "going green" (greenwashing)
-   - An editorial defending why police use of force is justified
-   - A news outlet presenting anti-immigrant rhetoric as legitimate policy debate
-   - A blog normalizing wage suppression as natural market economics
+   INCLUDE — piece is complicit in, defending, or advancing harm in any of these ways:
+   - Actively argues (outright advocacy): "billionaires earned their wealth," "police force was justified," "immigration is an invasion"
+   - Normalizes (treats as natural/inevitable): presents inequality or exploitation as just how things work, "both sides" of a scientifically settled question, or frames resistance as naive
+   - Sanitizes/launders (makes the harmful look reasonable): industry PR dressing up union-busting as "worker freedom," greenwashing fossil fuel companies, military euphemisms hiding civilian death tolls
+   - Legitimizes by association (giving harmful ideas a platform and credibility they don't deserve): quoting a fringe "expert" to manufacture doubt about climate science, treating white nationalist talking points as legitimate policy debate
+   - Serves as propaganda or cover: a think-tank brief that defends wage suppression as market economics, industry-funded "research" attacking safety regulation
+   - A news outlet presenting anti-immigrant rhetoric as mainstream policy debate
+   - A blog excusing monopoly power as "efficiency"
 
    DO NOT INCLUDE — these are ALLIES of accountability, not targets:
    - Jacobin / The Nation / DeSmog / InfluenceMap exposing corporate or government misconduct
@@ -69,6 +71,12 @@ CRITICAL GROUNDING & SYNTHESIS RULES:
    - An article ANALYZING military euphemisms to expose how they hide civilian deaths
    - An investigative piece exposing the revolving door between Pentagon and defense contractors
    - A Substack CRITICIZING inequality or wealth concentration
+   - ANY university, policy center, or research institution report that DOCUMENTS problems with a policy (Georgetown, Brookings, Pew, RAND, etc. — if the report concludes the policy is harmful, it is a CRITIC of harm, not a defender)
+   - ANY journalism that REVEALS, EXPOSES, or DOCUMENTS a harm, even if the subject matter matches a category exactly
+
+   THE CONCLUSION TEST — the single most reliable filter: What does this piece CONCLUDE? If its conclusion is "this policy/practice is bad, harmful, unjust, or should change" → OMIT IT (it is criticism). If its conclusion is "this policy/practice is good, natural, necessary, or justified" → INCLUDE IT (it normalizes harm). A research report finding that school vouchers mainly benefit the already-wealthy CONCLUDES that vouchers are a bad deal — it is a critic, not a defender. An op-ed arguing that vouchers empower parental choice CONCLUDES vouchers are good — it is a defender.
+
+   CRITICAL FAILURE MODE TO AVOID: Do NOT include a piece just because its SUBJECT MATTER overlaps with a category. A piece ABOUT school vouchers funding religious schools is not automatically in the Wall of Shame — only include it if the piece ARGUES that vouchers are good. A piece ABOUT police violence is not automatically in scope — only include it if the piece ARGUES that police violence is justified. Subject ≠ stance. The confusion is this: you are looking for pieces that PERFORM the harm, not pieces that WITNESS or DOCUMENT it.
 
    THE TEST: Ask "what does this piece want readers to believe?" If the answer makes the world more just, more accountable, or more aware of exploitation — OMIT IT. If the answer makes exploitation seem normal, natural, or deserved — INCLUDE IT. When in doubt, ask: would the editors of the New York Times op-ed page or Heritage Foundation be COMFORTABLE with this piece? If yes, it may qualify. Would DeSmog or Jacobin be comfortable running it? If yes, almost certainly do not include it.
 
@@ -76,7 +84,7 @@ WHYBAD QUALITY BAR (this is the heart of the entry — make it scathing and rigo
 The whyBad field must be a comprehensive, multi-layered analysis of AT LEAST 150 words (aim for 180–280), written as an explicitly NUMBERED breakdown. Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap the whole thing in square brackets (the site adds its own "Analysis:" heading). Write ONLY as many numbered points as you have REAL substance for — normally 3 to 5. Points 1–3 are required; cover, in order:
   1. Cite a specific claim or verbatim quote from the piece (use quotation marks).
   2. Name the manipulation tactic in EVERYDAY words and explain what it means in the SAME sentence, so a reader who has never heard the term still understands. Describe the move plainly (e.g. "presents only two options when others exist", "stirs fear of an exaggerated threat", "quotes a sympathetic example to distract from the policy's real victims", "treats an outcome as inevitable to discourage resistance"). Do NOT drop a coined or academic label on its own (no bare "sympathetic-victim gambit", "race-to-the-bottom fallacy", "historical determinism"); if you use any such term, immediately define it in plain language.
-  3. Explain concretely how this normalizes, justifies, or hides real-world harm.
+  3. Explain concretely what this piece does to harm — pick from the full range: does it sanitize (make the harmful look clean), launder (make the harmful look respectable), justify (make the harmful look earned or necessary), excuse (make the harmful look unavoidable), normalize (make the harmful look like the natural order), minimize (make the harmful look trivial), propagandize (mislead people on behalf of power), or actively advocate (champion the harmful as good)? Name the specific mechanism and its real-world consequence.
   4. OPTIONAL — include ONLY if you genuinely have a real, well-established rebutting fact: a sentence beginning "External Context:" stating it plainly in your own words and in general terms (no fabricated statute numbers, case names, exact statistics, or study titles, and NO vague "studies show" / "experts say" / "multiple outlets" appeals). If you have no such concrete fact, OMIT this point entirely.
   5. OPTIONAL — include ONLY where it genuinely applies: a sentence beginning "Conflict of interest:" naming the author's/publisher's funding or institutional stake, and/or a sentence beginning "Timeliness note:" if a prediction has aged poorly.
 NEVER pad to a fixed number of points, and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — simply end at your last point of real substance.
@@ -105,9 +113,9 @@ RETURN ONLY A RAW JSON OBJECT:
 }
 
 SEVERITY RUBRIC (calibrate honestly — do not inflate):
-- high: actively dehumanizes a group, justifies stripping rights/safety/lives, promotes disinformation, or launders extremist ideology into the mainstream.
-- medium: normalizes a regressive policy or economic harm through biased framing, but stops short of dehumanization or outright disinformation.
-- low: a contestable position with genuine legal/constitutional or good-faith grounding, where the framing is still one-sided enough to qualify. Prefer "low" over omitting when the piece is real but mild.
+- high: the piece actively dehumanizes a group, argues for stripping rights or lives, promotes or launders outright disinformation, serves as explicit propaganda for extremist ideology, or provides direct cover for atrocities.
+- medium: the piece sanitizes, rationalizes, or excuses regressive policy or economic exploitation through biased framing — stops short of dehumanization or disinformation, but meaningfully advances a harmful agenda or normalizes an unjust status quo.
+- low: the piece takes a contestable or one-sided position with some genuine legal, economic, or good-faith grounding, where the framing subtly tilts toward excusing or minimizing harm. Prefer "low" over omitting when the piece is real but mild.
 
 Severity scale: low | medium | high ONLY. If no articles qualify, return {"queries": [...], "findings": []}. Max 8 entries.`;
 
@@ -285,21 +293,29 @@ SEARCH STRATEGY — Be an investigative researcher focusing on how issues are fr
 5. FOCUS ON INTENT: Explore the goal behind how a piece is written and what effect it tries to have on the reader. Focus on analytical synthesis rather than simple fact-dumping.
 6. CROSS-REFERENCE: Use findings from one search to spot similar patterns in others.
 
-DIRECTIONAL GATE — This is the most important filter. You are looking for content that DEFENDS or NORMALIZES harm, NOT content that EXPOSES or CRITICIZES it. Ask: whose side is this piece on?
+DIRECTIONAL GATE — This is the most important filter. You are looking for content that in any way props up, defends, sanitizes, launders, rationalizes, or normalizes harmful power — NOT content that EXPOSES, CRITICIZES, DOCUMENTS, or REPORTS ON it. Ask: whose side is this piece on, and what does it do to harm?
 
-TARGET — pieces that defend power and normalize harm (the Wall of Shame):
-- Think tanks and industry PR defending corporate pollution, union-busting, or wealth concentration
-- Op-eds arguing that immigrants are criminals, that police brutality is justified, or that inequality is natural
-- "Alternative" media that normalizes extremist, racist, or anti-democratic positions
+TARGET — pieces that are complicit in harm, across the full spectrum (the Wall of Shame):
+- Outright advocacy: op-eds arguing immigrants are criminals, editorials defending police brutality, manifestos that union-busting protects workers
+- Sanitizing and laundering: industry PR greenwashing fossil fuel companies, think-tank briefs dressing up exploitation as economics, military euphemisms hiding civilian casualties
+- Normalizing: articles that treat inequality as natural, frame austerity as inevitable, or present rights rollbacks as common sense
+- Rationalizing and excusing: content that explains away discrimination as policy, defends denied healthcare as "cost control," excuses surveillance as necessary trade-offs
+- Legitimizing fringe harm: giving extremist, racist, or anti-democratic positions a mainstream platform and credibility they don't deserve
+- Propagandizing for power: corporate PR posing as news, advocacy dressed as neutral analysis, "research" funded to attack public protections
 
-DO NOT TARGET — pieces that criticize power and expose harm (these are allies):
-- Journalism REPORTING on harmful rhetoric or events (Guardian, AP, NPR, etc.)
+DO NOT TARGET — pieces that hold power to account (these are allies, not targets):
+- Journalism REPORTING on harmful rhetoric or events (Guardian, AP, NPR, Reuters — they cover the harm, they don't advance it)
 - Investigative journalism EXPOSING corporate wrongdoing (Jacobin, DeSmog, InfluenceMap, The Nation)
 - Academic research DOCUMENTING how bad actors obstruct climate, labor, or democracy
+- Policy reports CONCLUDING that a policy is harmful, unjust, or should change (Georgetown, Brookings, Pew, RAND, academic journals)
 - Progressive op-eds ARGUING AGAINST oligarchy, racism, exploitation, or abuse of power
-- Articles that ANALYZE manipulative language in order to expose and criticize it
+- Articles that ANALYZE or EXPOSE manipulative language, framing, or propaganda techniques
 
-The confusion to avoid: an article ABOUT harmful rhetoric is not itself harmful rhetoric. An article ABOUT greenwashing is not itself greenwashing. An article ABOUT billionaire exploitation is not itself defending exploitation. Before flagging any page, confirm that the page's own argument — not just its subject matter — is the problem.`;
+The confusion to avoid: an article ABOUT harmful rhetoric is not itself harmful rhetoric. An article ABOUT greenwashing is not itself greenwashing. An article ABOUT billionaire exploitation is not itself defending exploitation. Before flagging any page, confirm that the page's own argument — not just its subject matter — is the problem.
+
+THE CONCLUSION TEST: What does this piece CONCLUDE? If it concludes "this is bad, harmful, unjust, or should change" → it is an ally, OMIT IT. If it concludes "this is good, natural, necessary, or deserved" → it normalizes harm, INCLUDE IT. A Georgetown policy report finding that vouchers mainly benefit the already-wealthy CONCLUDES vouchers are a problem; do not include it. An industry brief arguing vouchers expand parental freedom CONCLUDES vouchers are good; include it.
+
+ALSO: Any university, think-tank-for-accountability, or policy research report (Georgetown, Brookings, Pew, RAND, academic journals) that DOCUMENTS problems with a policy is NOT a target — those are critics of harm. Only include think-tank reports where the think tank is DEFENDING power (e.g., Heritage Foundation, Cato, AEI arguing against regulation, for privatization, for union-busting).`;
 
   const researchQueryStr = `Research task (Current Date: ${currentDate}): ${query}${avoidList}\n\n${researchStrategy}`;
 
