@@ -255,7 +255,7 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          <span style={s.subtitleMuted}>racist, classist, sexist, politically disagreeable</span>
+          A repository of web content judged to be harmful, and why.
           <br />
           Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
         </p>
@@ -384,7 +384,6 @@ const s: Record<string, any> = {
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
   title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
   subtitle: { color: '#666', 'font-size': '1.05rem', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '500px' },
-  subtitleMuted: { color: '#a09a8e', 'font-family': SERIF },
   inlineLink: { color: '#666', 'text-decoration': 'underline' },
   stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   stat: { 'font-size': '0.72rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.7rem', 'border-radius': '4px', 'font-weight': '500' },
