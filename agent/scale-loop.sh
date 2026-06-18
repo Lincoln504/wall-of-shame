@@ -53,19 +53,22 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   done
   [ "$mem_ok" -eq 0 ] && continue
 
+  BEFORE=$(count)
   START=$(date +%s)
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \
     timeout 1500 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
   RC=$?
-  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s findings=$(count) avail=$(avail_mb)MB" | tee -a "$LOG"
+  AFTER=$(count)
+  ADDED=$(( AFTER - BEFORE ))
+  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s added=$ADDED findings=$AFTER avail=$(avail_mb)MB" | tee -a "$LOG"
   [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 1500s timeout guard" | tee -a "$LOG"
 
-  # Maintenance audit: sample and re-verify a slice of the existing corpus.
+  # Maintenance audit: audit all entries from this round + 10% random sample of the rest.
   if [ "$AUDIT_INTERVAL" -gt 0 ] && [ $((i % AUDIT_INTERVAL)) -eq 0 ]; then
-    echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL) ──" | tee -a "$LOG"
+    echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL, recent=$ADDED) ──" | tee -a "$LOG"
     MSTART=$(date +%s)
-    # --step=20 → sample ~20-25 entries from the corpus; no --dry-run so removals apply.
-    timeout 1200 npx tsx scripts/sample_audit.ts --step=20 >> "$LOG" 2>&1
+    # --recent=$ADDED: always audits every entry from this round + 10% of older corpus.
+    timeout 1200 npx tsx scripts/sample_audit.ts --recent="$ADDED" >> "$LOG" 2>&1
     MRC=$?
     echo "[loop] maintenance audit exit=$MRC dur=$(( $(date +%s) - MSTART ))s findings=$(count)" | tee -a "$LOG"
     [ "$MRC" -eq 124 ] && echo "[loop] WARNING maintenance audit hit 1200s timeout" | tee -a "$LOG"

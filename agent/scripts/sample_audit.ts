@@ -6,10 +6,15 @@
  * removals to findings.json (with seenUrls tombstones in run-state.json).
  *
  * Usage:
- *   cd agent && npx tsx scripts/sample_audit.ts [--step N] [--dry-run]
+ *   cd agent && npx tsx scripts/sample_audit.ts [--recent N] [--step N] [--dry-run]
  *
- *   --step N    sample every Nth entry (default: auto to get ~50)
- *   --offset N  start offset within the step (default 4, different from batch_audit.ts)
+ *   --recent N  audit the last N entries (from the most recent round) PLUS a 10%
+ *               random sample of the remaining corpus. This is the preferred mode
+ *               when called from scale-loop.sh; pass the number of entries added
+ *               in the just-completed round.
+ *   --step N    legacy: sample every Nth entry (default: auto to get ~50).
+ *               Used when --recent is not supplied (e.g. manual standalone runs).
+ *   --offset N  legacy: start offset within the step (default 4)
  *   --dry-run   print report without modifying files
  *
  * Output: /tmp/wos_sample_audit_result.json
@@ -28,6 +33,7 @@ const FINDINGS_PATH = join(DATA_DIR, 'findings.json');
 const STATE_PATH = join(DATA_DIR, 'run-state.json');
 
 const DRY_RUN = process.argv.includes('--dry-run');
+const RECENT_ARG = process.argv.find(a => a.startsWith('--recent='))?.split('=')[1];
 const STEP_ARG = process.argv.find(a => a.startsWith('--step='))?.split('=')[1];
 const OFFSET_ARG = process.argv.find(a => a.startsWith('--offset='))?.split('=')[1];
 const SCRAPE_CONCURRENCY = 4;
@@ -112,14 +118,25 @@ const rawFindings = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
 const rawState = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
 const findings: any[] = rawFindings.findings;
 
-const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
-const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
-// Normalize offset to [0, STEP) — if OFFSET >= STEP it wraps. Log when this occurs
-// so the operator knows the actual sampled offset.
-const effectiveOffset = OFFSET % STEP;
-if (effectiveOffset !== OFFSET) log(`[warn] --offset ${OFFSET} normalized to ${effectiveOffset} for step=${STEP}`);
-const sample = findings.filter((_, i) => i % STEP === effectiveOffset).slice(0, 55);
-log(`Total: ${findings.length} — sampling every ${STEP}th (offset ${effectiveOffset}) → ${sample.length} entries`);
+let sample: any[];
+if (RECENT_ARG !== undefined) {
+  // Preferred mode: audit all entries from the latest round + 10% random of the rest.
+  const recentN = Math.max(0, parseInt(RECENT_ARG));
+  const recentEntries = findings.slice(-recentN);
+  const olderEntries = findings.slice(0, findings.length - recentN);
+  // Deterministic 10% sample of the older corpus: pick every 10th entry.
+  const olderSample = olderEntries.filter((_, i) => i % 10 === 4);
+  sample = [...recentEntries, ...olderSample];
+  log(`Total: ${findings.length} — recent: ${recentEntries.length} (all) + older: ${olderSample.length} (10% of ${olderEntries.length}) = ${sample.length} entries`);
+} else {
+  // Legacy step-based sampling for standalone runs.
+  const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
+  const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
+  const effectiveOffset = OFFSET % STEP;
+  if (effectiveOffset !== OFFSET) log(`[warn] --offset ${OFFSET} normalized to ${effectiveOffset} for step=${STEP}`);
+  sample = findings.filter((_, i) => i % STEP === effectiveOffset).slice(0, 55);
+  log(`Total: ${findings.length} — sampling every ${STEP}th (offset ${effectiveOffset}) → ${sample.length} entries`);
+}
 if (DRY_RUN) log('DRY RUN');
 
 // Initialize SDK for scraping
