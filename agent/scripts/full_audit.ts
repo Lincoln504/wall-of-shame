@@ -110,7 +110,7 @@ try {
     const userText = buildAuditText(items);
     log(`  prompt ~${Math.round((AUDIT_SYSTEM.length + userText.length) / 4)} tokens — calling DeepSeek...`);
     const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
-      reasoning: 'medium', temperature: 0.2, timeoutMs: 600_000,
+      reasoning: 'medium', temperature: 0.2, timeoutMs: 120_000,
     });
 
     let batchResults: AuditResult[] = [];

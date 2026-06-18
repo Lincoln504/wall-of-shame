@@ -134,7 +134,7 @@ try {
     let batchResults: AuditResult[] = [];
     try {
       const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
-        reasoning: 'medium', temperature: 0.2, timeoutMs: 600_000,
+        reasoning: 'medium', temperature: 0.2, timeoutMs: 120_000,
       });
       writeFileSync(`/tmp/wos_sample_audit_b${b}_raw.txt`, rawResponse);
       const m = rawResponse.match(/\[[\s\S]*\]/);
