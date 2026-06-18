@@ -27,7 +27,7 @@ TARGET="${1:-1500}"
 MAX_ROUNDS="${2:-300}"
 CONC="${3:-3}"
 MIN_AVAIL_MB="${4:-6000}"   # don't start a round unless this many MB are available
-AUDIT_INTERVAL="${5:-5}"    # run maintenance audit every N rounds (0 = disabled)
+AUDIT_INTERVAL="${5:-3}"    # run maintenance audit every N rounds (0 = disabled)
 LOG="$(cd "$(dirname "$0")" && pwd)/scale-loop.log"   # on disk, *.log is gitignored
 
 count() { node -e "console.log(require('./data/findings.json').totalFindings||0)" 2>/dev/null || echo 0; }
@@ -40,12 +40,18 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   if [ "$C" -ge "$TARGET" ]; then echo "[loop] TARGET REACHED ($C >= $TARGET)" | tee -a "$LOG"; break; fi
 
   # Memory guard: wait (up to ~5 min) for headroom before starting a browser-heavy round.
+  # If memory is still too low after 5 min, SKIP the round entirely (continue outer loop).
+  mem_ok=1
   waited=0
   while [ "$(avail_mb)" -lt "$MIN_AVAIL_MB" ]; do
     echo "[loop] low memory ($(avail_mb)MB < ${MIN_AVAIL_MB}MB) — waiting 30s before round $i" | tee -a "$LOG"
     sleep 30; waited=$((waited+30))
-    [ "$waited" -ge 300 ] && { echo "[loop] still low after 5min — skipping round $i" | tee -a "$LOG"; break; }
+    if [ "$waited" -ge 300 ]; then
+      echo "[loop] still low after 5min — SKIPPING round $i" | tee -a "$LOG"
+      mem_ok=0; break
+    fi
   done
+  [ "$mem_ok" -eq 0 ] && continue
 
   START=$(date +%s)
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \

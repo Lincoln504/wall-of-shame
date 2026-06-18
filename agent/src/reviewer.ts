@@ -224,12 +224,10 @@ async function reviewBatch(
 
 const REVIEW_PROMPT_RAWREPORT = `${REVIEW_SYSTEM_PROMPT}
 
-RESEARCH CONTEXT (also the input to extract findings from):
+RESEARCH CONTEXT (extract findings from this text):
 <CONTEXT>
 
-Extract any qualifying findings from the above, then audit them with the same rules.
-CANDIDATE FINDINGS:
-<FINDINGS_JSON>
+No pre-extracted candidate findings exist — extract any qualifying entries directly from the RESEARCH CONTEXT above, then audit each one against the same rules.
 
 Return ONLY the raw JSON array.`;
 
@@ -241,8 +239,7 @@ async function reviewRawReport(
 ): Promise<RawFinding[]> {
   log('  [reviewer] desk audit of raw report...');
   const prompt = REVIEW_PROMPT_RAWREPORT
-    .replace('<CONTEXT>', report.slice(0, MAX_CONTEXT_CHARS_LEGACY))
-    .replace('<FINDINGS_JSON>', report.slice(0, MAX_CONTEXT_CHARS_LEGACY));
+    .replace('<CONTEXT>', report.slice(0, MAX_CONTEXT_CHARS_LEGACY));
 
   const modelId = pickModelForContext(report);
   const model = await getOpenRouterModel(modelId, { reasoning: false });

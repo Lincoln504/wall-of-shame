@@ -114,8 +114,12 @@ const findings: any[] = rawFindings.findings;
 
 const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
 const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
-const sample = findings.filter((_, i) => i % STEP === OFFSET % STEP).slice(0, 55);
-log(`Total: ${findings.length} — sampling every ${STEP}th (offset ${OFFSET}) → ${sample.length} entries`);
+// Normalize offset to [0, STEP) — if OFFSET >= STEP it wraps. Log when this occurs
+// so the operator knows the actual sampled offset.
+const effectiveOffset = OFFSET % STEP;
+if (effectiveOffset !== OFFSET) log(`[warn] --offset ${OFFSET} normalized to ${effectiveOffset} for step=${STEP}`);
+const sample = findings.filter((_, i) => i % STEP === effectiveOffset).slice(0, 55);
+log(`Total: ${findings.length} — sampling every ${STEP}th (offset ${effectiveOffset}) → ${sample.length} entries`);
 if (DRY_RUN) log('DRY RUN');
 
 // Initialize SDK for scraping
@@ -127,11 +131,15 @@ await initResearchSDK({
 });
 log('SDK initialized');
 
+// Wrap all SDK-dependent work in try/finally so the SDK is always shut down cleanly.
+let results: any[] = [];
+try {
+
 // Scrape articles
 log(`Scraping ${sample.length} articles...`);
-const scrapeResults = await mapWithConcurrency(sample, SCRAPE_CONCURRENCY, async (f) => {
+const scrapeResults = await mapWithConcurrency(sample, SCRAPE_CONCURRENCY, async (f, idx) => {
   const article = await scrapeOne(f.url);
-  log(`  [${sample.indexOf(f)+1}/${sample.length}] ${f.domain} — ${article ? article.length + ' chars' : 'unavail'}`);
+  log(`  [${idx + 1}/${sample.length}] ${f.domain} — ${article ? article.length + ' chars' : 'unavail'}`);
   return { ...f, article };
 });
 const items = scrapeResults.map((r, i) => r.ok ? r.value : { ...sample[i]!, article: null });
@@ -149,16 +157,20 @@ const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
 writeFileSync('/tmp/wos_sample_audit_raw.txt', rawResponse);
 log(`DeepSeek responded (${rawResponse.length} chars) — parsing...`);
 
-let results: any[] = [];
 try {
   const m = rawResponse.match(/\[[\s\S]*\]/);
   results = JSON.parse(m ? m[0] : rawResponse.trim());
 } catch (e) {
   log(`Parse error: ${String(e).slice(0, 100)}`);
   log(`Raw excerpt: ${rawResponse.slice(0, 500)}`);
-  await shutdownResearchSDK();
-  process.exit(1);
+  process.exitCode = 1;
 }
+
+} finally {
+  await shutdownResearchSDK();
+}
+
+if (process.exitCode === 1) { log('Exiting due to parse error.'); process.exit(1); }
 
 // Report
 const removes = results.filter(r => r.overall === 'REMOVE');
@@ -225,5 +237,4 @@ if (!DRY_RUN && removes.length > 0) {
   log(`Applied: removed ${removes.length} entries + tombstoned URLs`);
 }
 
-await shutdownResearchSDK();
 log('Done.');

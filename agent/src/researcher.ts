@@ -234,14 +234,35 @@ async function extractFindings(
       if (!existsSync(failureDir)) mkdirSync(failureDir, { recursive: true });
       writeFileSync(join(failureDir, `extraction-failure-${categoryKey}-${Date.now()}.txt`), text, 'utf-8');
     } catch { /* best effort */ }
-    // Best-effort recovery of just the findings array.
-    const m = text.match(/"findings"\s*:\s*(\[[\s\S]*?\])/);
-    if (m && m[1]) {
-      try {
-        const findings = safeParseJson<RawFinding[]>(m[1]);
-        log(`  [pi] recovered ${findings.length} findings from malformed JSON`);
-        return { findings, queries: [] };
-      } catch { /* fall through */ }
+    // Best-effort recovery: locate the "findings" array using bracket-counting so
+    // a `]` inside a whyBad value doesn't truncate the array (the non-greedy `*?`
+    // regex has that flaw). Feed the extracted array text to safeParseJson which
+    // handles trailing commas and other LLM noise.
+    const findingsKey = text.indexOf('"findings"');
+    if (findingsKey !== -1) {
+      const arrStart = text.indexOf('[', findingsKey);
+      if (arrStart !== -1) {
+        let depth = 0;
+        let arrEnd = -1;
+        let inStr = false;
+        let esc = false;
+        for (let k = arrStart; k < text.length; k++) {
+          const ch = text[k]!;
+          if (esc) { esc = false; continue; }
+          if (ch === '\\' && inStr) { esc = true; continue; }
+          if (ch === '"') { inStr = !inStr; continue; }
+          if (inStr) continue;
+          if (ch === '[') depth++;
+          else if (ch === ']') { depth--; if (depth === 0) { arrEnd = k; break; } }
+        }
+        if (arrEnd !== -1) {
+          try {
+            const findings = safeParseJson<RawFinding[]>(text.slice(arrStart, arrEnd + 1));
+            log(`  [pi] recovered ${findings.length} findings from malformed JSON`);
+            return { findings, queries: [] };
+          } catch { /* fall through */ }
+        }
+      }
     }
     return { findings: [], queries: [] };
   }
