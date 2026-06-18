@@ -1,31 +1,101 @@
 {
-  "lastRun": "2026-06-18T04:28:15.822Z",
+  "lastRun": "2026-06-18T04:47:00.163Z",
   "categoryIndex": 0,
-  "seenUrls": [
-    "climate",
-    "corruption",
-    "current_affairs",
-    "democracy",
-    "disability",
-    "economics",
-    "gender",
-    "health",
-    "healthcare",
-    "https://www.defensenews.com/opinion/2025/04/28/for-nuclear-deterrence-us-policymakers-must-rely-on-facts-not-hype/",
-    "https://www.numberanalytics.com/blog/media-framing-in-labor",
-    "https://www.ojp.gov/ncjrs/virtual-library/abstracts/weighing-watchman-evaluating-costs-and-benefits-outsourcing",
-    "https://www.sciencedirect.com/science/article/pii/S0016236125030017",
-    "immigration",
-    "labor",
-    "media",
-    "oligarchy",
-    "policing",
-    "race",
-    "religion",
-    "spectacle",
-    "technology",
-    "war"
-  ],
+  "seenUrls": {
+    "global_legacy": [
+      "climate",
+      "corruption",
+      "current_affairs",
+      "democracy",
+      "disability",
+      "economics",
+      "gender",
+      "health",
+      "healthcare",
+      "https://www.defensenews.com/opinion/2025/04/28/for-nuclear-deterrence-us-policymakers-must-rely-on-facts-not-hype/",
+      "https://www.numberanalytics.com/blog/media-framing-in-labor",
+      "https://www.ojp.gov/ncjrs/virtual-library/abstracts/weighing-watchman-evaluating-costs-and-benefits-outsourcing",
+      "https://www.sciencedirect.com/science/article/pii/S0016236125030017",
+      "immigration",
+      "labor",
+      "media",
+      "oligarchy",
+      "policing",
+      "race",
+      "religion",
+      "spectacle",
+      "technology",
+      "war"
+    ],
+    "labor": [
+      "dol.gov/newsroom/releases/osec/osec20250701-0",
+      "nfib.com/news/analysis/minimum-wage-hikes-impact-small-business-most",
+      "taxfoundation.org/research/all/federal/social-security-reform-options",
+      "aei.org/articles/the-case-for-a-payroll-tax-cut",
+      "fee.org/articles/oscar-lewis-personal-responsibility-and-poverty"
+    ],
+    "economics": [
+      "itif.org/publications/2026/03/25/antitrust-undone-how-competition-enforcers-are-undermining-competition",
+      "cei.org/studies/ten-thousand-commandments-2025",
+      "husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses"
+    ],
+    "race": [],
+    "gender": [
+      "newsweek.com/gender-pay-gap-isnt-caused-sexism-its-result-womens-choices-opinion-1776749",
+      "waltroderick.com/why-the-bible-teaches-patriarchy"
+    ],
+    "immigration": [
+      "crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime",
+      "whitehouse.gov/presidential-actions/2025/01/protecting-the-american-people-against-invasion"
+    ],
+    "religion": [
+      "whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office",
+      "whitehouse.gov/presidential-actions/2025/02/eradicating-anti-christian-bias",
+      "whitehouse.gov/presidential-actions/2025/05/establishment-of-the-religious-liberty-commission"
+    ],
+    "climate": [
+      "energyanalytics.org/fossil-subsidies"
+    ],
+    "health": [
+      "newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html"
+    ],
+    "policing": [
+      "nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare",
+      "city-journal.org/article/broken-windows-policing-public-health-safety"
+    ],
+    "technology": [],
+    "disability": [
+      "theacorn.com/articles/ada-lawsuits-called-legal-extortion-become-increasingly-common"
+    ],
+    "war": [],
+    "spectacle": [
+      "labusinessjournal.com/commentary/oped-getting-businesses-in-the-zone-for-the-world-cup",
+      "crainsnewyork.com/opinion/commentary/cny-world-cup-economics-20260401"
+    ],
+    "current_affairs": [],
+    "corruption": [
+      "washingtonpost.com/opinions/2025/06/13/campaign-finance-reform-first-amendment",
+      "erths.com/explainer/corporate-lobbying-explained",
+      "cervitude.com/building-the-government-of-tomorrow-the-case-for-organizational-efficiency-and-private-sector-expertise",
+      "yournews.com/2025/12/19/5457253/op-ed-setting-the-record-straight-on-campaign-finance"
+    ],
+    "media": [
+      "cotton.senate.gov/news/op-eds/in-defense-of-qualified-immunity",
+      "americansforprosperity.org/press-release/new-study-reveals-how-overregulation-drags-down-economy-and-puts-affordable-energy-out-of-reach",
+      "uschamber.com/economy/the-case-preserving-competitive-corporate-tax-rate",
+      "uschamber.com/employment-law/data-shows-how-strikes-impact-workers-and-communities"
+    ],
+    "healthcare": [
+      "americanactionforum.org/insight/single-payer-health-care-wait-times-a-feature-not-a-bug",
+      "forbes.com/sites/sallypipes/2023/11/13/state-legislatures-cant-shake-their-single-payer-dreams-thats-a-problem",
+      "reviewjournal.com/opinion/commentary-sorry-but-single-payer-wont-fix-american-health-care-3614509"
+    ],
+    "oligarchy": [
+      "libertystandard.net/article/conservative-global-billionaire-increase-signals-economic-dynamism-opportunity-for-innovation-iicumz",
+      "whitehouse.gov/presidential-actions/2025/01/unleashing-prosperity-through-deregulation",
+      "taxfoundation.org/research/all/federal/corporate-tax-hikes-tcja-us-competitiveness"
+    ]
+  },
   "queryHistory": {
     "labor": {
       "rhetorical strategies used to justify deregulation of labor protections": "2026-06-15T23:18:09.398Z",
@@ -407,7 +477,22 @@
       "R Street gig economy independent contractor freedom": "2026-06-18T04:28:09.066Z",
       "Hoover Institution public sector unions reactionary force": "2026-06-18T04:28:09.066Z",
       "The Blaze $15 minimum wage flip burgers deserve": "2026-06-18T04:28:09.066Z",
-      "FEI.org culture of poverty Oscar Lewis personal responsibility": "2026-06-18T04:28:09.066Z"
+      "FEI.org culture of poverty Oscar Lewis personal responsibility": "2026-06-18T04:28:09.066Z",
+      "advocacy for deregulating labor markets to increase economic efficiency": "2026-06-18T04:46:51.820Z",
+      "argument that worker misclassification promotes innovation and flexibility": "2026-06-18T04:46:51.820Z",
+      "think tank papers defending reduced payroll taxes and worker benefits": "2026-06-18T04:46:51.820Z",
+      "critique of minimum wage laws as harmful to small business survival": "2026-06-18T04:46:51.820Z",
+      "justification for limiting union power to protect direct employee-employer relationships": "2026-06-18T04:46:51.820Z",
+      "rhetoric framing safety regulations as impediments to business growth": "2026-06-18T04:46:51.820Z",
+      "defending work requirements for welfare as promoting self-sufficiency and dignity": "2026-06-18T04:46:51.820Z",
+      "argument that youth employment fosters responsibility and early work ethics": "2026-06-18T04:46:51.820Z",
+      "corporate messaging on the benefits of non-unionized workforces": "2026-06-18T04:46:51.820Z",
+      "economic arguments for shifting from employment to contract-based labor models": "2026-06-18T04:46:51.820Z",
+      "U.S. Department of Labor deregulatory agenda 2025": "2026-06-18T04:46:51.820Z",
+      "NFIB minimum wage small business impact opinion": "2026-06-18T04:46:51.820Z",
+      "Tax Foundation social security reform payroll tax caps": "2026-06-18T04:46:51.820Z",
+      "AEI case for payroll tax cut": "2026-06-18T04:46:51.820Z",
+      "Oscar Lewis culture of poverty economic education": "2026-06-18T04:46:51.820Z"
     },
     "economics": {
       "arguments justifying tax cuts for wealthy \"pay for itself\" supply-side economics": "2026-06-15T23:18:09.401Z",
@@ -836,7 +921,31 @@
       "arguments justifying extreme inequality public resources private gain": "2026-06-18T04:28:09.100Z",
       "defense of consumer welfare standard antitrust ITIF": "2026-06-18T04:28:09.100Z",
       "Competitive Enterprise Institute regulatory costs 2025": "2026-06-18T04:28:09.100Z",
-      "James Madison Institute Vance Ginn antitrust overreach capitalism": "2026-06-18T04:28:09.100Z"
+      "James Madison Institute Vance Ginn antitrust overreach capitalism": "2026-06-18T04:28:09.100Z",
+      "justifying estate tax repeal to protect family farms and small business continuity": "2026-06-18T04:46:51.843Z",
+      "economic benefits of high concentration of wealth and capital accumulation arguments": "2026-06-18T04:46:51.843Z",
+      "defending corporate subsidies as vital for maintaining domestic industrial base": "2026-06-18T04:46:51.843Z",
+      "the role of billionaire philanthropy as a substitute for government social spending arguments": "2026-06-18T04:46:51.843Z",
+      "why market-driven resource allocation is superior to wealth redistribution models": "2026-06-18T04:46:51.843Z",
+      "defending private equity efficiency and capital restructuring in distressed sectors": "2026-06-18T04:46:51.843Z",
+      "arguments for deregulation to promote entrepreneurial risk taking and market dynamism": "2026-06-18T04:46:51.843Z",
+      "the moral case for protecting private property rights against progressive taxation": "2026-06-18T04:46:51.843Z",
+      "framing shareholder primacy as the essential driver of economic value and productivity": "2026-06-18T04:46:51.843Z",
+      "justifying large scale financial institutional stability measures and systemic importance arguments": "2026-06-18T04:46:51.843Z",
+      "justifying estate tax repeal family farms small business continuity": "2026-06-18T04:46:51.843Z",
+      "defending corporate subsidies for domestic industrial base arguments": "2026-06-18T04:46:51.843Z",
+      "economic benefits of capital accumulation and wealth concentration op-eds": "2026-06-18T04:46:51.843Z",
+      "defending private equity efficiency in distressed industries arguments": "2026-06-18T04:46:51.843Z",
+      "moral case for private property rights against progressive taxation": "2026-06-18T04:46:51.843Z",
+      "why shareholder primacy drives economic productivity arguments": "2026-06-18T04:46:51.843Z",
+      "defending deregulation to encourage entrepreneurial risk taking": "2026-06-18T04:46:51.843Z",
+      "arguments for prioritizing capital formation over wealth redistribution": "2026-06-18T04:46:51.843Z",
+      "the case for billionaire philanthropy in lieu of state welfare": "2026-06-18T04:46:51.843Z",
+      "justifying systemic importance of large financial institutions for stability": "2026-06-18T04:46:51.843Z",
+      "arguments against estate tax family farms": "2026-06-18T04:46:51.843Z",
+      "share buybacks efficient capital allocation": "2026-06-18T04:46:51.843Z",
+      "ITIF antitrust consumer welfare standard": "2026-06-18T04:46:51.843Z",
+      "Competitive Enterprise Institute regulation hidden tax": "2026-06-18T04:46:51.843Z"
     },
     "race": {
       "arguments framing DEI as reverse discrimination and colorblindness strategies": "2026-06-15T23:18:09.659Z",
@@ -1210,7 +1319,30 @@
       "Executive Order Restoring Equality of Opportunity and Meritocracy disparate impact": "2026-06-18T04:28:10.244Z",
       "Executive Order Ending Radical Indoctrination in K-12 Schooling patriotic education": "2026-06-18T04:28:10.244Z",
       "Florida Department of Education African American History standards positive influences": "2026-06-18T04:28:10.244Z",
-      "The Positive Legacy of Empire Aporia Magazine Lipton Matthews colonialism": "2026-06-18T04:28:10.244Z"
+      "The Positive Legacy of Empire Aporia Magazine Lipton Matthews colonialism": "2026-06-18T04:28:10.244Z",
+      "arguments for meritocracy as the only fair way to organize society in 2025 2026": "2026-06-18T04:46:51.865Z",
+      "rhetoric describing racial justice as identity politics or wokeism in conservative media 2025 2026": "2026-06-18T04:46:51.865Z",
+      "justification for minimizing colonial atrocities in school curricula 2025 2026": "2026-06-18T04:46:51.865Z",
+      "framing immigration as a threat to cultural homogeneity and national identity 2025 2026": "2026-06-18T04:46:51.865Z",
+      "arguments for using cultural factors to explain socioeconomic disparities between races 2025 2026": "2026-06-18T04:46:51.865Z",
+      "white nationalist discourse on demographic change and replacement 2025 2026": "2026-06-18T04:46:51.865Z",
+      "how heritage foundations or similar think tanks frame DEI as harmful to excellence 2025 2026": "2026-06-18T04:46:51.865Z",
+      "rhetoric characterizing civil rights activism as chaos or lawlessness 2025 2026": "2026-06-18T04:46:51.865Z",
+      "defense of historical hierarchy and traditional social structures in modern political discourse": "2026-06-18T04:46:51.865Z",
+      "framing race-conscious policies as undermining individual achievement and character": "2026-06-18T04:46:51.865Z",
+      "rhetoric framing DEI as detrimental to academic excellence 2025 2026": "2026-06-18T04:46:51.865Z",
+      "arguments for preserving traditional western values against demographic shifts 2025 2026": "2026-06-18T04:46:51.865Z",
+      "justifying historical imperial governance through economic stability claims 2025 2026": "2026-06-18T04:46:51.865Z",
+      "framing racial equity programs as discriminatory against majority groups 2025 2026": "2026-06-18T04:46:51.865Z",
+      "rhetoric characterizing social justice movements as disruptive to public order 2025 2026": "2026-06-18T04:46:51.865Z",
+      "how conservative media portrays civil rights history as divisive 2025 2026": "2026-06-18T04:46:51.865Z",
+      "arguments prioritizing merit-based systems over race-conscious outcomes 2025 2026": "2026-06-18T04:46:51.865Z",
+      "framing immigration as a challenge to cultural cohesion 2025 2026": "2026-06-18T04:46:51.865Z",
+      "discourse regarding the 'neutrality' of colorblind policies in 2025 2026": "2026-06-18T04:46:51.865Z",
+      "restoring equality of opportunity and meritocracy executive order disparate impact": "2026-06-18T04:46:51.865Z",
+      "florida state academic standards social studies african american history": "2026-06-18T04:46:51.865Z",
+      "ending radical indoctrination k-12 schooling executive order": "2026-06-18T04:46:51.865Z",
+      "aporiumagazine positive legacy of empire lipton matthews": "2026-06-18T04:46:51.865Z"
     },
     "gender": {
       "mechanisms of normalizing misogyny and patriarchal power in media and online discourse": "2026-06-15T23:18:10.582Z",
@@ -1550,7 +1682,17 @@
       "\"Mechanisms of Normalization and Patriarchal Defense\"": "2026-06-18T04:28:10.275Z",
       "\"tradwife movement\" \"benevolent sexism\" manosphere": "2026-06-18T04:28:10.275Z",
       "\"Red Pill ideology\" \"hypergamy\" \"sexual marketplace\"": "2026-06-18T04:28:10.275Z",
-      "\"crisis of masculinity\" feminist threat": "2026-06-18T04:28:10.275Z"
+      "\"crisis of masculinity\" feminist threat": "2026-06-18T04:28:10.275Z",
+      "op-eds defending female submissiveness as essential for relationship stability": "2026-06-18T04:46:54.086Z",
+      "arguments claiming gender pay gap is due to personal lifestyle choices by women": "2026-06-18T04:46:54.086Z",
+      "rhetoric characterizing reproductive rights as a threat to social fabric": "2026-06-18T04:46:54.086Z",
+      "manosphere influencers discussing female biological necessity for male guidance": "2026-06-18T04:46:54.086Z",
+      "think tank papers arguing against women's workplace protections as economic burden": "2026-06-18T04:46:54.086Z",
+      "content framing domestic violence as a private family matter or consequence of female behavior": "2026-06-18T04:46:54.086Z",
+      "religious leaders arguing for patriarchal leadership in marriage as divine order": "2026-06-18T04:46:54.086Z",
+      "criticism of feminist legal reforms as undermining traditional family values": "2026-06-18T04:46:54.086Z",
+      "gender pay gap women's choices opinion": "2026-06-18T04:46:54.086Z",
+      "why the bible teaches patriarchy walt roderick": "2026-06-18T04:46:54.086Z"
     },
     "immigration": {
       "rhetorical analysis migration \"invasion\" \"replacement\" demographic alarmism": "2026-06-15T23:18:10.584Z",
@@ -1922,7 +2064,22 @@
       "linking undocumented presence to urban decay crime narratives 2025 2026": "2026-06-18T04:28:10.299Z",
       "economic arguments for limiting immigrant labor to protect native wages 2025 2026": "2026-06-18T04:28:10.299Z",
       "policy papers advocating for ending asylum rights for national security 2025 2026": "2026-06-18T04:28:10.299Z",
-      "Crime Prevention Research Center John Lott illegal immigrant crime New York": "2026-06-18T04:28:10.299Z"
+      "Crime Prevention Research Center John Lott illegal immigrant crime New York": "2026-06-18T04:28:10.299Z",
+      "rhetoric describing migrant arrivals as a hostile invasion 2025 2026": "2026-06-18T04:46:54.110Z",
+      "op-eds framing immigrant crime rates as a threat to public safety 2025 2026": "2026-06-18T04:46:54.110Z",
+      "arguments for mass deportation as a solution to national crisis 2025 2026": "2026-06-18T04:46:54.110Z",
+      "think tank reports justifying restriction of immigrant benefits 2025 2026": "2026-06-18T04:46:54.110Z",
+      "editorializing demographic changes as national decline or replacement 2025 2026": "2026-06-18T04:46:54.110Z",
+      "justification for increased border militarization and detention 2025 2026": "2026-06-18T04:46:54.110Z",
+      "narratives linking immigration to economic instability or wage depression 2025 2026": "2026-06-18T04:46:54.110Z",
+      "policy proposals for stripping legal protections from asylum seekers 2025 2026": "2026-06-18T04:46:54.110Z",
+      "arguments for mass deportation of undocumented immigrants 2025 2026": "2026-06-18T04:46:54.110Z",
+      "op-eds justifying border control as protecting American sovereignty 2025 2026": "2026-06-18T04:46:54.110Z",
+      "think tank papers on economic burden of undocumented immigration 2025 2026": "2026-06-18T04:46:54.110Z",
+      "rhetoric regarding the threat of illegal immigration to national identity 2025 2026": "2026-06-18T04:46:54.110Z",
+      "justifying stricter asylum requirements for national security 2025 2026": "2026-06-18T04:46:54.110Z",
+      "\"Protecting the American People Against Invasion\" executive order text": "2026-06-18T04:46:54.110Z",
+      "John Lott New York Post illegal immigrant crime op-ed": "2026-06-18T04:46:54.110Z"
     },
     "religion": {
       "White House Faith Office establishment presidential action 2025 analysis": "2026-06-15T23:18:10.587Z",
@@ -1979,7 +2136,7 @@
       "institutionalizing religious values in federal executive agencies 2025 2026": "2026-06-16T00:33:24.031Z",
       "using religious liberty litigation to challenge civil rights protections for LGBTQ+ individuals": "2026-06-16T00:33:24.031Z",
       "framing state-funded religious education as parental rights and school choice 2025 2026": "2026-06-16T00:33:24.031Z",
-      "White House Faith Office executive order 2025": "2026-06-16T22:20:17.552Z",
+      "White House Faith Office executive order 2025": "2026-06-18T04:46:54.133Z",
       "Religious Liberty Commission Trump 2025": "2026-06-16T00:33:24.031Z",
       "religious charter schools Oklahoma Guam": "2026-06-16T00:33:24.031Z",
       "Trump prayer public schools guidance": "2026-06-16T00:33:24.031Z",
@@ -2240,7 +2397,7 @@
       "protecting religious conscience in healthcare service provision arguments 2025 2026": "2026-06-16T22:20:17.552Z",
       "legal arguments for religious freedom as a priority for civil rights 2025 2026": "2026-06-16T22:20:17.552Z",
       "role of religious institutions in public governance white papers 2025 2026": "2026-06-16T22:20:17.552Z",
-      "Religious Liberty Commission executive order 2025": "2026-06-16T22:20:17.552Z",
+      "Religious Liberty Commission executive order 2025": "2026-06-18T04:46:54.133Z",
       "HHS conscience rights enforcement abortion referrals 2026": "2026-06-16T22:20:17.552Z",
       "\"religious liberty\" legal briefs justifying exemptions from anti-discrimination laws 2025 2026": "2026-06-18T03:51:16.119Z",
       "\"traditional values\" as a basis for public policy legislation 2025 2026": "2026-06-18T03:51:16.119Z",
@@ -2271,7 +2428,23 @@
       "religious conscience protections in public health and social services 2025 2026 advocacy": "2026-06-18T04:28:11.995Z",
       "Christian perspective legislate morality bible commands": "2026-06-18T04:28:11.995Z",
       "ERLC 2025 public policy agenda": "2026-06-18T04:28:11.995Z",
-      "expanding scope ministerial exception": "2026-06-18T04:28:11.995Z"
+      "expanding scope ministerial exception": "2026-06-18T04:28:11.995Z",
+      "arguments for \"religious liberty\" as a justification for non-discrimination exemptions 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"Christian liberty\" policy agenda 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"faith-based\" community development as a replacement for secular social services arguments": "2026-06-18T04:46:54.133Z",
+      "justifying religious involvement in public education 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"protecting religious freedom\" vs \"civil rights\" legal arguments 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"religious persecution\" framing in contemporary US political rhetoric 2025 2026": "2026-06-18T04:46:54.133Z",
+      "advocacy for religious exemptions in healthcare and reproductive rights 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"religious values\" in public school curricula advocacy 2025 2026": "2026-06-18T04:46:54.133Z",
+      "advocacy for \"religious exemptions\" from non-discrimination laws 2025 2026": "2026-06-18T04:46:54.133Z",
+      "arguments for \"religious liberty\" in public school curricula 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"faith-based\" initiatives replacing state social services arguments 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"Christian liberty\" and public policy 2025 2026": "2026-06-18T04:46:54.133Z",
+      "justifying religious values in public law 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"religious freedom\" as a defense for business non-compliance 2025 2026": "2026-06-18T04:46:54.133Z",
+      "\"protecting religious institutions\" from civil rights enforcement 2025 2026": "2026-06-18T04:46:54.133Z",
+      "Task Force to Eradicate Anti-Christian Bias DOJ": "2026-06-18T04:46:54.133Z"
     },
     "climate": {
       "strategies used to delay climate action greenwashing mechanisms": "2026-06-15T23:18:10.590Z",
@@ -2609,7 +2782,18 @@
       "economic impact of rapid decarbonization industry skepticism 2025 2026": "2026-06-18T04:28:12.026Z",
       "promoting \"technological optimism\" to delay climate policy 2025 2026": "2026-06-18T04:28:12.026Z",
       "Strategic Obstruction of Climate Action One Big Beautiful Bill Act OBBBA": "2026-06-18T04:28:12.026Z",
-      "carbon offset market net zero strategy corporate": "2026-06-18T04:28:12.026Z"
+      "carbon offset market net zero strategy corporate": "2026-06-18T04:28:12.026Z",
+      "arguments justifying continued fossil fuel extraction for global stability 2025 2026": "2026-06-18T04:46:55.094Z",
+      "op-eds defending gas expansion as essential for energy sovereignty 2025 2026": "2026-06-18T04:46:55.094Z",
+      "think tank briefs advocating for fossil fuel tax credits 2024 2025 2026": "2026-06-18T04:46:55.094Z",
+      "industry perspectives on the risks of rapid renewable energy deployment 2025 2026": "2026-06-18T04:46:55.094Z",
+      "corporate statements on the necessity of carbon capture to justify oil production 2025 2026": "2026-06-18T04:46:55.094Z",
+      "advocacy for maintaining hydrocarbon production to prevent inflation 2025 2026": "2026-06-18T04:46:55.094Z",
+      "editorial defending natural gas as a transition tool for economic growth 2025 2026": "2026-06-18T04:46:55.094Z",
+      "arguments against decarbonization policies based on grid reliability concerns 2025 2026": "2026-06-18T04:46:55.094Z",
+      "Strategic Obstruction of Climate Action tax benefits": "2026-06-18T04:46:55.094Z",
+      "Senate Finance Committee draft bill June 2025 oil gas tax benefits": "2026-06-18T04:46:55.094Z",
+      "One Big Beautiful Bill Act 2025 renewable energy tax credits": "2026-06-18T04:46:55.094Z"
     },
     "health": {
       "mechanisms of vaccine misinformation and conspiracy framing medical freedom deflection": "2026-06-15T23:18:10.593Z",
@@ -2617,7 +2801,7 @@
       "how health data misinterpretation creates vaccine fear narratives": "2026-06-15T23:18:10.593Z",
       "framing public health rules as tyranny and medical freedom as deflection research": "2026-06-15T23:18:10.593Z",
       "psychological tactics used to damage trust in health authorities": "2026-06-15T23:18:10.593Z",
-      "how vaccines AI globalist elites target humanity newstarget": "2026-06-15T23:18:10.593Z",
+      "how vaccines AI globalist elites target humanity newstarget": "2026-06-18T04:46:55.107Z",
       "depopulation agenda conspiracy vaccine AI": "2026-06-15T23:18:10.593Z",
       "NewsTarget vaccine globalist elites": "2026-06-15T23:18:10.593Z",
       "disinformation tactics eroding public trust in medical institutions research": "2026-06-16T00:05:53.095Z",
@@ -2957,7 +3141,22 @@
       "Strategies to Damage Public Health Trust": "2026-06-18T04:09:26.878Z",
       "how anti-vaccination groups misuse VAERS data": "2026-06-18T04:09:26.878Z",
       "wellness profiteering and detox narratives 2026": "2026-06-18T04:09:26.878Z",
-      "medical freedom vs public health bioethics": "2026-06-18T04:09:26.878Z"
+      "medical freedom vs public health bioethics": "2026-06-18T04:09:26.878Z",
+      "depopulation agenda vaccine conspiracy claims 2025 2026": "2026-06-18T04:46:55.107Z",
+      "misinterpretation of VAERS data for vaccine harm narratives 2025 2026": "2026-06-18T04:46:55.107Z",
+      "wellness profiteering detox products unproven claims 2026": "2026-06-18T04:46:55.107Z",
+      "medical freedom framing public health mandates tyranny op-eds": "2026-06-18T04:46:55.107Z",
+      "claims of mRNA vaccine causing 100 million deaths Denis Rancourt": "2026-06-18T04:46:55.107Z",
+      "how disinformation agents use AI to spread anti-vaccine claims": "2026-06-18T04:46:55.107Z",
+      "strategies to erode trust in public health authorities 2026": "2026-06-18T04:46:55.107Z",
+      "\"depopulation agenda\" vaccines globalists": "2026-06-18T04:46:55.107Z",
+      "\"Denis Rancourt\" vaccine deaths claims": "2026-06-18T04:46:55.107Z",
+      "\"Brian Hooker\" vaccine safety claims CHD": "2026-06-18T04:46:55.107Z",
+      "\"medical freedom\" vs \"public health\" rhetoric examples": "2026-06-18T04:46:55.107Z",
+      "\"detox\" protocols unproven medical claims wellness profiteering": "2026-06-18T04:46:55.107Z",
+      "\"Big Pharma\" conspiracy narratives 2025 2026": "2026-06-18T04:46:55.107Z",
+      "misuse of health databases for vaccine injury narratives": "2026-06-18T04:46:55.107Z",
+      "Strategies for Eroding Public Health Trust": "2026-06-18T04:46:55.107Z"
     },
     "democracy": {
       "framing of \"voter integrity\" laws as disenfranchisement mechanisms": "2026-06-15T23:18:10.595Z",
@@ -3681,7 +3880,18 @@
       "law and order political rhetoric protecting communities from crime": "2026-06-18T04:28:12.071Z",
       "justifying increased police presence in urban areas for public order": "2026-06-18T04:28:12.071Z",
       "Defense of Excessive State Power and Normalization of Carceral Systems report": "2026-06-18T04:28:12.071Z",
-      "City Journal Broken Windows policing public health safety": "2026-06-18T04:28:12.071Z"
+      "City Journal Broken Windows policing public health safety": "2026-06-18T04:46:55.120Z",
+      "opinion pieces defending officer immunity from civil liability 2025 2026": "2026-06-18T04:46:55.120Z",
+      "arguments for preserving qualified immunity to prevent officer hesitation": "2026-06-18T04:46:55.120Z",
+      "editorial justifying use of force in high-stress policing encounters": "2026-06-18T04:46:55.120Z",
+      "justifying prison labor as essential skill building for reentry": "2026-06-18T04:46:55.120Z",
+      "pro-privatization arguments for correctional facilities fiscal benefits 2025 2026": "2026-06-18T04:46:55.120Z",
+      "op-ed linking criminal justice reform to increased community disorder": "2026-06-18T04:46:55.120Z",
+      "defending increased police surveillance as essential for urban safety 2026": "2026-06-18T04:46:55.120Z",
+      "arguments for strict sentencing to deter violent crime 2025 2026": "2026-06-18T04:46:55.120Z",
+      "why police accountability measures hinder effective law enforcement": "2026-06-18T04:46:55.120Z",
+      "defense of broken windows policing in modern urban environments": "2026-06-18T04:46:55.120Z",
+      "National Police Association Qualified Immunity Act of 2025 support": "2026-06-18T04:46:55.120Z"
     },
     "technology": {
       "rhetorical strategies used by tech companies to normalize mass surveillance": "2026-06-15T23:18:11.370Z",
@@ -4032,7 +4242,15 @@
       "arguments that privacy protections are outdated in the age of big data and AI": "2026-06-18T04:28:12.088Z",
       "\"The Price of Privacy\" American Action Forum": "2026-06-18T04:28:12.088Z",
       "\"The Case for Private AI Governance\" The Regulatory Review": "2026-06-18T04:28:12.088Z",
-      "USC Annenberg Norman Lear Center social media harms individuals": "2026-06-18T04:28:12.088Z"
+      "USC Annenberg Norman Lear Center social media harms individuals": "2026-06-18T04:28:12.088Z",
+      "rhetoric justifying mass surveillance as a prerequisite for national security and public safety": "2026-06-18T04:46:55.133Z",
+      "arguments framing data privacy regulations as obstacles to economic competitiveness and technological leadership": "2026-06-18T04:46:55.133Z",
+      "industry defense of algorithmic decision-making as a way to reduce human bias and subjectivity": "2026-06-18T04:46:55.133Z",
+      "opinion pieces portraying AI safety regulations as stifling innovation and progress": "2026-06-18T04:46:55.133Z",
+      "how tech companies frame social media addiction as a matter of personal agency and digital literacy": "2026-06-18T04:46:55.133Z",
+      "justifying pervasive digital tracking as essential for personalized user experiences and seamless service delivery": "2026-06-18T04:46:55.133Z",
+      "think tank arguments promoting industry-led voluntary standards over government digital oversight": "2026-06-18T04:46:55.133Z",
+      "framing the inevitable expansion of biometrics and facial recognition as a technological certainty": "2026-06-18T04:46:55.133Z"
     },
     "disability": {
       "ADA website accessibility lawsuits \"shakedown\" \"legal extortion\" rhetoric": "2026-06-15T23:18:11.374Z",
@@ -4375,7 +4593,17 @@
       "industry perspective on website accessibility litigation \"rent-seeking\"": "2026-06-18T04:28:12.447Z",
       "Newt Gingrich op-ed Social Security Disability benefits reform capabilities": "2026-06-18T04:28:12.447Z",
       "National Review editorial bloated disability programs deficit": "2026-06-18T04:28:12.447Z",
-      "Stop ADA Lawsuits small business affordability compliance": "2026-06-18T04:28:12.447Z"
+      "Stop ADA Lawsuits small business affordability compliance": "2026-06-18T04:28:12.447Z",
+      "rhetoric regarding disability benefits as a drain on taxpayers": "2026-06-18T04:46:55.147Z",
+      "argument for disability-related cost-cutting in public education budgets": "2026-06-18T04:46:55.147Z",
+      "criticism of ADA compliance as a burden on economic growth": "2026-06-18T04:46:55.147Z",
+      "disability accommodation as a threat to workplace productivity and merit": "2026-06-18T04:46:55.147Z",
+      "framing disability as a lack of individual resilience or character": "2026-06-18T04:46:55.147Z",
+      "justifying the reduction of community-based disability support services": "2026-06-18T04:46:55.147Z",
+      "rhetoric labeling disability activists as opportunistic litigators": "2026-06-18T04:46:55.147Z",
+      "opinion pieces arguing against neurodiversity accommodations in competitive environments": "2026-06-18T04:46:55.147Z",
+      "Ventura County business owners ADA lawsuits shakedowns legal extortion": "2026-06-18T04:46:55.147Z",
+      "Newt Gingrich Social Security Disability benefits red tape employment": "2026-06-18T04:46:55.147Z"
     },
     "war": {
       "military-industrial complex revolving door influence on government policy research": "2026-06-15T23:18:11.377Z",
@@ -4706,7 +4934,17 @@
       "\"defense procurement\" \"national security\" necessity editorial": "2026-06-18T04:28:12.477Z",
       "\"arms sales\" \"strategic partnerships\" justification opinion": "2026-06-18T04:28:12.477Z",
       "counter-insurgency peacekeeping missions doctrine": "2026-06-18T04:28:12.477Z",
-      "tunnel warfare counter-insurgency tactics technology": "2026-06-18T04:28:12.477Z"
+      "tunnel warfare counter-insurgency tactics technology": "2026-06-18T04:28:12.477Z",
+      "defense industry \"economic engine\" domestic prosperity op-ed": "2026-06-18T04:46:55.160Z",
+      "\"unavoidable\" \"inevitable\" \"geopolitical reality\" military spending argument": "2026-06-18T04:46:55.160Z",
+      "\"collateral damage\" \"proportionality\" \"legitimate target\" military doctrine justifications": "2026-06-18T04:46:55.160Z",
+      "\"peace through strength\" Pentagon reform argument RealClearDefense": "2026-06-18T04:46:55.160Z",
+      "\"protecting democracy\" \"freedom of navigation\" military presence justification op-ed": "2026-06-18T04:46:55.160Z",
+      "\"security imperative\" \"existential threat\" military operations editorial": "2026-06-18T04:46:55.160Z",
+      "\"law enforcement\" \"tactical advantage\" \"officer safety\" military equipment use op-ed": "2026-06-18T04:46:55.160Z",
+      "\"human shields\" \"asymmetric warfare\" justifying civilian casualties argument": "2026-06-18T04:46:55.160Z",
+      "\"America's offshore fleet is a national security asset\" maritime executive": "2026-06-18T04:46:55.160Z",
+      "Aaron Smith Offshore Marine Service Association op-ed": "2026-06-18T04:46:55.160Z"
     },
     "spectacle": {
       "major sporting events June 2026": "2026-06-16T01:20:47.351Z",
@@ -4935,7 +5173,18 @@
       "who is hosting the major sporting events in June 2026": "2026-06-18T04:28:12.504Z",
       "Zerofox monthly geopolitical report June 2026": "2026-06-18T04:28:12.504Z",
       "2026 FIFA World Cup geopolitical risks framing": "2026-06-18T04:28:12.504Z",
-      "G7 summit June 2026 security protests": "2026-06-18T04:28:12.504Z"
+      "G7 summit June 2026 security protests": "2026-06-18T04:28:12.504Z",
+      "major global events happening June 2026": "2026-06-18T04:46:56.162Z",
+      "\"World Cup 2026\" economic benefits op-ed": "2026-06-18T04:46:56.162Z",
+      "\"World Cup 2026\" security measures justification": "2026-06-18T04:46:56.162Z",
+      "\"World Cup 2026\" host city urban development benefits": "2026-06-18T04:46:56.162Z",
+      "\"World Cup 2026\" unity and community pride articles": "2026-06-18T04:46:56.162Z",
+      "large scale music festivals June 2026 news": "2026-06-18T04:46:56.162Z",
+      "major entertainment festivals June 2026 coverage": "2026-06-18T04:46:56.162Z",
+      "commercial benefits of hosting mega sports events 2026": "2026-06-18T04:46:56.162Z",
+      "FIFA World Cup 2026 economic impact framing analysis": "2026-06-18T04:46:56.162Z",
+      "Bank of America Los Angeles business journal World Cup commentary": "2026-06-18T04:46:56.162Z",
+      "Vancouver Sun op-ed FIFA hosting risks short-term gain long-term pain": "2026-06-18T04:46:56.162Z"
     },
     "current_affairs": {
       "major breaking news stories June 15 2026": "2026-06-16T01:20:48.143Z",
@@ -5148,7 +5397,21 @@
       "current political controversies June 17 2026": "2026-06-18T04:28:12.521Z",
       "recent economic crises June 2026 news": "2026-06-18T04:28:12.521Z",
       "latest geopolitical tensions June 2026 headlines": "2026-06-18T04:28:12.521Z",
-      "\"essential\" OR \"necessary\" OR \"unavoidable\" opinion June 2026": "2026-06-18T04:28:12.521Z"
+      "\"essential\" OR \"necessary\" OR \"unavoidable\" opinion June 2026": "2026-06-18T04:28:12.521Z",
+      "breaking news June 17 2026 world events": "2026-06-18T04:46:56.188Z",
+      "\"opinion\" commentary \"sovereignty\" OR \"security\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"defense of\" OR \"justifying\" recent military action June 2026": "2026-06-18T04:46:56.188Z",
+      "\"essential for stability\" OR \"fiscal prudence\" op-ed June 2026": "2026-06-18T04:46:56.188Z",
+      "\"protecting rights\" OR \"parental choice\" legislation June 2026 commentary": "2026-06-18T04:46:56.188Z",
+      "\"unavoidable reality\" OR \"market correction\" policy discussion June 2026": "2026-06-18T04:46:56.188Z",
+      "current major global events June 17 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking news\" June 17 2026 live updates": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" editorial \"national security\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" opinion \"economic necessity\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" commentary \"inevitable\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" editorial \"stability\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" opinion \"common sense\" June 2026": "2026-06-18T04:46:56.188Z",
+      "\"breaking\" editorial \"freedom\" June 2026": "2026-06-18T04:46:56.188Z"
     },
     "corruption": {
       "arguments defending unlimited political spending as free speech Citizens United": "2026-06-16T15:40:11.188Z",
@@ -5404,7 +5667,18 @@
       "the role of business interests in ensuring effective governance opinion": "2026-06-18T04:28:14.383Z",
       "George F. Will campaign finance reform First Amendment Washington Post": "2026-06-18T04:28:14.383Z",
       "David Primo Jeffrey Milyo campaign finance trust in democracy research": "2026-06-18T04:28:14.383Z",
-      "veteran hiring public sector strategic advantage agencies": "2026-06-18T04:28:14.383Z"
+      "veteran hiring public sector strategic advantage agencies": "2026-06-18T04:28:14.383Z",
+      "defending political contribution limits as infringement on free expression op-ed": "2026-06-18T04:46:58.068Z",
+      "why corporate lobbying is essential for informed policymaking arguments": "2026-06-18T04:46:58.068Z",
+      "justifying industry experts in regulatory agency leadership positions": "2026-06-18T04:46:58.068Z",
+      "the constitutional necessity of anonymous political spending to protect dissent": "2026-06-18T04:46:58.068Z",
+      "critique of campaign finance reform as partisan interference": "2026-06-18T04:46:58.068Z",
+      "why private sector experience improves government agency efficiency": "2026-06-18T04:46:58.068Z",
+      "defending the role of special interest groups in a healthy democracy": "2026-06-18T04:46:58.068Z",
+      "the argument for deregulation through industry cooperation and expertise": "2026-06-18T04:46:58.068Z",
+      "corporate lobbying defense informed policymaking": "2026-06-18T04:46:58.068Z",
+      "campaign finance reform first amendment free speech arguments": "2026-06-18T04:46:58.068Z",
+      "private sector expertise government efficiency regulatory capture": "2026-06-18T04:46:58.068Z"
     },
     "media": {
       "mechanisms of media manufacturing consent and protecting corporate interests": "2026-06-16T15:40:11.196Z",
@@ -5694,7 +5968,21 @@
       "Keith Sonderling Washington Examiner gig economy opinion": "2026-06-18T04:28:15.768Z",
       "Instituto de Libertad Económica para Puerto Rico defense of billionaires article": "2026-06-18T04:28:15.768Z",
       "GTIPA Global Trade and Innovation Policy Alliance deregulation report": "2026-06-18T04:28:15.768Z",
-      "Richard Hanania unions cartels newsletter": "2026-06-18T04:28:15.768Z"
+      "Richard Hanania unions cartels newsletter": "2026-06-18T04:28:15.768Z",
+      "op-ed defending expansion of police immunity or qualified immunity as necessary for public safety": "2026-06-18T04:46:58.862Z",
+      "editorial arguing that environmental regulations are barriers to energy independence and prosperity": "2026-06-18T04:46:58.862Z",
+      "think tank report justifying privatization of social security or public pensions as modernizing service": "2026-06-18T04:46:58.862Z",
+      "news coverage framing pharmaceutical price increases as essential for innovation and R&D investment": "2026-06-18T04:46:58.862Z",
+      "opinion piece arguing that reducing corporate taxes is the only way to remain competitive in a global market": "2026-06-18T04:46:58.862Z",
+      "commentary framing austerity measures as a requirement for maintaining credit ratings and market stability": "2026-06-18T04:46:58.862Z",
+      "op-ed defending automated surveillance technology as a vital tool for community protection": "2026-06-18T04:46:58.862Z",
+      "editorial supporting the rollback of tenant protections as a way to encourage housing development": "2026-06-18T04:46:58.862Z",
+      "industry-funded reports claiming that carbon capture technology makes fossil fuels sustainable for the future": "2026-06-18T04:46:58.862Z",
+      "analysis framing labor strikes as disruptive to the economy and consumer interests rather than worker rights": "2026-06-18T04:46:58.862Z",
+      "Tom Cotton qualified immunity op-ed": "2026-06-18T04:46:58.862Z",
+      "Americans for Prosperity energy regulation study": "2026-06-18T04:46:58.862Z",
+      "US Chamber of Commerce corporate tax burden workers": "2026-06-18T04:46:58.862Z",
+      "US Chamber of Commerce strike economic impact analysis": "2026-06-18T04:46:58.862Z"
     },
     "healthcare": {
       "arguments defending for-profit healthcare vs single-payer \"socialized medicine\"": "2026-06-16T15:40:11.204Z",
@@ -5925,7 +6213,21 @@
       "criticisms of single payer healthcare efficiency and quality of care": "2026-06-18T04:28:15.790Z",
       "role of market competition in driving medical technological advancements": "2026-06-18T04:28:15.790Z",
       "how managed care improves patient safety and quality through network management": "2026-06-18T04:28:15.790Z",
-      "defending private healthcare as a driver of global medical innovation": "2026-06-18T04:28:15.790Z"
+      "defending private healthcare as a driver of global medical innovation": "2026-06-18T04:28:15.790Z",
+      "arguments against government drug price negotiations protecting innovation": "2026-06-18T04:46:59.466Z",
+      "why health insurance premiums are rising due to consumer demand and medical advancement": "2026-06-18T04:46:59.466Z",
+      "critique of single-payer healthcare wait times and quality of care op-ed": "2026-06-18T04:46:59.466Z",
+      "justifying medical debt as part of personal financial responsibility in healthcare": "2026-06-18T04:46:59.466Z",
+      "benefits of private insurance market competition in medical technology development": "2026-06-18T04:46:59.466Z",
+      "why universal healthcare would stifle the pharmaceutical industry and medical research": "2026-06-18T04:46:59.466Z",
+      "defending prior authorization as a tool for evidence-based clinical decision making": "2026-06-18T04:46:59.466Z",
+      "the importance of consumer choice in private health insurance markets op-ed": "2026-06-18T04:46:59.466Z",
+      "how market-based healthcare solutions drive medical progress and efficiency": "2026-06-18T04:46:59.466Z",
+      "conservative viewpoints on the dangers of socialized medicine in the US": "2026-06-18T04:46:59.466Z",
+      "Defending the For-Profit Healthcare System and Opposing Universal Care": "2026-06-18T04:46:59.466Z",
+      "Single-Payer Fearmongering and Wait Times": "2026-06-18T04:46:59.466Z",
+      "Market-Based Solutions and Economic Realism": "2026-06-18T04:46:59.466Z",
+      "Critical Analysis of Framing": "2026-06-18T04:46:59.466Z"
     },
     "oligarchy": {
       "rhetoric normalizing billionaire influence \"job creators\" \"trickle-down\"": "2026-06-16T15:40:11.211Z",
@@ -6158,7 +6460,21 @@
       "\"economic stability\" requires limiting populist influence op-ed": "2026-06-18T04:28:15.809Z",
       "\"merit-based\" wealth distribution arguments Forbes editorial": "2026-06-18T04:28:15.809Z",
       "how americas most generous philanthropists are giving big bridgespan": "2026-06-18T04:28:15.809Z",
-      "the power of strategic philanthropy how high net worth giving shapes global progress": "2026-06-18T04:28:15.809Z"
+      "the power of strategic philanthropy how high net worth giving shapes global progress": "2026-06-18T04:28:15.809Z",
+      "op-ed defending deregulation as way to ensure prosperity": "2026-06-18T04:47:00.143Z",
+      "\"economic dynamism\" importance of high net worth individuals editorial": "2026-06-18T04:47:00.143Z",
+      "why \"entrepreneurial spirit\" justifies wealth inequality op-ed": "2026-06-18T04:47:00.143Z",
+      "\"supply-side\" economics benefits for all society editorial": "2026-06-18T04:47:00.143Z",
+      "defending private interest in public infrastructure privatization op-ed": "2026-06-18T04:47:00.143Z",
+      "\"competitiveness\" argument for lowering corporate taxes editorial": "2026-06-18T04:47:00.143Z",
+      "\"orderly\" market processes vs \"unpredictable\" democratic intervention op-ed": "2026-06-18T04:47:00.143Z",
+      "\"charitable leadership\" role of billionaires in solving global issues op-ed": "2026-06-18T04:47:00.143Z",
+      "why \"innovation-led growth\" requires minimal regulation editorial": "2026-06-18T04:47:00.143Z",
+      "protecting \"property rights\" from \"populist\" redistribution arguments": "2026-06-18T04:47:00.143Z",
+      "normalizing concentrated wealth and power strategies": "2026-06-18T04:47:00.143Z",
+      "economic dynamism billionaire wealth regulation": "2026-06-18T04:47:00.143Z",
+      "deregulation as prerequisite for prosperity executive orders": "2026-06-18T04:47:00.143Z",
+      "corporate competitiveness tax policy think tank arguments": "2026-06-18T04:47:00.143Z"
     }
   }
 }
