@@ -12,7 +12,14 @@
 #     starts into a near-OOM condition.
 #   - Verbose SDK debug logging stays OFF (set WOS_PI_DEBUG=1 only when diagnosing).
 #
-# Usage: bash scale-loop.sh [target] [max_rounds] [concurrency] [min_avail_mb]
+# MAINTENANCE AUDIT: every AUDIT_INTERVAL rounds (default 5), a sample audit runs
+#   on the existing corpus. This catches directional failures and quote fabrications
+#   in entries added by earlier rounds before standards fully stabilized. The audit
+#   samples ~25 entries, scrapes them, and runs DeepSeek verification. Removals are
+#   applied automatically and the result is logged. Runtime ~15-20min per audit.
+#   Set AUDIT_INTERVAL=0 to disable maintenance audits.
+#
+# Usage: bash scale-loop.sh [target] [max_rounds] [concurrency] [min_avail_mb] [audit_interval]
 set -u
 cd "$(dirname "$0")"
 
@@ -20,12 +27,13 @@ TARGET="${1:-1500}"
 MAX_ROUNDS="${2:-300}"
 CONC="${3:-3}"
 MIN_AVAIL_MB="${4:-6000}"   # don't start a round unless this many MB are available
+AUDIT_INTERVAL="${5:-5}"    # run maintenance audit every N rounds (0 = disabled)
 LOG="$(cd "$(dirname "$0")" && pwd)/scale-loop.log"   # on disk, *.log is gitignored
 
 count() { node -e "console.log(require('./data/findings.json').totalFindings||0)" 2>/dev/null || echo 0; }
 avail_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 999999; }
 
-echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC min_avail=${MIN_AVAIL_MB}MB" | tee -a "$LOG"
+echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC min_avail=${MIN_AVAIL_MB}MB audit_every=${AUDIT_INTERVAL}" | tee -a "$LOG"
 for i in $(seq 1 "$MAX_ROUNDS"); do
   C=$(count)
   echo "[loop] ── round $i — current findings=$C / $TARGET ──" | tee -a "$LOG"
@@ -45,6 +53,18 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   RC=$?
   echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s findings=$(count) avail=$(avail_mb)MB" | tee -a "$LOG"
   [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 1500s timeout guard" | tee -a "$LOG"
+
+  # Maintenance audit: sample and re-verify a slice of the existing corpus.
+  if [ "$AUDIT_INTERVAL" -gt 0 ] && [ $((i % AUDIT_INTERVAL)) -eq 0 ]; then
+    echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL) ──" | tee -a "$LOG"
+    MSTART=$(date +%s)
+    # --step=20 → sample ~20-25 entries from the corpus; no --dry-run so removals apply.
+    timeout 1200 npx tsx scripts/sample_audit.ts --step=20 >> "$LOG" 2>&1
+    MRC=$?
+    echo "[loop] maintenance audit exit=$MRC dur=$(( $(date +%s) - MSTART ))s findings=$(count)" | tee -a "$LOG"
+    [ "$MRC" -eq 124 ] && echo "[loop] WARNING maintenance audit hit 1200s timeout" | tee -a "$LOG"
+  fi
+
   sleep 5
 done
 echo "[loop] done $(date -u +%FT%TZ) final findings=$(count)" | tee -a "$LOG"

@@ -79,8 +79,9 @@ function printMenu(): void {
   console.log(`  ${CYAN}3${RESET})  View statistics & status`);
   console.log(`  ${CYAN}4${RESET})  View findings`);
   console.log(`  ${CYAN}5${RESET})  Reset category index to 0`);
-  console.log(`  ${CYAN}6${RESET})  Setup weekly cron job`);
-  console.log(`  ${CYAN}7${RESET})  Exit`);
+  console.log(`  ${CYAN}6${RESET})  Run maintenance audit (re-verify corpus sample)`);
+  console.log(`  ${CYAN}7${RESET})  Setup weekly cron job`);
+  console.log(`  ${CYAN}8${RESET})  Exit`);
   console.log();
 }
 
@@ -289,7 +290,42 @@ async function resetState(): Promise<void> {
   await pressEnter();
 }
 
-// ── Option 6: Setup cron ──────────────────────────────────────────────────────
+// ── Option 6: Maintenance audit ──────────────────────────────────────────────
+
+async function runMaintenanceAudit(): Promise<void> {
+  banner();
+  console.log(`${BOLD}${YELLOW}MAINTENANCE AUDIT${RESET}`);
+  divider();
+
+  const store = loadFindings();
+  console.log(`  Will sample ~25 entries from the current ${CYAN}${store.findings.length}${RESET} findings.`);
+  console.log(`  Scrapes each article, re-verifies with DeepSeek V4 Pro.`);
+  console.log(`  Directional failures and quote fabrications are removed automatically.`);
+  console.log(`  Runtime: ~15-20 minutes.`);
+  console.log();
+
+  const confirm = await question(`${RED}Run maintenance audit?${RESET} This costs API credits! (y/N): `);
+  if (confirm.toLowerCase() !== 'y') return;
+
+  divider();
+  console.log(`${DIM}Running sample_audit.ts --step=20 ... output will stream below:${RESET}\n`);
+
+  try {
+    const scriptPath = join(__dirname, '..', 'scripts', 'sample_audit.ts');
+    execSync(`npx tsx "${scriptPath}" --step=20`, {
+      cwd: join(__dirname, '..'),
+      stdio: 'inherit',
+      timeout: 1200000, // 20 min
+    });
+  } catch (err) {
+    const msg = String(err).split('\n')[0];
+    console.log(`\n${RED}Audit error: ${msg}${RESET}`);
+  }
+
+  await pressEnter();
+}
+
+// ── Option 7: Setup cron ──────────────────────────────────────────────────────
 
 async function setupCron(): Promise<void> {
   banner();
@@ -345,7 +381,7 @@ async function main() {
 
       printMenu();
 
-      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-7]: `)).trim();
+      const choice = (await question(`  ${BOLD}${GREEN}Select option${RESET} [1-8]: `)).trim();
 
       switch (choice) {
         case '1':
@@ -364,9 +400,12 @@ async function main() {
           await resetState();
           break;
         case '6':
-          await setupCron();
+          await runMaintenanceAudit();
           break;
         case '7':
+          await setupCron();
+          break;
+        case '8':
           console.log(`\n${GREEN}Goodbye!${RESET}\n`);
           const { shutdownResearch } = await import('./researcher.js');
           await shutdownResearch();

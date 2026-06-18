@@ -165,6 +165,8 @@ export interface RawFinding {
    *  (not just its subject matter). Required by the extraction prompt; optional
    *  here so legacy entries without it still load. */
   directionalBasis?: string;
+  /** Audit trail: most recent stage that reviewed this entry (reviewer then verifier). */
+  verificationLog?: string;
 }
 
 /**

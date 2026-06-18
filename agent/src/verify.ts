@@ -160,9 +160,9 @@ async function verifyBatch(
     const summary = (r.summary ?? '').trim();
     const whyBad = normalizeWhyBad(r.whyBad ?? '');
     if (summaryOk(summary) && whyBadOk(whyBad)) {
-      return { ...it.f, summary, whyBad };
+      return { ...it.f, summary, whyBad, verificationLog: `DeepSeek verify: article-grounded ${new Date().toISOString().slice(0, 10)}` };
     }
-    return it.f; // returned output failed a gate — keep the desk audit
+    return it.f; // returned output failed quality gates — keep the desk audit
   });
 }
 
