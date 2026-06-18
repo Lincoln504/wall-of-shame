@@ -254,7 +254,7 @@ async function mergeAndPersist(
   }
   saveState(state);
 
-  if (opts.commit && totalAdded > 0 && isGitRepo() && remoteExists() && hasDataChanges()) {
+  if (opts.commit && isGitRepo() && remoteExists() && hasDataChanges()) {
     commitAndPush(totalAdded, `${categories.length} categories`, log);
   }
 

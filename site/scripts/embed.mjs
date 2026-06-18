@@ -32,7 +32,9 @@ const BATCH = 16;
 env.allowLocalModels = false; // fetch from the HF hub
 
 function docText(f) {
-  return `${f.title}. ${f.summary} ${f.whyBad}`.replace(/\s+/g, ' ').trim();
+  const base = `${f.title}. ${f.summary} ${f.whyBad}`;
+  const extra = f.directionalBasis ? ` ${f.directionalBasis}` : '';
+  return (base + extra).replace(/\s+/g, ' ').trim();
 }
 
 async function main() {

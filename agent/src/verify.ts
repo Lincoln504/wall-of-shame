@@ -140,7 +140,7 @@ async function verifyBatch(
   try {
     const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: true });
     const text = await completeText(model, BATCH_GROUND_PROMPT, buildBatchUserText(items), {
-      reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true,
+      reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true, timeoutMs: 180000,
     });
     const parsed = safeParseJson<{ results?: BatchResult[] }>(text);
     const results = Array.isArray(parsed?.results) ? parsed.results : [];

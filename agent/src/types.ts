@@ -20,6 +20,8 @@ export const FindingSchema = Type.Object({
   severity: SeveritySchema,
   foundAt: Type.String(),
   researchQuery: Type.String(),
+  directionalBasis: Type.Optional(Type.String()),
+  verificationLog: Type.Optional(Type.String()),
 });
 
 export type Finding = Static<typeof FindingSchema>;
