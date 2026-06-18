@@ -212,6 +212,32 @@ Return ONLY a raw JSON array, one object per entry, in the same order as input:
   "corrected_severity": "(omit if not needed)"
 }, ...]`;
 
+/**
+ * Additional instructions appended to AUDIT_SYSTEM for the targeted resolution pass
+ * (resolve_flagged.ts). These override the standard FLAG_FOR_REVIEW trigger so the
+ * model commits to a verdict rather than re-flagging indefinitely.
+ */
+export const RESOLVE_ADDENDUM = `
+
+═══ RESOLUTION PASS — YOU MUST COMMIT TO A VERDICT ═══
+
+These entries were previously flagged as borderline. This is your targeted review. You MUST reach a definitive verdict.
+
+CHANGED RULES FOR THIS PASS:
+
+1. ARTICLE UNAVAILABLE is NOT sufficient reason to return FLAG_FOR_REVIEW. Instead:
+   - If the organization is a known advocacy source (think-tank, PR group, partisan publisher, industry lobby) AND the title and existing summary coherently describe advocacy content → vote KEEP or FIX_IN_PLACE.
+   - If the existing whyBad is grounded and substantive, treat it as your evidence base.
+   - REMOVE only if the existing summary/whyBad describes journalism, criticism, or research (the wrong direction), or if the title/org is clearly a news/academic outlet.
+
+2. FORMAT FAILURES ALONE (short summary, wrong point count) require FIX_IN_PLACE with corrected fields — write corrections grounded in the title, organization, and existing summary even when article text is UNAVAILABLE. This is explicitly allowed.
+
+3. If you write corrected_summary or corrected_whybad, your verdict MUST be FIX_IN_PLACE — never FLAG_FOR_REVIEW alongside corrections.
+
+4. FLAG_FOR_REVIEW is reserved ONLY for genuine directional uncertainty: the existing summary/whyBad describes something that might be journalism or criticism rather than advocacy, AND you cannot determine which without the article.
+
+5. The PRIOR AUDIT NOTE explains why this entry was previously flagged. If the reason is purely "article unavailable" or a format issue, that is NOT a reason to re-flag.`;
+
 export function buildAuditText(
   items: Array<{
     url: string;

@@ -31,7 +31,9 @@ import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-
 import { getOpenRouterModel, completeText, WORKHORSE_MODEL_ID } from '../src/models.js';
 import { mapWithConcurrency } from '../src/utils.js';
 import { canonicalizeUrl } from '../src/utils.js';
-import { AUDIT_SYSTEM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
+import { AUDIT_SYSTEM, RESOLVE_ADDENDUM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
+
+const RESOLVE_SYSTEM = AUDIT_SYSTEM + RESOLVE_ADDENDUM;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data');
@@ -180,7 +182,7 @@ try {
 
     let batchResults: AuditResult[] = [];
     try {
-      const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
+      const rawResponse = await completeText(model, RESOLVE_SYSTEM, userText, {
         reasoning: 'medium',
         temperature: 0.15,
         timeoutMs: 240_000, // 4 min for 5 entries
@@ -197,6 +199,13 @@ try {
     for (const result of batchResults) {
       const entry = batch.find(e => e.url === result.id);
       if (!entry) continue;
+
+      // Safety net: if the model provides corrected fields but still says FLAG_FOR_REVIEW,
+      // it has the evidence to fix — upgrade to FIX_IN_PLACE so corrections are applied.
+      if (result.overall === 'FLAG_FOR_REVIEW' && (result.corrected_summary || result.corrected_whybad)) {
+        result.overall = 'FIX_IN_PLACE';
+        log(`  ↑ upgraded FLAG_FOR_REVIEW→FIX_IN_PLACE (corrected fields present): ${result.id.slice(0, 50)}`);
+      }
 
       const verdict = result.overall;
       log(`  ${verdict === 'KEEP' ? '✓' : verdict === 'FIX_IN_PLACE' ? '✎' : verdict === 'REMOVE' ? '✗' : '⚑'} ${verdict.padEnd(14)} ${result.id.replace(/^https?:\/\//, '').slice(0, 50)}`);
