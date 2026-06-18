@@ -112,13 +112,14 @@ A piece DOES NOT QUALIFY (exposes or criticizes harm — OMIT):
 THE CONCLUSION TEST — the single most reliable filter: What does this piece CONCLUDE? If its conclusion is "this is bad, harmful, unjust, or should change" → OMIT (it is on the side of accountability). If its conclusion is "this is good, natural, necessary, or justified" → INCLUDE (it normalizes harm).
 
 ARTICLE TEXT GROUNDING — APPLY WHEN ARTICLE TEXT IS PROVIDED:
-0. DIRECTIONAL CHECK using the real article text: ask "whose side is this piece on?" If the article itself EXPOSES, CRITICIZES, or DOCUMENTS harm → set valid:false and OMIT immediately.
-1. VERIFY THE QUOTE: if the summary contains text in quotation marks, confirm those exact words appear verbatim in the ARTICLE TEXT. If not: either replace with a real verbatim excerpt, or rephrase as a paraphrase without quotes. Never retain an unconfirmed quote.
-2. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT; remove or soften anything the article does not support.
-3. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it argues the opposite of harmful framing, or the page is an error/unrelated page — set "valid": false.
+0. STUB / ERROR PAGE CHECK — BEFORE ANYTHING ELSE: Is the article text actually the article about the topic? If it is instead a "Page Not Found" / 404 page, an access-denied or login wall, a generic homepage, a subscribe prompt, or any content that clearly does not discuss the topic named in the title — OMIT this finding immediately. Do NOT fall back to the research context as a substitute. A finding whose live page is an error or stub cannot be verified and must be dropped, regardless of how compelling the research context looks.
+1. DIRECTIONAL CHECK using the real article text: ask "whose side is this piece on?" If the article itself EXPOSES, CRITICIZES, or DOCUMENTS harm → OMIT immediately.
+2. VERIFY THE QUOTE: if the summary contains text in quotation marks, confirm those exact words appear verbatim in the ARTICLE TEXT. If not: either replace with a real verbatim excerpt, or rephrase as a paraphrase without quotes. Never retain an unconfirmed quote.
+3. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT; remove or soften anything the article does not support.
+4. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it argues the opposite of harmful framing — OMIT.
 
 ARTICLE TEXT UNAVAILABLE — APPLY WHEN ARTICLE TEXT IS UNAVAILABLE:
-Apply the directional test to the DRAFT SUMMARY and DRAFT ANALYSIS. Default to OMIT — keep ONLY IF the draft clearly and unambiguously describes a piece that DEFENDS or NORMALIZES harm with a specific, non-circular argument. If there is any doubt — if the draft reads like journalism, research, or criticism of harm — OMIT.
+Apply the directional test to the DRAFT SUMMARY and DRAFT ANALYSIS. Default to OMIT — keep ONLY IF the draft clearly and unambiguously describes a piece that DEFENDS or NORMALIZES harm with a specific, non-circular argument AND the source is a recognizable advocacy outlet, think-tank, or partisan publisher (not an unknown or academic URL). If there is any doubt — if the draft reads like journalism, research, or criticism of harm, or the source is unfamiliar — OMIT.
 
 FOR EACH candidate, apply this workflow:
 1. SCOPE GATE — Apply the DIRECTIONAL TEST. MANDATORY: Can you complete "This piece CONCLUDES that [harmful thing] is [good/justified/necessary/natural]"? If you cannot write this sentence with a specific, non-circular claim → OMIT. Use this sentence as directionalBasis in output.
