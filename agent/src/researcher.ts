@@ -22,7 +22,7 @@ import { RESEARCH_MODEL_ID, OPENROUTER_PROVIDER, getOpenRouterModel, completeTex
 //      scrapes are bounded by SDK config (MAX_SCRAPE_BATCHES + context-gating) so
 //      the window is never overrun, rather than swapping in a larger model.
 //   2. EXTRACTION — gemma turns the raw report into structured findings using
-//      EXTRACTION_PROMPT (verbatim-quote requirement + the 4-part whyBad template
+//      EXTRACTION_PROMPT (verbatim-or-none quote rule + the 4-part whyBad template
 //      that produced ~150-word scathing analyses).
 //   3. REVIEW     — gemma (reviewer.ts) scope-gates and sharpens each finding.
 
