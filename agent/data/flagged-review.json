@@ -1,0 +1,5 @@
+{
+  "description": "Durable accumulator of audit entries that returned FLAG_FOR_REVIEW. Entries stay here until resolve_flagged.ts makes a confident decision (remove or keep). Entries left ambiguous after MAX_RESOLVE_ATTEMPTS are kept in the corpus (benefit of the doubt) and noted here for human review.",
+  "maxResolveAttempts": 3,
+  "flagged": []
+}

@@ -72,6 +72,19 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
     MRC=$?
     echo "[loop] maintenance audit exit=$MRC dur=$(( $(date +%s) - MSTART ))s findings=$(count)" | tee -a "$LOG"
     [ "$MRC" -eq 124 ] && echo "[loop] WARNING maintenance audit hit 1200s timeout" | tee -a "$LOG"
+
+    # Resolution pass: if flagged-review.json has unresolved entries, attempt resolution.
+    # Still-ambiguous entries after maxResolveAttempts are removed from the corpus.
+    PENDING=$(node -e "const f=require('./data/flagged-review.json'); console.log(f.flagged.filter(e=>e.resolveAttempts<(f.maxResolveAttempts||3)).length)" 2>/dev/null || echo 0)
+    EXHAUSTED=$(node -e "const f=require('./data/flagged-review.json'); const max=f.maxResolveAttempts||3; console.log(f.flagged.filter(e=>e.resolveAttempts>=max).length)" 2>/dev/null || echo 0)
+    if [ "$PENDING" -gt 0 ] || [ "$EXHAUSTED" -gt 0 ]; then
+      echo "[loop] ── flagged resolution (pending=$PENDING exhausted=$EXHAUSTED) ──" | tee -a "$LOG"
+      RSTART=$(date +%s)
+      timeout 900 npx tsx scripts/resolve_flagged.ts >> "$LOG" 2>&1
+      RRC=$?
+      echo "[loop] resolution exit=$RRC dur=$(( $(date +%s) - RSTART ))s findings=$(count)" | tee -a "$LOG"
+      [ "$RRC" -eq 124 ] && echo "[loop] WARNING resolution pass hit 900s timeout" | tee -a "$LOG"
+    fi
   fi
 
   sleep 5
