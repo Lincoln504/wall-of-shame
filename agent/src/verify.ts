@@ -169,7 +169,8 @@ async function verifyBatch(
 /** Scrape one finding's own article. Reuses _articleText from the reviewer stage if available. */
 async function scrapeOne(f: RawFinding, log: (m: string) => void): Promise<{ f: RawFinding; article: string | null }> {
   // Reuse article scraped by the reviewer stage — avoids double-fetching the same URL.
-  if (f._articleText && f._articleText.length >= MIN_ARTICLE_CHARS) {
+  // Guard: if the cached content is an error page, treat as unavailable and re-scrape.
+  if (f._articleText && f._articleText.length >= MIN_ARTICLE_CHARS && !isErrorOrBlockedPage(f._articleText)) {
     return { f, article: f._articleText.slice(0, MAX_ARTICLE_CHARS) };
   }
   try {
