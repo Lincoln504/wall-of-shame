@@ -29,8 +29,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
 import { getOpenRouterModel, completeText, WORKHORSE_MODEL_ID } from '../src/models.js';
-import { mapWithConcurrency } from '../src/utils.js';
-import { canonicalizeUrl } from '../src/utils.js';
+import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage } from '../src/utils.js';
 import { AUDIT_SYSTEM, RESOLVE_ADDENDUM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
 
 const RESOLVE_SYSTEM = AUDIT_SYSTEM + RESOLVE_ADDENDUM;
@@ -67,8 +66,9 @@ async function scrapeOne(url: string): Promise<string | null> {
     let res;
     try { res = await Promise.race([scrapeUrl(url), timeout]); }
     finally { if (timer) clearTimeout(timer); }
-    if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) return null;
-    return res.markdown.trim().slice(0, MAX_ARTICLE_CHARS);
+    const text = res.markdown?.trim() ?? '';
+    if (!res.success || text.length < MIN_ARTICLE_CHARS || isErrorOrBlockedPage(text)) return null;
+    return text.slice(0, MAX_ARTICLE_CHARS);
   } catch {
     return null;
   }

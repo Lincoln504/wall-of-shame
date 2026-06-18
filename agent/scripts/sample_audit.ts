@@ -28,8 +28,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
 import { getOpenRouterModel, completeText, VERIFY_MODEL_ID } from '../src/models.js';
-import { mapWithConcurrency } from '../src/utils.js';
-import { canonicalizeUrl } from '../src/utils.js';
+import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage } from '../src/utils.js';
 import { AUDIT_SYSTEM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -65,8 +64,9 @@ async function scrapeOne(url: string): Promise<string | null> {
     let res;
     try { res = await Promise.race([scrapeUrl(url), timeout]); }
     finally { if (timer) clearTimeout(timer); }
-    if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) return null;
-    return res.markdown.trim().slice(0, MAX_ARTICLE_CHARS);
+    const text = res.markdown?.trim() ?? '';
+    if (!res.success || text.length < MIN_ARTICLE_CHARS || isErrorOrBlockedPage(text)) return null;
+    return text.slice(0, MAX_ARTICLE_CHARS);
   } catch {
     return null;
   }
@@ -82,9 +82,9 @@ if (RECENT_ARG !== undefined) {
   const recentN = Math.max(0, parseInt(RECENT_ARG));
   const recentEntries = findings.slice(-recentN);
   const olderEntries = findings.slice(0, findings.length - recentN);
-  const olderSample = olderEntries.filter((_, i) => i % 10 === 4);
+  const olderSample = olderEntries.filter((_, i) => i % 7 === 3);
   sample = [...recentEntries, ...olderSample];
-  log(`Total: ${findings.length} — recent: ${recentEntries.length} (all) + older: ${olderSample.length} (10% of ${olderEntries.length}) = ${sample.length} entries`);
+  log(`Total: ${findings.length} — recent: ${recentEntries.length} (all) + older: ${olderSample.length} (~15% of ${olderEntries.length}) = ${sample.length} entries`);
 } else {
   const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
   const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;

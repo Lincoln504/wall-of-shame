@@ -21,7 +21,7 @@
 import { scrapeUrl } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
 import { VERIFY_MODEL_ID, getOpenRouterModel, completeText } from './models.js';
-import { safeParseJson, normalizeWhyBad, mapWithConcurrency } from './utils.js';
+import { safeParseJson, normalizeWhyBad, mapWithConcurrency, isErrorOrBlockedPage } from './utils.js';
 
 const MIN_ARTICLE_CHARS = 400;   // below this the scrape is too thin to ground on
 const MAX_ARTICLE_CHARS = 10000; // bound per-article context handed to the model
@@ -183,10 +183,11 @@ async function scrapeOne(f: RawFinding, log: (m: string) => void): Promise<{ f: 
     } finally {
       if (timer) clearTimeout(timer);
     }
-    if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) {
+    const text = res.markdown?.trim() ?? '';
+    if (!res.success || text.length < MIN_ARTICLE_CHARS || isErrorOrBlockedPage(text)) {
       return { f, article: null };
     }
-    return { f, article: res.markdown.trim().slice(0, MAX_ARTICLE_CHARS) };
+    return { f, article: text.slice(0, MAX_ARTICLE_CHARS) };
   } catch (err) {
     log(`    [verify] ${f.domain ?? f.url}: scrape error (${String(err).slice(0, 50)}) — standards-only`);
     return { f, article: null };

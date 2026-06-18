@@ -27,7 +27,7 @@ import { scrapeUrl } from '@lincoln504/pi-research';
 import { Type } from 'typebox';
 import { repairJson } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
-import { safeParseValidatedJson, mapWithConcurrency } from './utils.js';
+import { safeParseValidatedJson, mapWithConcurrency, isErrorOrBlockedPage } from './utils.js';
 import { getOpenRouterModel, completeText, pickModelForContext } from './models.js';
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
@@ -66,10 +66,11 @@ async function scrapeOneForReview(url: string): Promise<string | null> {
     } finally {
       if (timer) clearTimeout(timer);
     }
-    if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) {
+    const text = res.markdown?.trim() ?? '';
+    if (!res.success || text.length < MIN_ARTICLE_CHARS || isErrorOrBlockedPage(text)) {
       return null;
     }
-    return res.markdown.trim().slice(0, MAX_ARTICLE_CHARS);
+    return text.slice(0, MAX_ARTICLE_CHARS);
   } catch {
     return null;
   }

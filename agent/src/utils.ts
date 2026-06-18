@@ -237,6 +237,33 @@ export function normalizeWhyBad(input: unknown): string {
 }
 
 /**
+ * Detect scraped content that is clearly an error page rather than a real article.
+ * Returns true for 404s, access-denied, login walls, and generic error pages.
+ * Used by every scrapeOne() call in the pipeline so bad pages are treated as UNAVAILABLE.
+ */
+export function isErrorOrBlockedPage(text: string): boolean {
+  const t = text.toLowerCase();
+  return (
+    // Generic 404 / not-found patterns
+    /\bpage\s+not\s+found\b/.test(t) ||
+    /\b404\b.*\bnot\s+found\b/.test(t) ||
+    /\bnot\s+found\b.*\b404\b/.test(t) ||
+    /the page you (are|were) looking for/.test(t) ||
+    /this page (does not|doesn'?t) exist/.test(t) ||
+    /temporarily unavailable/.test(t) ||
+    /no longer (available|exist)/.test(t) ||
+    // Access denied / paywalled
+    /\baccess\s+denied\b/.test(t) ||
+    /\b403\s+forbidden\b/.test(t) ||
+    /(please\s+)?(log\s*in|sign\s+in)\s+to\s+(read|view|access|continue)/.test(t) ||
+    /subscribe\s+to\s+(read|view|access|continue)/.test(t) ||
+    // Server errors
+    /\b500\s+internal\s+server\s+error\b/.test(t) ||
+    /\bservice\s+unavailable\b/.test(t)
+  );
+}
+
+/**
  * Run an async mapper over `items` with a bounded number of concurrent workers.
  *
  * Results are returned in the original item order. Each item is settled
