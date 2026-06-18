@@ -116,11 +116,15 @@ whyBad field must:
 - Start with "1. " (required — names a specific claim from the piece)
 - Contain "2. " (required — names the manipulation tactic in everyday words AND defines it in the same sentence)
 - Contain "3. " (required — explains what the piece DOES to harm: sanitize/launder/justify/excuse/normalize/propagandize, plus mechanism and consequence)
+- May contain "4. External Context:" (optional — a concrete, well-established real-world fact that sharpens the harm; PASS only if substantive)
+- May contain "5. Conflict of interest:" (optional — documented specific funding or institutional stake; PASS only if substantive)
 - Be 150–280 words
 - NOT start with "Analysis:" and NOT be surrounded by brackets
 - Contain NO markdown (no **, no __, no backticks, no # headers)
 - Contain NO ALL-CAPS non-acronym words
-- End at the last substantive point — NO filler entries ("None," "N/A," "Not applicable," "No additional context")
+- FAIL if point 4 is present but does NOT begin with "External Context:" or "Conflict of interest:"
+- FAIL if point 5 is present but does NOT begin with "Conflict of interest:" or "Timeliness note:"
+- FAIL if any point beyond 3 is a filler ("None," "N/A," "Not applicable," "No additional context")
 
 BANNED vague-authority phrases (if present, whyBad FAILS the format check):
 "multiple news outlets reported," "studies show," "many experts agree," "research finds,"
@@ -162,7 +166,9 @@ Evaluate each entry on SEVEN dimensions:
 5. FORMAT: Does the entry meet all field standards above?
    Check: single-para summary, numbered whyBad (1./2./3. present), 150–280 words in whyBad,
    no markdown, no ALL-CAPS, no "Analysis:" label, no filler points, no banned vague-authority
-   phrases, no metadata leakage, no over-specific fabrications
+   phrases, no metadata leakage, no over-specific fabrications.
+   Optional point 4 ("External Context:") and point 5 ("Conflict of interest:" / "Timeliness note:") are VALID — do NOT fail entries for having them, so long as they are substantive.
+   FAIL only if: point 4+ is present AND does not start with one of the allowed labels, OR any point is a filler placeholder.
    PASS / FAIL
 
 6. CATEGORY: Is the entry in the correct category from the list above?
