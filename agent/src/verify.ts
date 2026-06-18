@@ -97,10 +97,10 @@ function buildBatchUserText(items: { f: RawFinding; article: string | null }[]):
   return `Verify the following ${items.length} entr${items.length === 1 ? 'y' : 'ies'} and return one result object per entry (echo each id).\n\n${blocks.join('\n\n')}`;
 }
 
-/** A grounded summary must still be a single paragraph with a quote. */
+/** A grounded summary must be a single paragraph (no bullets, no line-break lists). */
 function summaryOk(s: string): boolean {
   const t = (s || '').trim();
-  return t.length >= 80 && !/^-\s/.test(t) && !/\n\s*-\s/.test(t) && /["“”'’][^"“”'’]{3,}["“”'’]/.test(t);
+  return t.length >= 80 && !/^-\s/.test(t) && !/\n\s*-\s/.test(t);
 }
 /** A grounded analysis must still be the numbered breakdown. */
 function whyBadOk(w: string): boolean {
