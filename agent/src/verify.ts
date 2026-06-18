@@ -97,26 +97,31 @@ function buildBatchUserText(items: { f: RawFinding; article: string | null }[]):
   return `Verify the following ${items.length} entr${items.length === 1 ? 'y' : 'ies'} and return one result object per entry (echo each id).\n\n${blocks.join('\n\n')}`;
 }
 
+// Acronyms that legitimately appear in all-caps in entries — whitelist them out of
+// the all-caps shouting check. Keep sorted and expand as new acronyms surface.
+const ACRONYM_WHITELIST_RE = /\b(ACA|ADA|ADEC|AFL|ACLJ|AI|ALPR|APA|ATF|BLM|CBP|CATO|CDC|CEO|CFO|COO|CFPB|CRT|DACA|DEA|DEI|DHS|DOD|DOJ|DOL|DOT|DOGE|EEOC|EPA|ESA|ESG|EU|FAA|FBI|FCC|FDA|FEMA|FIFA|FMLA|FTC|GAO|GDP|GDPR|GOP|HHS|HIMARS|HIPAA|HUD|ICE|ICU|IMF|IRS|ITIF|JDAM|KKK|LGBT|LGBTQ|LIBOR|MAGA|MBS|MLRS|NAFTA|NATO|NBER|NFIB|NLRB|NLRA|NIH|NIST|NRA|NSA|OMB|OSHA|PAC|PPP|PR|RAND|REIT|RNC|DNC|SBA|SAVE|SEC|SEIU|SNAP|SSI|SSDI|STEM|SWIFT|TARP|TPP|TSA|UN|US|UK|USMCA|UBI|VA|VC|WTO|WHO)\b/g;
+
 /** A grounded summary must be a single prose paragraph — no bullets, no line breaks. */
 function summaryOk(s: string): boolean {
   const t = (s || '').trim();
   return (
     t.length >= 80 &&
-    !/\n/.test(t) &&                     // no line breaks (must be a single paragraph)
-    !/^-\s/.test(t) &&                   // no leading bullet
-    !/\n\s*-\s/.test(t) &&              // no interior bullets
-    !/\b[A-Z]{3,}\b/.test(t.replace(/\b(DOL|OSHA|EPA|FDA|FBI|CIA|ICE|DEI|ICU|CEO|CFO|COO|ESG|GDP|IRS|HHS|DOJ|SEC|FTC|FCC|FAA|TSA|DHS|DOD|NATO|WHO|UN)\b/g, ''))  // no all-caps words (with common acronym whitelist)
+    !/\n/.test(t) &&              // no line breaks (must be a single paragraph)
+    !/^-\s/.test(t) &&            // no leading bullet
+    !/\n\s*-\s/.test(t) &&        // no interior bullets
+    !/\b[A-Z]{3,}\b/.test(t.replace(ACRONYM_WHITELIST_RE, ''))  // no shouting all-caps
   );
 }
+
 /** A grounded analysis must be a numbered breakdown with at least 3 points. */
 function whyBadOk(w: string): boolean {
   const t = (w || '').trim();
   return (
-    /^1\.\s/.test(t) &&                 // starts with point 1
-    /\b2\.\s/.test(t) &&                // has point 2 (tactic)
-    /\b3\.\s/.test(t) &&                // has point 3 (real-world harm)
+    /^1\.\s/.test(t) &&           // starts with point 1
+    /\b2\.\s/.test(t) &&          // has point 2 (tactic)
+    /\b3\.\s/.test(t) &&          // has point 3 (real-world harm)
     t.length >= 150 &&
-    !/\b[A-Z]{3,}\b/.test(t.replace(/\b(DOL|OSHA|EPA|FDA|FBI|CIA|ICE|DEI|ICU|CEO|CFO|COO|ESG|GDP|IRS|HHS|DOJ|SEC|FTC|FCC|FAA|TSA|DHS|DOD|NATO|WHO|UN)\b/g, ''))  // no all-caps words
+    !/\b[A-Z]{3,}\b/.test(t.replace(ACRONYM_WHITELIST_RE, ''))  // no shouting all-caps
   );
 }
 

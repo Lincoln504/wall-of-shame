@@ -1,35 +1,37 @@
 /**
- * reviewer.ts — the audit/refinement stage (gemma, single completeSimple call).
+ * reviewer.ts — the audit/refinement stage (Qwen3.6, batched, article-grounded).
  *
- * Design: a fast desk audit, NOT an agentic re-research. The earlier design gave
- * the reviewer the pi-research `research` tool and had it re-fetch every URL —
- * 7–9 minutes PER finding, which made scaling to thousands of entries impossible.
+ * Design: a grounded desk audit. Each candidate finding gets its own article
+ * scraped via the SDK's two-layer scraper (fast HTTP → stealth-browser fallback)
+ * before review. The reviewer audits each batch against the real article text —
+ * not just the multi-source synthesis — which closes the directional
+ * misclassification risk that existed when the reviewer could only see the
+ * research-stage synthesis.
  *
- * Grounding is already supplied upstream:
- *   - the gemma research stage actually scraped the pages (via the pi-research SDK),
- *   - the gemma extraction stage (medium reasoning) required verbatim quotes drawn
- *     from that report and produced the rich multi-point whyBad,
- *   - the merge stage (findings.ts) does a live existence check (verifyUrl) before
- *     anything is written to the wall.
+ * Pipeline stage:
+ *   researcher → REVIEWER → verify (DeepSeek final grounding)
  *
- * So the reviewer's job (gemma, medium reasoning, NO web access) is a deterministic
- * desk audit: scope-gate (drop neutral reporting / off-topic), verify each
- * quote/claim is consistent with the supplied RESEARCH CONTEXT (no new network
- * calls), and PRESERVE-or-STRENGTHEN whyBad to the golden bar — never oversimplify.
+ * The reviewer's job (Qwen3.6, NO web access beyond scrapeUrl):
+ *   1. Scope-gate using the REAL article: drop neutral reporting / journalism /
+ *      academic research and anything that doesn't conclusively defend harm.
+ *   2. Verify every quote/claim against the article text.
+ *   3. Preserve-or-strengthen whyBad to the golden quality bar.
+ *   4. Set directionalBasis (one sentence: what the piece concludes).
+ *
+ * Batching: REVIEWER_BATCH_SIZE findings per call (default 8), each with its
+ * scraped article text. The verify stage (DeepSeek, 1M ctx) is a second, final
+ * grounding pass after this.
  */
 
+import { scrapeUrl } from '@lincoln504/pi-research';
 import { Type } from 'typebox';
 import { repairJson } from '@lincoln504/pi-research';
 import type { RawFinding } from './findings.js';
-import { safeParseValidatedJson } from './utils.js';
+import { safeParseValidatedJson, mapWithConcurrency } from './utils.js';
 import { getOpenRouterModel, completeText, pickModelForContext } from './models.js';
 
 // ── Reviewer schemas ─────────────────────────────────────────────────────────
 
-// Only the fields a finding genuinely cannot exist without are required. domain is
-// derived from the URL downstream (addFindings), severity defaults to 'medium', and
-// verificationLog is informational — making them required caused the reviewer to throw
-// and drop EVERY finding whenever gemma (reasoning-off) omitted one of them.
 const ReviewedFindingSchema = Type.Object({
   url: Type.String(),
   title: Type.String(),
@@ -44,9 +46,46 @@ const ReviewedFindingSchema = Type.Object({
 
 const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
 
-const REVIEW_PROMPT = `You are the Lead Auditor for the Wall of Shame database. Rigorously vet the candidate findings produced by the research team.
+// ── Scraping ─────────────────────────────────────────────────────────────────
 
-You do NOT have web access. Judge each candidate using ONLY the candidate data and the RESEARCH CONTEXT supplied below (the context is the report our researcher produced after actually scraping the pages).
+const REVIEWER_SCRAPE_CONCURRENCY = 4;
+const REVIEWER_SCRAPE_TIMEOUT_MS = Math.max(15000, Number(process.env['WOS_REVIEW_SCRAPE_TIMEOUT_MS']) || 45000);
+const REVIEWER_BATCH_SIZE = Math.max(1, Number(process.env['WOS_REVIEW_BATCH']) || 8);
+const MIN_ARTICLE_CHARS = 400;
+const MAX_ARTICLE_CHARS = 8000;
+
+async function scrapeOneForReview(url: string): Promise<string | null> {
+  try {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('scrape timeout')), REVIEWER_SCRAPE_TIMEOUT_MS);
+    });
+    let res;
+    try {
+      res = await Promise.race([scrapeUrl(url), timeout]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    if (!res.success || !res.markdown || res.markdown.trim().length < MIN_ARTICLE_CHARS) {
+      return null;
+    }
+    return res.markdown.trim().slice(0, MAX_ARTICLE_CHARS);
+  } catch {
+    return null;
+  }
+}
+
+function chunkFindings<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// ── Prompts ───────────────────────────────────────────────────────────────────
+
+const REVIEW_SYSTEM_PROMPT = `You are the Lead Auditor for the Wall of Shame database. Rigorously vet the candidate findings produced by the research team.
+
+You do NOT have open web access. For each candidate you receive the ACTUAL ARTICLE TEXT scraped from the URL. Use that text as the primary source for grounding and the directional test. If a candidate's ARTICLE TEXT is UNAVAILABLE, rely on the RESEARCH CONTEXT and the candidate data alone, applying default-drop for any ambiguity.
 
 MISSION: We only list content where the PIECE ITSELF — through its own argument, framing, or intent — works to sanitize, excuse, advance, launder, normalize, justify, or minimize harm. This spans a wide spectrum: from mild pieces that subtly treat exploitation as natural or inevitable, to moderate pieces that rationalize regressive policy through biased framing, to severe pieces that actively advocate for dehumanization, spread disinformation, or serve as propaganda for extremist ideology. The common thread is that the piece is on the side of power, not accountability. Neutral, factual reporting of a harmful event is NOT for this database — only content that is itself complicit in the harm, provides cover for it, or advances it.
 
@@ -66,75 +105,190 @@ A piece DOES NOT QUALIFY (exposes or criticizes harm — OMIT):
 - A Harvard or academic study DOCUMENTING how fossil fuel companies obstruct climate action
 - A progressive op-ed ARGUING AGAINST oligarchy, inequality, or exploitation (criticizing the problem ≠ the problem)
 - An article ANALYZING military euphemisms like "collateral damage" to EXPOSE how they hide civilian deaths
-- Brewminate or any outlet writing that "Trump uses dehumanizing language toward immigrants" — they are CRITICIZING that language
-- NationOfChange writing that a law strips due process — they are CRITICIZING that law
 - ANY university, policy center, or research institution report (Georgetown, Brookings, Pew, RAND, etc.) that CONCLUDES a policy is harmful or unjust — those are critics, not defenders
 - ANY article that REVEALS, EXPOSES, DOCUMENTS, or INVESTIGATES a harm, even if its subject matter matches one of our categories exactly
 
-THE CONCLUSION TEST — the single most reliable filter: What does this piece CONCLUDE? If its conclusion is "this is bad, harmful, unjust, or should change" → OMIT (it is on the side of accountability). If its conclusion is "this is good, natural, necessary, or justified" → INCLUDE (it normalizes harm). A research report finding that school vouchers mainly benefit the already-wealthy CONCLUDES that vouchers are a bad deal — it is a critic. An op-ed arguing vouchers expand parental freedom CONCLUDES vouchers are good — it is a defender.
+THE CONCLUSION TEST — the single most reliable filter: What does this piece CONCLUDE? If its conclusion is "this is bad, harmful, unjust, or should change" → OMIT (it is on the side of accountability). If its conclusion is "this is good, natural, necessary, or justified" → INCLUDE (it normalizes harm).
 
-CRITICAL FAILURE MODE: Do NOT include a piece just because its SUBJECT MATTER overlaps with a category. A piece ABOUT school vouchers funding religious schools does not qualify — only include it if the piece ARGUES that vouchers are good. A piece ABOUT police violence does not qualify — only include it if the piece ARGUES police violence is justified. Subject ≠ stance. You are looking for pieces that PERFORM the harm, not pieces that WITNESS or DOCUMENT it. The whyBad must describe harm committed by the PIECE ITSELF (i.e., "this piece argues X is justified") — not harm of the topic the piece covers.
+ARTICLE TEXT GROUNDING — APPLY WHEN ARTICLE TEXT IS PROVIDED:
+0. DIRECTIONAL CHECK using the real article text: ask "whose side is this piece on?" If the article itself EXPOSES, CRITICIZES, or DOCUMENTS harm → set valid:false and OMIT immediately.
+1. VERIFY THE QUOTE: if the summary contains text in quotation marks, confirm those exact words appear verbatim in the ARTICLE TEXT. If not: either replace with a real verbatim excerpt, or rephrase as a paraphrase without quotes. Never retain an unconfirmed quote.
+2. VERIFY THE CLAIMS: check every claim in the analysis against the ARTICLE TEXT; remove or soften anything the article does not support.
+3. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it argues the opposite of harmful framing, or the page is an error/unrelated page — set "valid": false.
 
-THE DIRECTIONAL TEST: Ask "whose side is this piece on?" A piece is for the Wall of Shame only if it is ON THE SIDE of those who exploit, dehumanize, or obstruct accountability. If the piece is on the side of victims, critics, journalists, or reformers, OMIT IT — even if the subject matter overlaps exactly with our categories. An article about billionaire exploitation is not harmful if it argues that billionaires are the problem, not the solution.
-
-INPUT may be either (A) a JSON array of candidate findings, or (B) a raw research report. If (B), first extract the qualifying findings, then audit them with the same rules.
+ARTICLE TEXT UNAVAILABLE — APPLY WHEN ARTICLE TEXT IS UNAVAILABLE:
+Apply the directional test to the DRAFT SUMMARY and DRAFT ANALYSIS. Default to OMIT — keep ONLY IF the draft clearly and unambiguously describes a piece that DEFENDS or NORMALIZES harm with a specific, non-circular argument. If there is any doubt — if the draft reads like journalism, research, or criticism of harm — OMIT.
 
 FOR EACH candidate, apply this workflow:
-1. SCOPE GATE — Apply the DIRECTIONAL TEST above. Ask: is this piece on the side of power (include) or on the side of accountability (omit)? OMIT it if it is neutral reporting, investigative journalism, or if it actually criticizes the harm. Also omit if it is off-topic for its category. MANDATORY CHECK: Can you complete this sentence — "This piece CONCLUDES that [the harmful thing] is [good / justified / necessary / natural]"? If you cannot complete this sentence with a specific, non-circular claim about what the piece itself argues, OMIT the finding. If it is present, use this sentence as the directionalBasis field in your output.
-2. GROUNDING CHECK — Confirm every claim and any quoted text in the summary and whyBad is consistent with the RESEARCH CONTEXT. If a claim is NOT supported by the context, OMIT the finding — never invent support or fabricate quotes. For any text currently inside quotation marks: if you can confirm those exact words appear in the RESEARCH CONTEXT as a direct excerpt from the source article, keep the quote; if you cannot confirm it, remove the quotation marks and rephrase as a paraphrase in your own words. A summary with no quotation marks is correct. A fabricated or unverifiable quote is grounds for dropping the entire finding. If the candidate has a quote you cannot verify, either replace it with a real one from the RESEARCH CONTEXT or strip the quotes and rephrase — never leave an unverified quote in place.
-3. PRESERVE-OR-STRENGTHEN whyBad (NEVER oversimplify, NEVER shorten a good analysis):
-   - PRESERVE: if the analysis is already rich (>=150 words, cites a verbatim quote, names specific fallacies, and supplies external context), KEEP IT AS-IS or only correct factual inaccuracies. Do not trim it.
-   - STRENGTHEN: if it is thin, generic, or under-developed, EXPAND it to the full bar below. Adding depth is the goal; collapsing it into two or three sentences is a FAILURE of the audit.
-   The bar — a scathing, evidence-grounded, plain-English breakdown of AT LEAST 150 words (aim 180–280). Begin the text directly with "1." — do NOT prepend an "Analysis:" label and do NOT wrap it in square brackets (the site adds its own "Analysis:" heading). Cover in order:
-   1. cite a specific claim from the piece; include a verbatim quote in quotation marks ONLY if you can confirm the exact wording appears in the RESEARCH CONTEXT — otherwise describe the claim in your own words without quotation marks;
-   2. describe the manipulation tactic in EVERYDAY words and explain what it means in the SAME sentence (e.g. "presents only two options when others exist", "stirs fear of an exaggerated threat", "quotes a sympathetic example to distract from the policy's real victims") — list MULTIPLE where present. Do NOT drop a bare coined/academic label (no lone "sympathetic-victim gambit", "race-to-the-bottom fallacy"); if any such term is used, define it in plain words immediately;
-   3. name precisely what the piece does — pick language from the full spectrum, from mild to severe: does it sanitize (make the harmful look clean and acceptable), launder (make the harmful look respectable or mainstream), excuse (frame the harmful as unavoidable), rationalize (construct logic to make the harmful seem reasonable), normalize (present the harmful as natural or inevitable), minimize (make the harmful look minor or overstated), propagandize (mislead people on behalf of a power interest), or outright advocate (champion the harmful as good and deserved)? Then explain concretely what real-world harm this enables or protects;
-   4. OPTIONAL — only if you genuinely have one: a sentence beginning "External Context:" with a real, well-established rebutting fact stated plainly in general terms (omit this point entirely if you have none);
-   5. OPTIONAL — only where it genuinely applies: a sentence beginning "Conflict of interest:" (author/publisher funding or institutional stake) and/or "Timeliness note:" (a prediction that aged poorly).
-   Write only as many numbered points as carry real substance (normally 3–5). NEVER pad to a fixed count and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — end at the last point of real substance, and DELETE any such filler you find in a candidate.
-   WRITE FOR A LAYMAN: hard-hitting, common-person English. No academic jargon or empty buzzwords. If a precise technical or legal term is unavoidable, explain it in plain words in the same sentence — and rewrite any existing jargon in the candidate (e.g. "predator-prey dynamic", "sympathetic-victim gambit") into a plain-language description the first-time reader understands.
-   NO FABRICATION / NO OVER-SPECIFICITY: external context must be genuinely well-established public knowledge, stated GENERALLY. Do NOT invent or include over-specific identifiers that are easily fabricated — no statute/section numbers (e.g. "18 U.S.C. § 611"), no specific case names, no precise statistics/percentages, no specific study titles or uncertain dates. Assert the fact generally ("long-standing federal law already prohibits this") instead of a precise citation. Name only extremely well-known institutions you are sure of (ADA, OSHA, Civil Rights Act). If a candidate's whyBad already contains such over-specific citations, GENERALIZE them. If unsure, argue from the piece's own logic.
-   NO VAGUE AUTHORITIES: never support a point by gesturing at unnamed sources. Strip and rewrite any "multiple news outlets reported", "studies show", "many experts agree", "research finds", "researchers found", "critics note", "reports indicate", or "it is widely reported" phrasing — replace it with a plainly-stated common fact in your own words, or an argument from the piece's own logic. If a candidate leans on such an appeal and you have no real fact to substitute, delete that claim.
-4. STRUCTURE & READABILITY — the "summary" MUST be a single flowing descriptive PARAGRAPH (3–5 sentences, no bullets, no line breaks); reformat any bulleted summary into a paragraph. If the summary contains a verbatim quote you were able to confirm against the RESEARCH CONTEXT, keep it. If a quoted string cannot be confirmed, remove the quotation marks and rephrase as a paraphrase. The "whyBad" MUST be the numbered breakdown beginning at "1."; renumber a prose analysis and DROP any filler placeholder point (e.g. "5. No additional context"). STRIP any verification/audit metadata that leaked into whyBad (e.g. "Audit VERIFIED", "URL accessible (200)", "Content confirmed", "PDF accessible") — that belongs in verificationLog, never in the analysis. PLAIN TEXT ONLY — no markdown: no asterisk bold or italics, no backtick code spans, no hash headers. NO ALL-CAPS words or labels in the output: write labels in sentence case ("External Context:", "Conflict of interest:", "Timeliness note:"), never shouting capitals, and rewrite any all-caps emphasis already in a candidate into normal case (ordinary acronyms like the ADA, OSHA, the EPA are fine).
-5. SEVERITY (calibrate honestly — do not inflate):
-   - high: the piece actively dehumanizes a group, outright argues for stripping rights or lives, serves as explicit propaganda for extremist ideology, provides cover for documented atrocities, or disseminates disinformation as a calculated tool of harm;
-   - medium: the piece sanitizes, rationalizes, or excuses regressive policy, exploitation, or cruelty through biased framing — it advances a harmful agenda or legitimizes an unjust status quo without rising to outright dehumanization or disinformation;
-   - low: the piece takes a one-sided position that subtly minimizes, excuses, or sugarcoats harm, but has some genuine legal, economic, or good-faith basis; prefer "low" over omitting when the piece genuinely qualifies but is mild.
+1. SCOPE GATE — Apply the DIRECTIONAL TEST. MANDATORY: Can you complete "This piece CONCLUDES that [harmful thing] is [good/justified/necessary/natural]"? If you cannot write this sentence with a specific, non-circular claim → OMIT. Use this sentence as directionalBasis in output.
+2. GROUNDING CHECK — Confirm every claim and quoted text is consistent with the ARTICLE TEXT (or RESEARCH CONTEXT when unavailable). Unverifiable quotes: remove marks and rephrase, or drop the finding.
+3. PRESERVE-OR-STRENGTHEN whyBad (NEVER shorten):
+   - PRESERVE if already rich (>=150 words, substantive claims, specific fallacies, numbered structure) — keep as-is or correct only factual inaccuracies.
+   - STRENGTHEN if thin — expand to the full bar below.
+   The bar: a numbered breakdown of AT LEAST 150 words (aim 180–280). Begin directly with "1." — no "Analysis:" label, no brackets. Cover in order:
+   1. cite a specific claim from the piece; verbatim quote ONLY if confirmed in ARTICLE TEXT — otherwise describe without quotes;
+   2. manipulation tactic in EVERYDAY words explained in the SAME sentence (e.g. "presents only two options when others exist") — list MULTIPLE where present; never drop a bare coined label without defining it;
+   3. what the piece DOES to harm — sanitize / launder / excuse / rationalize / normalize / minimize / propagandize / advocate — and the concrete real-world consequence;
+   4. OPTIONAL: "External Context:" with a real, well-established fact stated plainly in your own words — NO vague authority appeals ("studies show", "many experts agree", "multiple news outlets reported", "critics note", "research finds" — none of these); omit this point entirely if you have no genuine concrete fact;
+   5. OPTIONAL: "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply.
+   NEVER pad and NEVER write "No additional context", "None", "N/A" — end at the last real point.
+   WRITE FOR A LAYMAN: plain English, no academic jargon (define any technical term immediately). No markdown. No ALL-CAPS emphasis — write labels in sentence case (ordinary acronyms like ADA, OSHA, EPA are fine).
+   NO FABRICATION: no statute/section numbers, no invented case names, no precise statistics or study titles unless they literally appear in the ARTICLE TEXT. Argue from the piece's own logic or state common facts in general terms.
+4. STRUCTURE — "summary" MUST be a single flowing paragraph (3–5 sentences, no bullets, no line breaks). "whyBad" MUST be the numbered breakdown beginning at "1.". Strip any audit/verification metadata that leaked into whyBad. PLAIN TEXT ONLY.
+5. SEVERITY — calibrate honestly:
+   - high: actively dehumanizes a group, advocates for stripping rights, serves as explicit propaganda for extremist ideology, covers for documented atrocities, or spreads disinformation as a tool;
+   - medium: sanitizes, rationalizes, or excuses regressive policy/exploitation — advances a harmful agenda without rising to outright dehumanization;
+   - low: one-sided, subtly minimizes or excuses harm, but with some genuine good-faith basis; prefer "low" over omitting when the piece genuinely qualifies but is mild.
 
-OUTPUT FORMAT:
-Return ONLY a raw JSON array of the APPROVED findings (no markdown, no preamble). Omit anything that fails the gate; an empty array [] is a valid answer.
-Each entry must follow this schema exactly:
+OUTPUT: Return ONLY a raw JSON array of APPROVED findings (no markdown, no preamble). Omit anything that fails the gate; an empty array [] is valid.
+Each entry must include:
 {
   "url": "...",
   "title": "...",
   "domain": "...",
-  "summary": "A flowing 3-5 sentence paragraph in plain language. Include a verbatim quote ONLY if you confirmed the exact wording in the RESEARCH CONTEXT — otherwise paraphrase without quotes. Never fabricate a quoted string. Not a list.",
+  "summary": "Single flowing paragraph, no bullets, no line breaks. Verbatim quote only if confirmed in ARTICLE TEXT.",
   "category": "...",
-  "whyBad": "1. cite a specific claim from the piece; quote verbatim ONLY if you confirmed the exact wording in the RESEARCH CONTEXT — otherwise describe without quotes. 2. named fallacy/framing technique(s) in plain words. 3. concrete real-world harm. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. Conflict of interest / Timeliness note where they genuinely apply.) End at the last real point — never pad or write 'No additional context'. (>=150 words; preserve rich researcher analysis, never shorten it; no 'Analysis:' label, no brackets, no audit metadata)",
+  "whyBad": "1. specific claim. 2. tactic in plain words. 3. concrete harm. (optional 4. External Context: real fact only — no vague authority appeals. optional 5. Conflict/Timeliness.) End at last real point. No filler. >=150 words.",
   "severity": "low|medium|high",
-  "directionalBasis": "One sentence: what does this piece CONCLUDE that makes it a bad actor? E.g. 'Concludes that billionaire wealth is earned and deserved.' Write the sentence or OMIT the entry.",
-  "verificationLog": "Desk audit: preserved/strengthened — one-line reason and what was checked against the context."
+  "directionalBasis": "One sentence: what does this piece CONCLUDE that makes it a bad actor?",
+  "verificationLog": "Desk audit: article-grounded / unavailable-fallback — one-line reason."
+}`;
+
+const MAX_CONTEXT_CHARS = 24000;
+
+function buildBatchUserText(
+  items: { f: RawFinding; article: string | null }[],
+  ctx: string,
+): string {
+  const contextBlock = ctx
+    ? `RESEARCH CONTEXT (broader synthesis from the research team):\n${ctx.slice(0, MAX_CONTEXT_CHARS)}`
+    : '(no separate research context supplied)';
+
+  const entries = items.map((it, i) => {
+    const art = it.article ? it.article : 'UNAVAILABLE';
+    return [
+      `[ENTRY ${i + 1}]`,
+      `URL: ${it.f.url}`,
+      `TITLE: ${it.f.title}`,
+      `ARTICLE TEXT:\n${art}`,
+      `CANDIDATE:\n${JSON.stringify(it.f, null, 2)}`,
+    ].join('\n');
+  });
+
+  return `${contextBlock}\n\n${entries.join('\n\n---\n\n')}\n\nReturn ONLY the raw JSON array of approved findings.`;
 }
 
-Severity scale: low | medium | high ONLY.
+// ── Batch processor ───────────────────────────────────────────────────────────
 
-RESEARCH CONTEXT:
+async function reviewBatch(
+  items: { f: RawFinding; article: string | null }[],
+  ctx: string,
+  log: (m: string) => void,
+): Promise<RawFinding[]> {
+  const userText = buildBatchUserText(items, ctx);
+  const modelId = pickModelForContext(userText);
+  const model = await getOpenRouterModel(modelId, { reasoning: false });
+
+  try {
+    const text = await completeText(
+      model,
+      REVIEW_SYSTEM_PROMPT,
+      userText,
+      { reasoning: false, temperature: 0.7, topP: 0.8, topK: 20, minP: 0, presencePenalty: 1.5 },
+    );
+    if (!text.trim()) {
+      log('  [reviewer] empty response for batch — keeping desk audit for all');
+      return items.map(it => it.f);
+    }
+
+    let reviewed: RawFinding[];
+    try {
+      reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
+    } catch {
+      const repaired = repairJson(text);
+      if (repaired) {
+        reviewed = safeParseValidatedJson(ReviewerOutputSchema, repaired);
+      } else {
+        log(`  [reviewer] batch parse failed — keeping desk audit`);
+        return items.map(it => it.f);
+      }
+    }
+    return reviewed;
+  } catch (err) {
+    log(`  [reviewer] batch error (${String(err).slice(0, 60)}) — keeping desk audit for batch`);
+    return items.map(it => it.f);
+  }
+}
+
+// ── Raw-report path (fallback when extraction produces nothing) ───────────────
+
+const REVIEW_PROMPT_RAWREPORT = `${REVIEW_SYSTEM_PROMPT}
+
+RESEARCH CONTEXT (also the input to extract findings from):
 <CONTEXT>
 
+Extract any qualifying findings from the above, then audit them with the same rules.
 CANDIDATE FINDINGS:
 <FINDINGS_JSON>
 
 Return ONLY the raw JSON array.`;
 
-const MAX_CONTEXT_CHARS = 16000;
+const MAX_CONTEXT_CHARS_LEGACY = 16000;
+
+async function reviewRawReport(
+  report: string,
+  log: (m: string) => void,
+): Promise<RawFinding[]> {
+  log('  [reviewer] desk audit of raw report...');
+  const prompt = REVIEW_PROMPT_RAWREPORT
+    .replace('<CONTEXT>', report.slice(0, MAX_CONTEXT_CHARS_LEGACY))
+    .replace('<FINDINGS_JSON>', report.slice(0, MAX_CONTEXT_CHARS_LEGACY));
+
+  const modelId = pickModelForContext(report);
+  const model = await getOpenRouterModel(modelId, { reasoning: false });
+
+  try {
+    const text = await completeText(
+      model,
+      prompt,
+      'Extract and audit findings from the report above. Return ONLY the JSON array.',
+      { reasoning: false, temperature: 0.7, topP: 0.8, topK: 20, minP: 0, presencePenalty: 1.5 },
+    );
+    if (!text.trim()) return [];
+
+    let reviewed: RawFinding[];
+    try {
+      reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
+    } catch {
+      const repaired = repairJson(text);
+      if (repaired) {
+        reviewed = safeParseValidatedJson(ReviewerOutputSchema, repaired);
+        log('  [reviewer] repaired JSON from raw report path.');
+      } else {
+        throw new Error('JSON parse + repair both failed');
+      }
+    }
+    log(`  [reviewer] raw-report audit complete. ${reviewed.length} findings approved.`);
+    return reviewed;
+  } catch (err) {
+    log(`  [reviewer] raw-report AUDIT FAILED: ${String(err)}`);
+    throw err;
+  }
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Audit and sharpen candidate findings (or mine a raw report) with gemma.
+ * Audit and sharpen candidate findings (or mine a raw report) with Qwen3.6.
  *
- * @param input    a JSON-serializable array of candidate findings, OR a raw report string.
+ * When input is a RawFinding array: scrapes each article URL first, then processes
+ * in batches of REVIEWER_BATCH_SIZE, each batch getting its article texts inlined.
+ * When input is a raw report string: falls back to the single-call legacy path.
+ *
+ * @param input    JSON-serializable array of candidate findings, OR a raw report string.
  * @param log      logger.
- * @param context  optional raw research report used as desk-audit grounding when
- *                 `input` is a findings array (ignored when input is already the report).
+ * @param context  optional raw research report for desk-audit grounding when input is
+ *                 a findings array (ignored when input is already the report).
  */
 export async function runReview(
   input: RawFinding[] | string,
@@ -142,59 +296,37 @@ export async function runReview(
   context?: string,
 ): Promise<RawFinding[]> {
   const isRawReport = typeof input === 'string';
-  if (!isRawReport && input.length === 0) return [];
 
-  const countLabel = isRawReport ? 'raw report' : `${input.length} findings`;
-  log(`  [reviewer] desk audit of ${countLabel}...`);
-
-  const inputContent = isRawReport ? input : JSON.stringify(input, null, 2);
-  // When auditing a findings array, ground the audit in the research report.
-  // When the input already IS the report, it is its own context.
-  const ctxSource = isRawReport ? input : (context ?? '');
-  const ctx = ctxSource
-    ? ctxSource.slice(0, MAX_CONTEXT_CHARS)
-    : '(no separate context supplied — judge using the candidate data and your general knowledge; do not invent quotes.)';
-
-  const prompt = REVIEW_PROMPT
-    .replace('<CONTEXT>', ctx)
-    .replace('<FINDINGS_JSON>', inputContent);
-
-  // Context-aware routing: the candidates + report context are normally snippet-sized →
-  // the Qwen3.6-35B-A3B workhorse; an unusually large audit input escalates to DeepSeek
-  // V4 Pro (see models.ts).
-  const modelId = pickModelForContext(inputContent + (context ?? ''));
-  const model = await getOpenRouterModel(modelId, { reasoning: false });
-
-  try {
-    // Review returns a JSON ARRAY, so json-object mode is not used here (it requires an
-    // object root). NON-THINKING (instruct) mode like extraction: Qwen3.6-35B-A3B with
-    // thinking disabled, on Qwen's official instruct sampling profile (temp 0.7, top_p 0.80,
-    // top_k 20, min_p 0, presence_penalty 1.5 — vendor-recommended, and not below temp 0.6).
-    const text = await completeText(model, prompt, 'Audit the candidates above and return ONLY the JSON array.', { reasoning: false, temperature: 0.7, topP: 0.8, topK: 20, minP: 0, presencePenalty: 1.5 });
-    if (!text.trim()) {
-      log('  [reviewer] empty response');
-      return [];
-    }
-
-    let reviewed: RawFinding[];
-    try {
-      reviewed = safeParseValidatedJson(ReviewerOutputSchema, text);
-    } catch (parseErr) {
-      log(`  [reviewer] parse failed, attempting JSON repair...`);
-      const repaired = repairJson(text);
-      if (repaired) {
-        reviewed = safeParseValidatedJson(ReviewerOutputSchema, repaired);
-        log(`  [reviewer] repaired JSON successfully.`);
-      } else {
-        throw parseErr;
-      }
-    }
-
-    const originalCount = isRawReport ? '(from report)' : String(input.length);
-    log(`  [reviewer] audit complete. ${reviewed.length}/${originalCount} findings approved.`);
-    return reviewed;
-  } catch (err) {
-    log(`  [reviewer] AUDIT FAILED: ${String(err)}`);
-    throw err;
+  // Fallback path: no findings extracted → reviewer mines the raw report directly.
+  if (isRawReport) {
+    return reviewRawReport(input, log);
   }
+
+  if (input.length === 0) return [];
+
+  log(`  [reviewer] scraping ${input.length} article(s) before desk audit...`);
+
+  // Phase 1: scrape every candidate's article URL in parallel.
+  const scraped = await mapWithConcurrency(
+    input,
+    REVIEWER_SCRAPE_CONCURRENCY,
+    async (f) => ({ f, article: await scrapeOneForReview(f.url) }),
+  );
+  const items = scraped.map((r, i) => (r.ok ? r.value : { f: input[i]!, article: null as string | null }));
+
+  const scrapedCount = items.filter(it => it.article).length;
+  log(`  [reviewer] scraped ${scrapedCount}/${items.length} article(s); auditing in batches of ${REVIEWER_BATCH_SIZE}...`);
+
+  // Phase 2: review in batches, each batch = one Qwen3.6 call.
+  const ctx = context ?? '';
+  const batches = chunkFindings(items, REVIEWER_BATCH_SIZE);
+  const allReviewed: RawFinding[] = [];
+
+  for (const batch of batches) {
+    const batchReviewed = await reviewBatch(batch, ctx, log);
+    allReviewed.push(...batchReviewed);
+  }
+
+  log(`  [reviewer] audit complete. ${allReviewed.length}/${input.length} findings approved.`);
+  return allReviewed;
 }
