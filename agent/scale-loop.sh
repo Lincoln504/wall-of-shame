@@ -12,12 +12,12 @@
 #     starts into a near-OOM condition.
 #   - Verbose SDK debug logging stays OFF (set WOS_PI_DEBUG=1 only when diagnosing).
 #
-# MAINTENANCE AUDIT: every AUDIT_INTERVAL rounds (default 5), a sample audit runs
-#   on the existing corpus. This catches directional failures and quote fabrications
-#   in entries added by earlier rounds before standards fully stabilized. The audit
-#   samples ~25 entries, scrapes them, and runs DeepSeek verification. Removals are
-#   applied automatically and the result is logged. Runtime ~15-20min per audit.
-#   Set AUDIT_INTERVAL=0 to disable maintenance audits.
+# MAINTENANCE AUDIT: every AUDIT_INTERVAL rounds (default 3), a sample audit runs.
+#   Covers ALL entries added since the last audit ran (ADDED_SINCE_AUDIT accumulator)
+#   plus a 10% random sample of the older corpus. This guarantees no entry slips
+#   through the gap between audits regardless of how many rounds have passed.
+#   After each audit, the resolution pass (resolve_flagged.ts) processes ambiguous
+#   entries in batches of 5 using Qwen3.6. Set AUDIT_INTERVAL=0 to disable.
 #
 # Usage: bash scale-loop.sh [target] [max_rounds] [concurrency] [min_avail_mb] [audit_interval]
 set -u
@@ -34,6 +34,12 @@ count() { node -e "console.log(require('./data/findings.json').totalFindings||0)
 avail_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 999999; }
 
 echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC min_avail=${MIN_AVAIL_MB}MB audit_every=${AUDIT_INTERVAL}" | tee -a "$LOG"
+
+# Accumulates total new entries since the last audit ran. Passed as --recent=N so the
+# maintenance audit always covers EVERY entry added in the inter-audit gap, not just
+# the most recent round. Reset to 0 after each audit.
+ADDED_SINCE_AUDIT=0
+
 for i in $(seq 1 "$MAX_ROUNDS"); do
   C=$(count)
   echo "[loop] ── round $i — current findings=$C / $TARGET ──" | tee -a "$LOG"
@@ -60,18 +66,19 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   RC=$?
   AFTER=$(count)
   ADDED=$(( AFTER - BEFORE ))
-  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s added=$ADDED findings=$AFTER avail=$(avail_mb)MB" | tee -a "$LOG"
+  ADDED_SINCE_AUDIT=$(( ADDED_SINCE_AUDIT + ADDED ))
+  echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s added=$ADDED findings=$AFTER added_since_audit=$ADDED_SINCE_AUDIT avail=$(avail_mb)MB" | tee -a "$LOG"
   [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 3600s timeout guard" | tee -a "$LOG"
 
-  # Maintenance audit: audit all entries from this round + 10% random sample of the rest.
+  # Maintenance audit: covers ALL entries added since the last audit ran (not just this round).
   if [ "$AUDIT_INTERVAL" -gt 0 ] && [ $((i % AUDIT_INTERVAL)) -eq 0 ]; then
-    echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL, recent=$ADDED) ──" | tee -a "$LOG"
+    echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL, recent=$ADDED_SINCE_AUDIT) ──" | tee -a "$LOG"
     MSTART=$(date +%s)
-    # --recent=$ADDED: always audits every entry from this round + 10% of older corpus.
-    timeout 1200 npx tsx scripts/sample_audit.ts --recent="$ADDED" >> "$LOG" 2>&1
+    timeout 1200 npx tsx scripts/sample_audit.ts --recent="$ADDED_SINCE_AUDIT" >> "$LOG" 2>&1
     MRC=$?
     echo "[loop] maintenance audit exit=$MRC dur=$(( $(date +%s) - MSTART ))s findings=$(count)" | tee -a "$LOG"
     [ "$MRC" -eq 124 ] && echo "[loop] WARNING maintenance audit hit 1200s timeout" | tee -a "$LOG"
+    ADDED_SINCE_AUDIT=0  # reset — next audit window starts now
 
     # Resolution pass: if flagged-review.json has unresolved entries, attempt resolution.
     # Still-ambiguous entries after maxResolveAttempts are removed from the corpus.

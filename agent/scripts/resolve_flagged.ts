@@ -1,20 +1,22 @@
 /**
- * resolve_flagged.ts — Targeted resolution pass for ambiguous entries.
+ * resolve_flagged.ts — Batched resolution pass for ambiguous flagged entries.
  *
- * Reads data/flagged-review.json and attempts to resolve each entry with a
- * deeper scrape + DeepSeek analysis that has full context on WHY it was flagged.
+ * Reads data/flagged-review.json and resolves entries in batches of 5.
+ * Each batch: scrape all 5 articles (via pi-research scrapeUrl), then one
+ * Qwen3.6 call for the batch with full prior-flag context per entry.
+ *
+ * Model: Qwen3.6-35B (WORKHORSE_MODEL_ID) — same as the inline pipeline.
+ * DeepSeek is NOT used here; it is reserved for the large-scale batch layer 3
+ * passes (sample_audit.ts, full_audit.ts).
  *
  * Decision policy:
  *   KEEP or FIX_IN_PLACE → apply and remove from flagged-review.json
- *   REMOVE               → remove from corpus + tombstone + remove from flagged-review.json
- *   FLAG_FOR_REVIEW      → increment resolveAttempts; if attempts >= maxResolveAttempts → REMOVE
+ *   REMOVE               → remove from corpus + tombstone + clear from store
+ *   FLAG_FOR_REVIEW      → increment resolveAttempts
+ *   Exhausted (>= maxResolveAttempts) → REMOVED from corpus at start of run
  *
- * The "still ambiguous after max attempts → remove" rule enforces that only
- * verifiably qualifying entries remain in the corpus. If we cannot confirm
- * an entry meets criteria, it does not belong.
- *
- * Runs automatically from scale-loop.sh after each maintenance audit when
- * flagged-review.json has unresolved entries.
+ * "Still ambiguous after max attempts → remove" is strict: unverifiable entries
+ * do not stay in the corpus.
  *
  * Usage:
  *   cd agent && npx tsx scripts/resolve_flagged.ts [--dry-run] [--limit N]
@@ -26,7 +28,7 @@ import { readFileSync, writeFileSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
-import { getOpenRouterModel, completeText, VERIFY_MODEL_ID } from '../src/models.js';
+import { getOpenRouterModel, completeText, WORKHORSE_MODEL_ID } from '../src/models.js';
 import { mapWithConcurrency } from '../src/utils.js';
 import { canonicalizeUrl } from '../src/utils.js';
 import { AUDIT_SYSTEM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
@@ -40,9 +42,11 @@ const FLAGGED_PATH = join(DATA_DIR, 'flagged-review.json');
 const DRY_RUN = process.argv.includes('--dry-run');
 const LIMIT_ARG = process.argv.find(a => a.startsWith('--limit='))?.split('=')[1];
 const LIMIT = LIMIT_ARG ? parseInt(LIMIT_ARG) : Infinity;
-const SCRAPE_TIMEOUT_MS = 90_000; // longer timeout for retry scrapes
+const BATCH_SIZE = 5;
+const SCRAPE_CONCURRENCY = 5;
+const SCRAPE_TIMEOUT_MS = 90_000;
 const MIN_ARTICLE_CHARS = 400;
-const MAX_ARTICLE_CHARS = 12_000; // wider window than batch audit for deeper context
+const MAX_ARTICLE_CHARS = 12_000; // wider window for retry context
 
 function log(msg: string) { console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`); }
 
@@ -77,8 +81,7 @@ const allFlagged: FlaggedEntry[] = flagStore.flagged;
 const pending = allFlagged.filter(e => e.resolveAttempts < MAX_ATTEMPTS).slice(0, LIMIT);
 const exhausted = allFlagged.filter(e => e.resolveAttempts >= MAX_ATTEMPTS);
 
-log(`Flagged-review: ${allFlagged.length} total — ${pending.length} pending resolution, ${exhausted.length} exhausted (→ remove)`);
-
+log(`Flagged-review: ${allFlagged.length} total — ${pending.length} pending, ${exhausted.length} exhausted (→ remove)`);
 if (DRY_RUN) log('DRY RUN — no writes');
 
 if (pending.length === 0 && exhausted.length === 0) {
@@ -86,9 +89,9 @@ if (pending.length === 0 && exhausted.length === 0) {
   process.exit(0);
 }
 
-// Entries that have hit max attempts get removed immediately — no more chances.
+// Remove exhausted entries immediately — they've had their chances.
 if (!DRY_RUN && exhausted.length > 0) {
-  log(`\nRemoving ${exhausted.length} entries that hit maxResolveAttempts (${MAX_ATTEMPTS}) without confirmation:`);
+  log(`\nRemoving ${exhausted.length} entries that exhausted maxResolveAttempts (${MAX_ATTEMPTS}):`);
   const exhaustedUrls = new Set(exhausted.map(e => e.url));
 
   const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
@@ -101,23 +104,24 @@ if (!DRY_RUN && exhausted.length > 0) {
   const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
   if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
   for (const url of exhaustedUrls) {
-    log(`  ✗ EXPIRED ${url}`);
+    log(`  ✗ EXPIRED  ${url}`);
     state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));
   }
   state.lastRun = new Date().toISOString();
   writeAtomic(STATE_PATH, state);
 
-  // Remove exhausted entries from flag store
   flagStore.flagged = flagStore.flagged.filter((e: FlaggedEntry) => !exhaustedUrls.has(e.url));
   writeAtomic(FLAGGED_PATH, flagStore);
-
-  log(`Removed ${before - latest.findings.length} exhausted entries from corpus`);
+  log(`Removed ${before - latest.findings.length} exhausted entries`);
 }
 
 if (pending.length === 0) {
-  log('No pending entries to resolve.');
+  log('No pending entries — done.');
   process.exit(0);
 }
+
+const currentFindings: any[] = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8')).findings;
+const findingByUrl = new Map(currentFindings.map((f: any) => [f.url, f]));
 
 await initResearchSDK({
   model: 'openrouter/google/gemma-4-26b-a4b-it',
@@ -125,158 +129,182 @@ await initResearchSDK({
   config: { KNOWLEDGE_STORE_MODE: 'none', MAX_SCRAPE_BATCHES: 2, DEBUG: false },
   verbose: false,
 });
-log(`SDK initialized — resolving ${pending.length} entries`);
+log(`SDK initialized — resolving ${pending.length} entries in batches of ${BATCH_SIZE} (${WORKHORSE_MODEL_ID})`);
 
-const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: true });
+const model = await getOpenRouterModel(WORKHORSE_MODEL_ID, { reasoning: true });
 
-let totalResolved = 0;
-let totalStillAmbiguous = 0;
+// Accumulate decisions across all batches, apply atomically at the end
+const toRemove = new Set<string>();
+const toFix: AuditResult[] = [];
+const toKeep: string[] = [];
+const updatedAttempts = new Map<string, { attempts: number; result: AuditResult | null }>();
+let totalErrors = 0;
+
+const totalBatches = Math.ceil(pending.length / BATCH_SIZE);
 
 try {
-  // Scrape all pending entries with wider context window
-  log('\nScraping flagged entries...');
-  const scrapeResults = await mapWithConcurrency(pending, 4, async (entry: FlaggedEntry, idx: number) => {
-    const article = await scrapeOne(entry.url);
-    log(`  [${idx + 1}/${pending.length}] ${entry.url.replace(/^https?:\/\//, '').slice(0, 50)} — ${article ? article.length + ' chars' : 'unavail'}`);
-    return { entry, article };
-  });
+  for (let b = 0; b < totalBatches; b++) {
+    const batch = pending.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+    log(`\nBatch ${b + 1}/${totalBatches} — ${batch.length} entries`);
 
-  const items = scrapeResults.map(r => r.ok ? r.value : { entry: pending[scrapeResults.indexOf(r)]!, article: null });
-  const gotArticle = items.filter(it => it.article).length;
-  log(`Scraped ${gotArticle}/${items.length}`);
+    // Scrape all entries in the batch concurrently
+    const scrapeResults = await mapWithConcurrency(batch, SCRAPE_CONCURRENCY, async (entry: FlaggedEntry, idx: number) => {
+      const article = await scrapeOne(entry.url);
+      log(`  [${idx + 1}/${batch.length}] ${entry.url.replace(/^https?:\/\//, '').slice(0, 55)} — ${article ? article.length + ' chars' : 'unavail'}`);
+      return { entry, article };
+    });
 
-  // Build prompt items with prior flag context included
-  const auditItems = items.map(({ entry, article }) => ({
-    url: entry.url,
-    title: entry.title,
-    category: entry.category,
-    severity: entry.severity,
-    summary: '', // we load from current findings below
-    whyBad: '',
-    article,
-    priorFlagNote: `${entry.auditResult.dim1_note} | ${entry.auditResult.overall_reason} (attempt ${entry.resolveAttempts + 1}/${MAX_ATTEMPTS})`,
-  }));
+    const scraped = scrapeResults.map((r, i) =>
+      r.ok ? r.value : { entry: batch[i]!, article: null }
+    );
+    const gotArticle = scraped.filter(s => s.article).length;
+    log(`  scraped ${gotArticle}/${batch.length}`);
 
-  // Populate summary/whyBad from current findings
-  const currentFindings: any[] = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8')).findings;
-  for (const item of auditItems) {
-    const f = currentFindings.find(f => f.url === item.url);
-    if (f) { item.summary = f.summary; item.whyBad = f.whyBad; }
-  }
+    // Build audit items with prior flag context
+    const auditItems = scraped.map(({ entry, article }) => {
+      const finding = findingByUrl.get(entry.url);
+      return {
+        url: entry.url,
+        title: entry.title,
+        category: entry.category,
+        severity: entry.severity,
+        summary: finding?.summary ?? '',
+        whyBad: finding?.whyBad ?? '',
+        article,
+        priorFlagNote: `Flagged by ${entry.flaggedBy} (attempt ${entry.resolveAttempts + 1}/${MAX_ATTEMPTS}): ${entry.auditResult.dim1_note} — ${entry.auditResult.overall_reason}`,
+      };
+    });
 
-  const userText = buildAuditText(auditItems);
-  log(`Prompt ~${Math.round((AUDIT_SYSTEM.length + userText.length) / 4)} tokens — calling DeepSeek...`);
-  const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
-    reasoning: 'high', // higher effort for resolution pass
-    temperature: 0.15,
-    timeoutMs: 600_000,
-  });
+    const userText = buildAuditText(auditItems);
+    log(`  prompt ~${Math.round((AUDIT_SYSTEM.length + userText.length) / 4)} tokens — calling Qwen3.6...`);
 
-  let results: AuditResult[] = [];
-  try {
-    const m = rawResponse.match(/\[[\s\S]*\]/);
-    results = JSON.parse(m ? m[0] : rawResponse.trim());
-  } catch (e) {
-    log(`Parse error: ${String(e).slice(0, 100)} — writing raw to /tmp/wos_resolve_raw.txt`);
-    writeFileSync('/tmp/wos_resolve_raw.txt', rawResponse);
-    process.exitCode = 1;
-  }
+    let batchResults: AuditResult[] = [];
+    try {
+      const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
+        reasoning: 'medium',
+        temperature: 0.15,
+        timeoutMs: 240_000, // 4 min for 5 entries
+      });
 
-  if (process.exitCode !== 1 && results.length > 0) {
-    const keeps   = results.filter(r => r.overall === 'KEEP');
-    const fixes   = results.filter(r => r.overall === 'FIX_IN_PLACE');
-    const removes = results.filter(r => r.overall === 'REMOVE');
-    const still   = results.filter(r => r.overall === 'FLAG_FOR_REVIEW');
+      const m = rawResponse.match(/\[[\s\S]*\]/);
+      batchResults = JSON.parse(m ? m[0] : rawResponse.trim());
+    } catch (e) {
+      log(`  batch ${b + 1} error: ${String(e).slice(0, 100)} — skipping batch, will retry next run`);
+      totalErrors += batch.length;
+      continue;
+    }
 
-    log(`\nResolution: KEEP ${keeps.length} / FIX ${fixes.length} / REMOVE ${removes.length} / STILL AMBIGUOUS ${still.length}`);
+    for (const result of batchResults) {
+      const entry = batch.find(e => e.url === result.id);
+      if (!entry) continue;
 
-    keeps.forEach(r => log(`  ✓ KEEP    ${r.id}`));
-    fixes.forEach(r => log(`  ✎ FIX     ${r.id} — ${r.overall_reason}`));
-    removes.forEach(r => log(`  ✗ REMOVE  ${r.id} — ${r.overall_reason}`));
-    still.forEach(r => log(`  ⚑ STILL   ${r.id} — ${r.overall_reason}`));
+      const verdict = result.overall;
+      log(`  ${verdict === 'KEEP' ? '✓' : verdict === 'FIX_IN_PLACE' ? '✎' : verdict === 'REMOVE' ? '✗' : '⚑'} ${verdict.padEnd(14)} ${result.id.replace(/^https?:\/\//, '').slice(0, 50)}`);
 
-    if (!DRY_RUN) {
-      const removeUrls = new Set([...removes.map(r => r.id)]);
-      const fixMap = new Map(fixes.map(r => [r.id, r]));
-      const resolvedUrls = new Set([...keeps, ...fixes, ...removes].map(r => r.id));
-
-      const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
-
-      // Apply fixes
-      for (const f of latest.findings) {
-        const fix = fixMap.get(f.url);
-        if (!fix) continue;
-        if (fix.corrected_summary) f.summary = fix.corrected_summary;
-        if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
-        if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
-          f.category = fix.corrected_category;
-        }
-        if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
-          f.severity = fix.corrected_severity;
+      if (verdict === 'KEEP') {
+        toKeep.push(entry.url);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else if (verdict === 'FIX_IN_PLACE') {
+        toFix.push(result);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else if (verdict === 'REMOVE') {
+        toRemove.add(entry.url);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else {
+        // FLAG_FOR_REVIEW — increment; if now at max, schedule removal
+        const newAttempts = entry.resolveAttempts + 1;
+        updatedAttempts.set(entry.url, { attempts: newAttempts, result });
+        if (newAttempts >= MAX_ATTEMPTS) {
+          log(`    → reached max attempts, scheduled for removal`);
+          toRemove.add(entry.url);
         }
       }
-
-      // Apply removals
-      latest.findings = latest.findings.filter((f: any) => !removeUrls.has(f.url));
-      latest.totalFindings = latest.findings.length;
-      latest.lastUpdated = new Date().toISOString();
-      writeAtomic(FINDINGS_PATH, latest);
-
-      if (removeUrls.size > 0) {
-        const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
-        if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
-        for (const url of removeUrls) state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));
-        state.lastRun = new Date().toISOString();
-        writeAtomic(STATE_PATH, state);
-      }
-
-      // Update flagged-review.json
-      const freshFlagStore = JSON.parse(readFileSync(FLAGGED_PATH, 'utf-8'));
-      const updatedFlagged: FlaggedEntry[] = [];
-      for (const entry of freshFlagStore.flagged as FlaggedEntry[]) {
-        if (resolvedUrls.has(entry.url)) {
-          // Resolved — drop from store
-          totalResolved++;
-          continue;
-        }
-        const stillResult = still.find(r => r.id === entry.url);
-        if (stillResult) {
-          // Still ambiguous — increment attempt count; if now at max, it will be removed next run
-          const updated = {
-            ...entry,
-            resolveAttempts: entry.resolveAttempts + 1,
-            auditResult: stillResult, // update with latest audit result
-          };
-          updatedFlagged.push(updated);
-          totalStillAmbiguous++;
-          if (updated.resolveAttempts >= MAX_ATTEMPTS) {
-            log(`  ⚑ ${entry.url} — reached max attempts (${MAX_ATTEMPTS}), will be REMOVED next run`);
-          }
-        } else {
-          // Not in this batch (--limit was used or wasn't pending)
-          updatedFlagged.push(entry);
-        }
-      }
-      freshFlagStore.flagged = updatedFlagged;
-      writeAtomic(FLAGGED_PATH, freshFlagStore);
-
-      log(`\nFlagged-review.json: ${updatedFlagged.length} remaining (${totalResolved} resolved this run)`);
     }
   }
 } finally {
   await shutdownResearchSDK();
 }
 
-const finalFlagCount = JSON.parse(readFileSync(FLAGGED_PATH, 'utf-8')).flagged.length;
-const finalCorpus = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8')).totalFindings;
-console.log('\n' + '='.repeat(60));
-console.log('RESOLUTION PASS COMPLETE');
-console.log('='.repeat(60));
-console.log(`  Attempted:       ${pending.length}`);
-console.log(`  Resolved:        ${totalResolved}`);
-console.log(`  Still ambiguous: ${totalStillAmbiguous}`);
-console.log(`  Remaining flags: ${finalFlagCount}`);
-console.log(`  Corpus:          ${finalCorpus}`);
-if (finalFlagCount > 0) {
-  log(`${finalFlagCount} entries remain in flagged-review.json — run again or review manually.`);
+// ── Apply all decisions atomically ────────────────────────────────────────────
+
+const decidedUrls = new Set([...toKeep, ...toFix.map(r => r.id), ...toRemove]);
+
+if (!DRY_RUN && decidedUrls.size > 0) {
+  const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
+
+  for (const f of latest.findings) {
+    const fix = toFix.find(r => r.id === f.url);
+    if (!fix) continue;
+    if (fix.corrected_summary) f.summary = fix.corrected_summary;
+    if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
+    if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
+      f.category = fix.corrected_category;
+    }
+    if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
+      f.severity = fix.corrected_severity;
+    }
+  }
+
+  const before = latest.findings.length;
+  latest.findings = latest.findings.filter((f: any) => !toRemove.has(f.url));
+  latest.totalFindings = latest.findings.length;
+  latest.lastUpdated = new Date().toISOString();
+  writeAtomic(FINDINGS_PATH, latest);
+
+  if (toRemove.size > 0) {
+    const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+    if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
+    for (const url of toRemove) state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));
+    state.lastRun = new Date().toISOString();
+    writeAtomic(STATE_PATH, state);
+    log(`Removed ${before - latest.findings.length} entries, tombstoned`);
+  }
+
+  // Update flagged-review.json — drop resolved, update attempt counts
+  const freshFlagStore = JSON.parse(readFileSync(FLAGGED_PATH, 'utf-8'));
+  const updatedFlagged: FlaggedEntry[] = [];
+  let totalResolved = 0;
+
+  for (const entry of freshFlagStore.flagged as FlaggedEntry[]) {
+    const decision = updatedAttempts.get(entry.url);
+    if (!decision) {
+      updatedFlagged.push(entry); // not in this run (limit or error)
+      continue;
+    }
+    if (decidedUrls.has(entry.url)) {
+      // Confidently resolved (keep, fix, or remove) — clear from store
+      totalResolved++;
+      continue;
+    }
+    // Still ambiguous but below max — update with latest result + incremented count
+    updatedFlagged.push({
+      ...entry,
+      resolveAttempts: decision.attempts,
+      auditResult: decision.result ?? entry.auditResult,
+    });
+  }
+
+  freshFlagStore.flagged = updatedFlagged;
+  writeAtomic(FLAGGED_PATH, freshFlagStore);
+
+  const finalFlagCount = freshFlagStore.flagged.length;
+  const finalCorpus = latest.totalFindings;
+
+  console.log('\n' + '='.repeat(60));
+  console.log('RESOLUTION PASS COMPLETE');
+  console.log('='.repeat(60));
+  console.log(`  Attempted:       ${pending.length}`);
+  console.log(`  Kept:            ${toKeep.length}`);
+  console.log(`  Fixed:           ${toFix.length}`);
+  console.log(`  Removed:         ${toRemove.size}`);
+  console.log(`  Still ambiguous: ${updatedFlagged.filter(e => updatedAttempts.has(e.url)).length}`);
+  console.log(`  Errors (retry):  ${totalErrors}`);
+  console.log(`  Resolved total:  ${totalResolved}`);
+  console.log(`  Remaining flags: ${finalFlagCount}`);
+  console.log(`  Corpus:          ${finalCorpus}`);
+
+  if (finalFlagCount > 0) {
+    const atMax = (freshFlagStore.flagged as FlaggedEntry[]).filter(e => e.resolveAttempts >= MAX_ATTEMPTS).length;
+    if (atMax > 0) log(`${atMax} entries will be removed next run (reached max attempts)`);
+  }
 }
