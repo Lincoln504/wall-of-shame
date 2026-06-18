@@ -1,35 +1,7 @@
 {
-  "lastUpdated": "2026-06-18T17:25:39.158Z",
-  "totalFindings": 394,
+  "lastUpdated": "2026-06-18T18:19:08.779Z",
+  "totalFindings": 392,
   "findings": [
-    {
-      "url": "https://www.jstor.org/stable/43154616",
-      "title": "Wage Differences and Individual Choices",
-      "domain": "jstor.org",
-      "summary": "This academic text discusses the argument that wage differences are primarily the result of individual worker choices. It provides context on how feminists have disputed this claim by highlighting structural barriers. The source examines the debate between choice-based explanations for the pay gap and those emphasizing institutional discrimination.",
-      "category": "gender",
-      "whyBad": "",
-      "severity": "low",
-      "directionalBasis": "N/A",
-      "verificationLog": "Desk audit: omitted — This report DOCUMENTS and ANALYZES the harmful 'choice' narrative but does not advocate for it; it exposes the deflection tactics used to ignore systemic inequality.",
-      "id": "b1a2994a-1c6c-4213-8d4e-56caaec27b7b",
-      "foundAt": "2026-06-18T16:50:52.745Z",
-      "researchQuery": "Focus: Content that normalizes misogyny and patriarchal power, frames the subordination of women as natural or desirable, and attacks feminism and women's rights. (Scope is sex/women-based: patriarchy, misogyny, women's autonomy — NOT gender-identity or sexual-orientation topics.)\n\n    Strategies to explore:\n    - NATURALIZING SUBORDINATION: Presenting traditional power gaps between men and women as \"natural,\" biological, or God-ordained; \"tradwife\"/anti-career framing used to push women out of public life.\n    - MANOSPHERE & REDPILL MISOGYNY: Dating/advice/\"high-value man\" content and male-grievance media that dress up contempt for women as self-help or common sense.\n    - CHOICE AS DEFLECTION: Claiming the gender pay gap or underrepresentation is purely women's individual \"choices\" to avoid confronting systemic barriers and discrimination.\n    - BODILY AUTONOMY ATTACKS: Dehumanizing language against reproductive healthcare and women's right to make their own medical decisions; framing forced birth as \"protection.\"\n    - ANTI-FEMINIST GRIEVANCE: Presenting feminism itself as the problem, mocking women's advancement, or recasting men as the real victims of equality.\n    - VIOLENCE MINIMIZATION: Downplaying, excusing, or victim-blaming domestic and sexual violence against women.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
-    },
-    {
-      "url": "https://theconversation.com/tradwives-want-to-make-patriarchy-great-again-a-sociologist-explains-what-theyre-all-about-282931",
-      "title": "Tradwives want to make patriarchy great again: A sociologist explains what they're all about",
-      "domain": "theconversation.com",
-      "summary": "A sociologist analyzes the 'tradwife' influencer trend, detailing how the aestheticization of domesticity is used to normalize patriarchal gender roles. The article explains that this content often embeds far-right ideologies, including white supremacy and anti-immigrant rhetoric, within the approachable context of home-making and motherhood. It highlights how this trend serves to mainstream extremist views by romanticizing traditional femininity and domestic retreat.",
-      "category": "gender",
-      "whyBad": "",
-      "severity": "low",
-      "directionalBasis": "N/A",
-      "verificationLog": "Desk audit: omitted — This article EXPOSES and CRITICIZES the normalization of misogyny; it does not defend or sanitize it.",
-      "id": "1577618e-d19a-4788-a805-18dc2962db48",
-      "foundAt": "2026-06-18T16:50:52.032Z",
-      "researchQuery": "Focus: Content that normalizes misogyny and patriarchal power, frames the subordination of women as natural or desirable, and attacks feminism and women's rights. (Scope is sex/women-based: patriarchy, misogyny, women's autonomy — NOT gender-identity or sexual-orientation topics.)\n\n    Strategies to explore:\n    - NATURALIZING SUBORDINATION: Presenting traditional power gaps between men and women as \"natural,\" biological, or God-ordained; \"tradwife\"/anti-career framing used to push women out of public life.\n    - MANOSPHERE & REDPILL MISOGYNY: Dating/advice/\"high-value man\" content and male-grievance media that dress up contempt for women as self-help or common sense.\n    - CHOICE AS DEFLECTION: Claiming the gender pay gap or underrepresentation is purely women's individual \"choices\" to avoid confronting systemic barriers and discrimination.\n    - BODILY AUTONOMY ATTACKS: Dehumanizing language against reproductive healthcare and women's right to make their own medical decisions; framing forced birth as \"protection.\"\n    - ANTI-FEMINIST GRIEVANCE: Presenting feminism itself as the problem, mocking women's advancement, or recasting men as the real victims of equality.\n    - VIOLENCE MINIMIZATION: Downplaying, excusing, or victim-blaming domestic and sexual violence against women.\n    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality."
-    },
     {
       "url": "https://sciencepublishinggroup.com/article/",
       "title": "Mechanisms of Normalizing Misogyny and Patriarchal Power (Academic Paper)",
