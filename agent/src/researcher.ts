@@ -36,6 +36,7 @@ const RawFindingSchema = Type.Object({
   category: Type.String(),
   whyBad: Type.String(),
   severity: Type.Optional(Type.String()),
+  directionalBasis: Type.Optional(Type.String()),
 });
 
 const ExtractionResultSchema = Type.Object({
@@ -106,6 +107,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "domain": "example.com",
       "summary": "A flowing 3-5 sentence paragraph in plain language describing the piece and its intended conclusion. Include a verbatim quote ONLY if the RESEARCH DATA contains the exact wording as a direct excerpt from the source — otherwise paraphrase without quotes. Never fabricate a quoted string. Not a list.",
       "category": "<CATEGORY_KEY>",
+      "directionalBasis": "One sentence: what does this piece CONCLUDE that makes it a bad actor? E.g. 'Concludes that billionaire wealth is earned and deserved, not extracted.' or 'Concludes that immigration is an invasion threatening public safety.' If you cannot write this sentence, the piece fails the Conclusion Test and must be omitted.",
       "whyBad": "1. Cite a specific claim from the piece; quote verbatim ONLY if the exact wording appears in the RESEARCH DATA as a direct excerpt — otherwise describe in your own words without quotes. 2. Name the manipulation tactic in plain words and explain it in the same sentence. 3. Explain the concrete real-world harm it normalizes. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. Conflict of interest / Timeliness note where it genuinely applies.) End at your last real point — never pad or write 'No additional context'. (>=150 words, scathing, evidence-grounded, layman-readable; no 'Analysis:' label, no surrounding brackets)",
       "severity": "low|medium|high"
     }

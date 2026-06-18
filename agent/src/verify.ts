@@ -97,15 +97,27 @@ function buildBatchUserText(items: { f: RawFinding; article: string | null }[]):
   return `Verify the following ${items.length} entr${items.length === 1 ? 'y' : 'ies'} and return one result object per entry (echo each id).\n\n${blocks.join('\n\n')}`;
 }
 
-/** A grounded summary must be a single paragraph (no bullets, no line-break lists). */
+/** A grounded summary must be a single prose paragraph — no bullets, no line breaks. */
 function summaryOk(s: string): boolean {
   const t = (s || '').trim();
-  return t.length >= 80 && !/^-\s/.test(t) && !/\n\s*-\s/.test(t);
+  return (
+    t.length >= 80 &&
+    !/\n/.test(t) &&                     // no line breaks (must be a single paragraph)
+    !/^-\s/.test(t) &&                   // no leading bullet
+    !/\n\s*-\s/.test(t) &&              // no interior bullets
+    !/\b[A-Z]{3,}\b/.test(t.replace(/\b(DOL|OSHA|EPA|FDA|FBI|CIA|ICE|DEI|ICU|CEO|CFO|COO|ESG|GDP|IRS|HHS|DOJ|SEC|FTC|FCC|FAA|TSA|DHS|DOD|NATO|WHO|UN)\b/g, ''))  // no all-caps words (with common acronym whitelist)
+  );
 }
-/** A grounded analysis must still be the numbered breakdown. */
+/** A grounded analysis must be a numbered breakdown with at least 3 points. */
 function whyBadOk(w: string): boolean {
   const t = (w || '').trim();
-  return /^1\.\s/.test(t) && t.length >= 150;
+  return (
+    /^1\.\s/.test(t) &&                 // starts with point 1
+    /\b2\.\s/.test(t) &&                // has point 2 (tactic)
+    /\b3\.\s/.test(t) &&                // has point 3 (real-world harm)
+    t.length >= 150 &&
+    !/\b[A-Z]{3,}\b/.test(t.replace(/\b(DOL|OSHA|EPA|FDA|FBI|CIA|ICE|DEI|ICU|CEO|CFO|COO|ESG|GDP|IRS|HHS|DOJ|SEC|FTC|FCC|FAA|TSA|DHS|DOD|NATO|WHO|UN)\b/g, ''))  // no all-caps words
+  );
 }
 
 interface BatchResult { id?: string; valid?: boolean; summary?: string; whyBad?: string }

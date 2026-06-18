@@ -39,6 +39,7 @@ const ReviewedFindingSchema = Type.Object({
   domain: Type.Optional(Type.String()),
   severity: Type.Optional(Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')])),
   verificationLog: Type.Optional(Type.String()),
+  directionalBasis: Type.Optional(Type.String()),
 });
 
 const ReviewerOutputSchema = Type.Array(ReviewedFindingSchema);
@@ -79,7 +80,7 @@ THE DIRECTIONAL TEST: Ask "whose side is this piece on?" A piece is for the Wall
 INPUT may be either (A) a JSON array of candidate findings, or (B) a raw research report. If (B), first extract the qualifying findings, then audit them with the same rules.
 
 FOR EACH candidate, apply this workflow:
-1. SCOPE GATE — Apply the DIRECTIONAL TEST above. Ask: is this piece on the side of power (include) or on the side of accountability (omit)? OMIT it if it is neutral reporting, investigative journalism, or if it actually criticizes the harm. Also omit if it is off-topic for its category.
+1. SCOPE GATE — Apply the DIRECTIONAL TEST above. Ask: is this piece on the side of power (include) or on the side of accountability (omit)? OMIT it if it is neutral reporting, investigative journalism, or if it actually criticizes the harm. Also omit if it is off-topic for its category. MANDATORY CHECK: Can you complete this sentence — "This piece CONCLUDES that [the harmful thing] is [good / justified / necessary / natural]"? If you cannot complete this sentence with a specific, non-circular claim about what the piece itself argues, OMIT the finding. If it is present, use this sentence as the directionalBasis field in your output.
 2. GROUNDING CHECK — Confirm every claim and any quoted text in the summary and whyBad is consistent with the RESEARCH CONTEXT. If a claim is NOT supported by the context, OMIT the finding — never invent support or fabricate quotes. For any text currently inside quotation marks: if you can confirm those exact words appear in the RESEARCH CONTEXT as a direct excerpt from the source article, keep the quote; if you cannot confirm it, remove the quotation marks and rephrase as a paraphrase in your own words. A summary with no quotation marks is correct. A fabricated or unverifiable quote is grounds for dropping the entire finding. If the candidate has a quote you cannot verify, either replace it with a real one from the RESEARCH CONTEXT or strip the quotes and rephrase — never leave an unverified quote in place.
 3. PRESERVE-OR-STRENGTHEN whyBad (NEVER oversimplify, NEVER shorten a good analysis):
    - PRESERVE: if the analysis is already rich (>=150 words, cites a verbatim quote, names specific fallacies, and supplies external context), KEEP IT AS-IS or only correct factual inaccuracies. Do not trim it.
@@ -111,6 +112,7 @@ Each entry must follow this schema exactly:
   "category": "...",
   "whyBad": "1. cite a specific claim from the piece; quote verbatim ONLY if you confirmed the exact wording in the RESEARCH CONTEXT — otherwise describe without quotes. 2. named fallacy/framing technique(s) in plain words. 3. concrete real-world harm. (Then OPTIONALLY: 4. External Context: a real rebutting fact in your own words, no unnamed-authority appeals — omit if you have none. 5. Conflict of interest / Timeliness note where they genuinely apply.) End at the last real point — never pad or write 'No additional context'. (>=150 words; preserve rich researcher analysis, never shorten it; no 'Analysis:' label, no brackets, no audit metadata)",
   "severity": "low|medium|high",
+  "directionalBasis": "One sentence: what does this piece CONCLUDE that makes it a bad actor? E.g. 'Concludes that billionaire wealth is earned and deserved.' Write the sentence or OMIT the entry.",
   "verificationLog": "Desk audit: preserved/strengthened — one-line reason and what was checked against the context."
 }
 

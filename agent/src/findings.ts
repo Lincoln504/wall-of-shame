@@ -161,6 +161,10 @@ export interface RawFinding {
   whyBad: string;
   domain?: string;
   severity?: string;
+  /** One sentence stating what the piece CONCLUDES that makes it a bad actor
+   *  (not just its subject matter). Required by the extraction prompt; optional
+   *  here so legacy entries without it still load. */
+  directionalBasis?: string;
 }
 
 /**
