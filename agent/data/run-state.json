@@ -1,158 +1,30 @@
 {
   "lastRun": "2026-06-18T05:22:23.893Z",
   "categoryIndex": 0,
-  "seenUrls": {
-    "global_legacy": [
-      "climate",
-      "corruption",
-      "current_affairs",
-      "democracy",
-      "disability",
-      "economics",
-      "gender",
-      "health",
-      "healthcare",
-      "https://www.defensenews.com/opinion/2025/04/28/for-nuclear-deterrence-us-policymakers-must-rely-on-facts-not-hype/",
-      "https://www.numberanalytics.com/blog/media-framing-in-labor",
-      "https://www.ojp.gov/ncjrs/virtual-library/abstracts/weighing-watchman-evaluating-costs-and-benefits-outsourcing",
-      "https://www.sciencedirect.com/science/article/pii/S0016236125030017",
-      "immigration",
-      "labor",
-      "media",
-      "oligarchy",
-      "policing",
-      "race",
-      "religion",
-      "spectacle",
-      "technology",
-      "war"
-    ],
-    "labor": [
-      "dol.gov/newsroom/releases/osec/osec20250701-0",
-      "nfib.com/news/analysis/minimum-wage-hikes-impact-small-business-most",
-      "taxfoundation.org/research/all/federal/social-security-reform-options",
-      "aei.org/articles/the-case-for-a-payroll-tax-cut",
-      "fee.org/articles/oscar-lewis-personal-responsibility-and-poverty",
-      "reason.org/commentary/federal-independent-contractor-regulation-threatens-the-gig-economy",
-      "fisherphillips.com/en/insights/insights/osha-key-player-in-dol-deregulation-wave",
-      "theblaze.com/contributions/fast-food-workers-you-dont-deserve-15-an-hour-to-flip-burgers-and-thats-ok",
-      "cascadepolicy.org/right-to-work/inter-union-competition-and-workplace-freedom-ending-exclusive-representation",
-      "sbecouncil.org/2026/02/26/dols-proposed-independent-contractor-rule-promotes-entrepreneurship-flexibility-opportunity",
-      "newhouse.house.gov/media/weekly-columns-and-op-eds/work-requirements-welfare-programs-path-dignity-self-sufficiency",
-      "americansforprosperity.org/blog/how-independent-contracting-works-and-why-its-good-for-american-workers"
-    ],
-    "economics": [
-      "itif.org/publications/2026/03/25/antitrust-undone-how-competition-enforcers-are-undermining-competition",
-      "cei.org/studies/ten-thousand-commandments-2025",
-      "husted.senate.gov/media/press-releases/husted-joins-effort-to-permanently-repeal-the-death-tax-on-family-farms-and-small-businesses",
-      "aei.org/op-eds/the-war-on-billionaires-is-dangerous-nonsense",
-      "newideal.aynrand.org/robert-reichs-unjust-crusade-against-billionaire-producers",
-      "uschamber.com/economy/how-excessive-regulation-hurts-the-economy",
-      "hoover.org/research/why-billionaires-should-exist",
-      "fastercapital.com/content/Banking-Deregulation--Breaking-Chains--The-Impact-of-Banking",
-      "cei.org/news_releases/report-regulations-disproportionately-impose-costs-on-small-businesses"
-    ],
-    "race": [
-      "aporiamagazine.com/p/the-positive-legacy-of-empire",
-      "whitehouse.gov/wp-content/uploads/2025/05/defunding-the-open-border-fact-sheet.pdf",
-      "nationalreview.com/2025/10/restoring-columbus-to-his-rightful-place",
-      "whitehouse.gov/presidential-actions/2025/01/ending-radical-indoctrination-in-k-12-schooling",
-      "whitehouse.gov/presidential-actions/2026/03/addressing-dei-discrimination-by-federal-contractors",
-      "federalregister.gov/documents/2025/01/31/2025-02097/ending-illegal-discrimination-and-restoring-merit-based-opportunity"
-    ],
-    "gender": [
-      "newsweek.com/gender-pay-gap-isnt-caused-sexism-its-result-womens-choices-opinion-1776749",
-      "waltroderick.com/why-the-bible-teaches-patriarchy"
-    ],
-    "immigration": [
-      "crimeresearch.org/2025/12/at-the-new-york-post-new-data-reveals-the-horrific-truth-about-illegal-immigrant-crime",
-      "whitehouse.gov/presidential-actions/2025/01/protecting-the-american-people-against-invasion"
-    ],
-    "religion": [
-      "whitehouse.gov/presidential-actions/2025/02/establishment-of-the-white-house-faith-office",
-      "whitehouse.gov/presidential-actions/2025/02/eradicating-anti-christian-bias",
-      "whitehouse.gov/presidential-actions/2025/05/establishment-of-the-religious-liberty-commission",
-      "whitehouse.gov/releases/2026/04/this-easter-president-trump-reaffirms-america-as-a-beacon-for-christian-liberty",
-      "aclj.org/school-choice/aclj-takes-stand-for-parental-rights-in-supreme-court-brief-defending-families-of-all-faiths"
-    ],
-    "climate": [
-      "energyanalytics.org/fossil-subsidies"
-    ],
-    "health": [
-      "newstarget.com/2025-11-15-how-vaccines-ai-globalist-elites-target-humanity.html"
-    ],
-    "policing": [
-      "nationalpolice.org/the-national-police-association-supports-new-legislation-introduced-to-protect-officers-from-lawfare",
-      "city-journal.org/article/broken-windows-policing-public-health-safety",
-      "banks.senate.gov/news/press-releases/senator-jim-banks-introduces-the-qualified-immunity-act-of-2025"
-    ],
-    "technology": [
-      "spiked-online.com/2023/10/24/ai-hysteria-is-out-of-control",
-      "trustarc.com/resource/why-data-privacy-self-regulation-is-better-than-involuntary-options",
-      "city-journal.org/article/artificial-intelligence-regulation-ai-futures-project",
-      "americanactionforum.org/insight/the-price-of-privacy-the-impact-of-strict-data-regulations-on-innovation-and-more",
-      "forbes.com/councils/forbesbusinesscouncil/2024/04/30/social-media-how-companies-can-support-mental-health-in-the-digital-age"
-    ],
-    "disability": [
-      "theacorn.com/articles/ada-lawsuits-called-legal-extortion-become-increasingly-common",
-      "waysandmeans.house.gov/2025/09/25/newt-gingrich-op-ed-reform-of-social-security-disability-benefits-could-help-move-countless-americans-toward-greater-sense-of-their-own-capabilities"
-    ],
-    "war": [
-      "c4israel.org/news/the-complex-dilemmas-involved-in-combatting-terror",
-      "aei.org/op-eds/the-us-cant-and-shouldnt-escape-the-middle-east"
-    ],
-    "spectacle": [
-      "labusinessjournal.com/commentary/oped-getting-businesses-in-the-zone-for-the-world-cup",
-      "crainsnewyork.com/opinion/commentary/cny-world-cup-economics-20260401"
-    ],
-    "current_affairs": [
-      "unonext.com/..."
-    ],
-    "corruption": [
-      "washingtonpost.com/opinions/2025/06/13/campaign-finance-reform-first-amendment",
-      "erths.com/explainer/corporate-lobbying-explained",
-      "cervitude.com/building-the-government-of-tomorrow-the-case-for-organizational-efficiency-and-private-sector-expertise",
-      "yournews.com/2025/12/19/5457253/op-ed-setting-the-record-straight-on-campaign-finance",
-      "imprimis.hillsdale.edu/the-trouble-with-campaign-finance-regulation",
-      "oakcentreonline.org/wp-content/uploads/2025/03/understanding-the-legality-of-lobbyists-role-in-the-legislative-process.pdf",
-      "hulr.org/fall-2024/what-it-takes-to-speak-freely-a-defense-of-citizens-united",
-      "city-journal.org/article/in-defense-of-political-anonymity",
-      "linkedin.com/pulse/industry-expertise-transformation-asset-new-role-lobbyists-kevin-muir-2qc7e"
-    ],
-    "media": [
-      "cotton.senate.gov/news/op-eds/in-defense-of-qualified-immunity",
-      "americansforprosperity.org/press-release/new-study-reveals-how-overregulation-drags-down-economy-and-puts-affordable-energy-out-of-reach",
-      "uschamber.com/economy/the-case-preserving-competitive-corporate-tax-rate",
-      "uschamber.com/employment-law/data-shows-how-strikes-impact-workers-and-communities",
-      "reaganfoundation.org/reagan-institute/publications/securing-the-border-is-a-national-security-and-regional-foreign-policy-imperative",
-      "forbes.com/councils/forbestechcouncil/2025/08/21/facial-recognition-in-policing-and-smart-cities-balancing-innovation-with-responsibility"
-    ],
-    "healthcare": [
-      "americanactionforum.org/insight/single-payer-health-care-wait-times-a-feature-not-a-bug",
-      "forbes.com/sites/sallypipes/2023/11/13/state-legislatures-cant-shake-their-single-payer-dreams-thats-a-problem",
-      "reviewjournal.com/opinion/commentary-sorry-but-single-payer-wont-fix-american-health-care-3614509",
-      "insuranceclarityhub.com/insurance-market-stability",
-      "mckinsey.com/~/media/mckinsey/industries/financial%20services/our%20insights/global%20insurance%20report%202025/global-insurance-report-2025-the-pursuit-of-growth.pdf",
-      "forbes.com/sites/danielmendelson/2025/05/13/behind-the-cost-curtain-better-health-outcomes-through-transparency",
-      "kevinmd.com/2026/02/single-payer-health-care-vs-market-based-solutions-an-economic-reality-check.html",
-      "phrma.org/blog/new-report-how-intellectual-property-drives-u-s-innovation-and-biopharma-impact",
-      "americanactionforum.org/insight/primer-what-is-utilization-management-and-how-is-it-used",
-      "goodmaninstitute.org/2024/12/31/why-we-need-health-insurance-companies"
-    ],
-    "oligarchy": [
-      "libertystandard.net/article/conservative-global-billionaire-increase-signals-economic-dynamism-opportunity-for-innovation-iicumz",
-      "whitehouse.gov/presidential-actions/2025/01/unleashing-prosperity-through-deregulation",
-      "taxfoundation.org/research/all/federal/corporate-tax-hikes-tcja-us-competitiveness",
-      "borgenmagazine.com/billionaire-philanthropy",
-      "jdsupra.com/legalnews/political-giving-a-primer-for-high-net-6407977",
-      "usglc.org/blog/deloitte-report-high-stake-collaboration-the-private-sectors-influence-on-great-power-competition"
-    ],
-    "democracy": [
-      "heartland.org/publications/ranked-choice-voting-a-major-threat-to-free-fair-and-secure-elections",
-      "goldwaterinstitute.org/the-victims-of-dark-money-disclosure-how-governmen",
-      "adflegal.org/article/lawfare-when-the-process-is-the-punishment"
-    ]
-  },
+  "seenUrls": [
+    "climate",
+    "corruption",
+    "current_affairs",
+    "democracy",
+    "disability",
+    "economics",
+    "gender",
+    "global_legacy",
+    "health",
+    "healthcare",
+    "https://labusinessjournal.com/commentary/oped-getting-businesses-in-the-zone-for-the-world-cup/",
+    "https://www.crainsnewyork.com/opinion/commentary/cny-world-cup-economics-20260401/",
+    "immigration",
+    "labor",
+    "media",
+    "oligarchy",
+    "policing",
+    "race",
+    "religion",
+    "spectacle",
+    "technology",
+    "war"
+  ],
   "queryHistory": {
     "labor": {
       "rhetorical strategies used to justify deregulation of labor protections": "2026-06-15T23:18:09.398Z",
@@ -6403,7 +6275,7 @@
       "editorials justifying reductions in public funding for higher education as fiscal realism": "2026-06-18T04:28:15.768Z",
       "commentary presenting corporate tax incentives as vital for local job retention": "2026-06-18T04:28:15.768Z",
       "Keith Sonderling Washington Examiner gig economy opinion": "2026-06-18T04:28:15.768Z",
-      "Instituto de Libertad Económica para Puerto Rico defense of billionaires article": "2026-06-18T04:28:15.768Z",
+      "Instituto de Libertad Econ\u00f3mica para Puerto Rico defense of billionaires article": "2026-06-18T04:28:15.768Z",
       "GTIPA Global Trade and Innovation Policy Alliance deregulation report": "2026-06-18T04:28:15.768Z",
       "Richard Hanania unions cartels newsletter": "2026-06-18T04:28:15.768Z",
       "op-ed defending expansion of police immunity or qualified immunity as necessary for public safety": "2026-06-18T04:46:58.862Z",
