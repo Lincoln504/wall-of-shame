@@ -102,9 +102,10 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
     node ../site/scripts/embed.mjs >> "$LOG" 2>&1
     ERC=$?
     echo "[loop] embed exit=$ERC dur=$(( $(date +%s) - ESTART ))s" | tee -a "$LOG"
-    GIT_CHANGED=$(git status --porcelain agent/data/findings.json agent/data/run-state.json agent/data/flagged-review.json site/public/findings.json site/public/embeddings.bin site/public/embeddings.meta.json 2>/dev/null)
+    # Paths relative to agent/ (our CWD); site lives one level up.
+    GIT_CHANGED=$(git status --porcelain data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json ../site/public/embeddings.bin ../site/public/embeddings.meta.json 2>/dev/null)
     if [ -n "$GIT_CHANGED" ]; then
-      git add agent/data/findings.json agent/data/run-state.json agent/data/flagged-review.json site/public/findings.json site/public/embeddings.bin site/public/embeddings.meta.json >> "$LOG" 2>&1
+      git add data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json ../site/public/embeddings.bin ../site/public/embeddings.meta.json >> "$LOG" 2>&1
       git commit -m "chore: post-audit corpus sync $(date -u +%FT%TZ) ($(count) entries)" >> "$LOG" 2>&1
       git pull --rebase --autostash origin main >> "$LOG" 2>&1
       git push origin main >> "$LOG" 2>&1
