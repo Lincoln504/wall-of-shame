@@ -166,8 +166,12 @@ async function verifyBatch(
   });
 }
 
-/** Scrape one finding's own article (bounded by the browser pool + a hard timeout). */
+/** Scrape one finding's own article. Reuses _articleText from the reviewer stage if available. */
 async function scrapeOne(f: RawFinding, log: (m: string) => void): Promise<{ f: RawFinding; article: string | null }> {
+  // Reuse article scraped by the reviewer stage — avoids double-fetching the same URL.
+  if (f._articleText && f._articleText.length >= MIN_ARTICLE_CHARS) {
+    return { f, article: f._articleText.slice(0, MAX_ARTICLE_CHARS) };
+  }
   try {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
@@ -228,5 +232,6 @@ export async function groundFindings(
     }
   });
   log(`  [verify] kept ${out.length}, dropped ${dropped} (unsupported by source)`);
-  return out;
+  // Strip pipeline-only field before findings are written to disk.
+  return out.map(({ _articleText: _, ...rest }) => rest as RawFinding);
 }

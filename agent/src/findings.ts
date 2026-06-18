@@ -167,6 +167,9 @@ export interface RawFinding {
   directionalBasis?: string;
   /** Audit trail: most recent stage that reviewed this entry (reviewer then verifier). */
   verificationLog?: string;
+  /** Scraped article text attached by the reviewer stage so the verifier can reuse
+   *  it without re-fetching. Stripped before writing to findings.json. */
+  _articleText?: string;
 }
 
 /**

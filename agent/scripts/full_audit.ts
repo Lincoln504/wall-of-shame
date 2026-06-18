@@ -33,7 +33,7 @@ const STATE_PATH = join(DATA_DIR, 'run-state.json');
 const FLAGGED_PATH = join(DATA_DIR, 'flagged-review.json');
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const BATCH_SIZE = parseInt(process.argv.find(a => a.startsWith('--batch-size='))?.split('=')[1] ?? '30');
+const BATCH_SIZE = parseInt(process.argv.find(a => a.startsWith('--batch-size='))?.split('=')[1] ?? '15');
 const START_BATCH = parseInt(process.argv.find(a => a.startsWith('--start-batch='))?.split('=')[1] ?? '1');
 const SCRAPE_CONCURRENCY = 5;
 const SCRAPE_TIMEOUT_MS = 60_000;

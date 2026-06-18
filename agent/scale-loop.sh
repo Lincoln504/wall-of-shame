@@ -92,6 +92,26 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
       echo "[loop] resolution exit=$RRC dur=$(( $(date +%s) - RSTART ))s findings=$(count)" | tee -a "$LOG"
       [ "$RRC" -eq 124 ] && echo "[loop] WARNING resolution pass hit 900s timeout" | tee -a "$LOG"
     fi
+
+    # Post-audit: sync findings to site, rebuild embeddings, commit+push everything.
+    # This ensures audit fixes (FIX_IN_PLACE, REMOVE, resolved flags) reach the live
+    # site and are durable in git — not just applied to local disk.
+    echo "[loop] ── post-audit sync ──" | tee -a "$LOG"
+    cp data/findings.json ../site/public/findings.json
+    ESTART=$(date +%s)
+    node ../site/scripts/embed.mjs >> "$LOG" 2>&1
+    ERC=$?
+    echo "[loop] embed exit=$ERC dur=$(( $(date +%s) - ESTART ))s" | tee -a "$LOG"
+    GIT_CHANGED=$(git status --porcelain agent/data/findings.json agent/data/run-state.json agent/data/flagged-review.json site/public/findings.json site/public/embeddings.bin site/public/embeddings.meta.json 2>/dev/null)
+    if [ -n "$GIT_CHANGED" ]; then
+      git add agent/data/findings.json agent/data/run-state.json agent/data/flagged-review.json site/public/findings.json site/public/embeddings.bin site/public/embeddings.meta.json >> "$LOG" 2>&1
+      git commit -m "chore: post-audit corpus sync $(date -u +%FT%TZ) ($(count) entries)" >> "$LOG" 2>&1
+      git pull --rebase --autostash origin main >> "$LOG" 2>&1
+      git push origin main >> "$LOG" 2>&1
+      echo "[loop] post-audit commit+push done findings=$(count)" | tee -a "$LOG"
+    else
+      echo "[loop] no changes to commit after audit" | tee -a "$LOG"
+    fi
   fi
 
   sleep 5

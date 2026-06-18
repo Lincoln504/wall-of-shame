@@ -125,13 +125,12 @@ FOR EACH candidate, apply this workflow:
 3. PRESERVE-OR-STRENGTHEN whyBad (NEVER shorten):
    - PRESERVE if already rich (>=150 words, substantive claims, specific fallacies, numbered structure) — keep as-is or correct only factual inaccuracies.
    - STRENGTHEN if thin — expand to the full bar below.
-   The bar: a numbered breakdown of AT LEAST 150 words (aim 180–280). Begin directly with "1." — no "Analysis:" label, no brackets. Cover in order:
+   The bar: a numbered breakdown of AT LEAST 150 words (aim 180–280). Begin directly with "1." — no "Analysis:" label, no brackets. EXACTLY 3 numbered points, in order:
    1. cite a specific claim from the piece; verbatim quote ONLY if confirmed in ARTICLE TEXT — otherwise describe without quotes;
-   2. manipulation tactic in EVERYDAY words explained in the SAME sentence (e.g. "presents only two options when others exist") — list MULTIPLE where present; never drop a bare coined label without defining it;
-   3. what the piece DOES to harm — sanitize / launder / excuse / rationalize / normalize / minimize / propagandize / advocate — and the concrete real-world consequence;
-   4. OPTIONAL: "External Context:" with a real, well-established fact stated plainly in your own words — NO vague authority appeals ("studies show", "many experts agree", "multiple news outlets reported", "critics note", "research finds" — none of these); omit this point entirely if you have no genuine concrete fact;
-   5. OPTIONAL: "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply.
-   NEVER pad and NEVER write "No additional context", "None", "N/A" — end at the last real point.
+   2. name the manipulation tactic in EVERYDAY words in the SAME sentence (e.g. "presents only two options when others exist") — define ALL tactics present; never use a coined label without defining it;
+   3. what the piece DOES to harm — sanitize / launder / excuse / rationalize / normalize / minimize / propagandize / advocate — plus the concrete real-world consequence. If a specific, well-established fact makes the harm concrete, state it plainly in your own words here (NO vague authority appeals: "studies show", "many experts agree", "critics note", "research finds" — state only concrete facts you know with certainty).
+   WRITE EXACTLY 3 POINTS. Do not add a "4." or "5." — end the breakdown at "3.".
+   NEVER pad and NEVER write "No additional context", "None", "N/A".
    WRITE FOR A LAYMAN: plain English, no academic jargon (define any technical term immediately). No markdown. No ALL-CAPS emphasis — write labels in sentence case (ordinary acronyms like ADA, OSHA, EPA are fine).
    NO FABRICATION: no statute/section numbers, no invented case names, no precise statistics or study titles unless they literally appear in the ARTICLE TEXT. Argue from the piece's own logic or state common facts in general terms.
 4. STRUCTURE — "summary" MUST be a single flowing paragraph (3–5 sentences, no bullets, no line breaks). "whyBad" MUST be the numbered breakdown beginning at "1.". Strip any audit/verification metadata that leaked into whyBad. PLAIN TEXT ONLY.
@@ -148,7 +147,7 @@ Each entry must include:
   "domain": "...",
   "summary": "Single flowing paragraph, no bullets, no line breaks. Verbatim quote only if confirmed in ARTICLE TEXT.",
   "category": "...",
-  "whyBad": "1. specific claim. 2. tactic in plain words. 3. concrete harm. (optional 4. External Context: real fact only — no vague authority appeals. optional 5. Conflict/Timeliness.) End at last real point. No filler. >=150 words.",
+  "whyBad": "1. specific claim from the piece. 2. manipulation tactic in everyday words. 3. what the piece does to harm + real-world consequence (+ any concrete established fact if genuinely known). Exactly 3 numbered points, 150–280 words total. No filler.",
   "severity": "low|medium|high",
   "directionalBasis": "One sentence: what does this piece CONCLUDE that makes it a bad actor?",
   "verificationLog": "Desk audit: article-grounded / unavailable-fallback — one-line reason."
@@ -213,7 +212,9 @@ async function reviewBatch(
         return items.map(it => it.f);
       }
     }
-    return reviewed;
+    // Attach scraped article text so the verifier stage can reuse it without re-fetching.
+    const articleByUrl = new Map(items.map(it => [it.f.url, it.article]));
+    return reviewed.map(r => ({ ...r, _articleText: articleByUrl.get(r.url) ?? undefined }));
   } catch (err) {
     log(`  [reviewer] batch error (${String(err).slice(0, 60)}) — keeping desk audit for batch`);
     return items.map(it => it.f);
