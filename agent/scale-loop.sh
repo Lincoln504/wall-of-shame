@@ -56,12 +56,12 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   BEFORE=$(count)
   START=$(date +%s)
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \
-    timeout 1500 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
+    timeout 3600 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
   RC=$?
   AFTER=$(count)
   ADDED=$(( AFTER - BEFORE ))
   echo "[loop] round $i exit=$RC dur=$(( $(date +%s) - START ))s added=$ADDED findings=$AFTER avail=$(avail_mb)MB" | tee -a "$LOG"
-  [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 1500s timeout guard" | tee -a "$LOG"
+  [ "$RC" -eq 124 ] && echo "[loop] WARNING round $i hit the 3600s timeout guard" | tee -a "$LOG"
 
   # Maintenance audit: audit all entries from this round + 10% random sample of the rest.
   if [ "$AUDIT_INTERVAL" -gt 0 ] && [ $((i % AUDIT_INTERVAL)) -eq 0 ]; then
