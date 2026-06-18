@@ -28,7 +28,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
 import { getOpenRouterModel, completeText, VERIFY_MODEL_ID } from '../src/models.js';
-import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage } from '../src/utils.js';
+import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage, safeParseJson } from '../src/utils.js';
 import { AUDIT_SYSTEM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -106,7 +106,7 @@ await initResearchSDK({
 });
 log('SDK initialized');
 
-const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: true });
+const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: false });
 
 // Accumulate per-batch to produce the final summary report
 const allResults: AuditResult[] = [];
@@ -134,11 +134,10 @@ try {
     let batchResults: AuditResult[] = [];
     try {
       const rawResponse = await completeText(model, AUDIT_SYSTEM, userText, {
-        reasoning: 'medium', temperature: 0.2, timeoutMs: 120_000,
+        reasoning: false, temperature: 0.2, timeoutMs: 120_000,
       });
       writeFileSync(`/tmp/wos_sample_audit_b${b}_raw.txt`, rawResponse);
-      const m = rawResponse.match(/\[[\s\S]*\]/);
-      batchResults = JSON.parse(m ? m[0] : rawResponse.trim());
+      batchResults = safeParseJson<AuditResult[]>(rawResponse);
     } catch (e) {
       log(`  batch ${b} error: ${String(e).slice(0, 100)} — skipping`);
       continue;

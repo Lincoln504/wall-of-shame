@@ -29,7 +29,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
 import { getOpenRouterModel, completeText, WORKHORSE_MODEL_ID } from '../src/models.js';
-import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage } from '../src/utils.js';
+import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage, safeParseJson } from '../src/utils.js';
 import { AUDIT_SYSTEM, RESOLVE_ADDENDUM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
 
 const RESOLVE_SYSTEM = AUDIT_SYSTEM + RESOLVE_ADDENDUM;
@@ -133,7 +133,7 @@ await initResearchSDK({
 });
 log(`SDK initialized — resolving ${pending.length} entries in batches of ${BATCH_SIZE} (${WORKHORSE_MODEL_ID})`);
 
-const model = await getOpenRouterModel(WORKHORSE_MODEL_ID, { reasoning: true });
+const model = await getOpenRouterModel(WORKHORSE_MODEL_ID, { reasoning: false });
 
 // Accumulate decisions across all batches, apply atomically at the end
 const toRemove = new Set<string>();
@@ -183,13 +183,12 @@ try {
     let batchResults: AuditResult[] = [];
     try {
       const rawResponse = await completeText(model, RESOLVE_SYSTEM, userText, {
-        reasoning: 'medium',
+        reasoning: false,
         temperature: 0.15,
         timeoutMs: 240_000, // 4 min for 5 entries
       });
 
-      const m = rawResponse.match(/\[[\s\S]*\]/);
-      batchResults = JSON.parse(m ? m[0] : rawResponse.trim());
+      batchResults = safeParseJson<AuditResult[]>(rawResponse);
     } catch (e) {
       log(`  batch ${b + 1} error: ${String(e).slice(0, 100)} — skipping batch, will retry next run`);
       totalErrors += batch.length;

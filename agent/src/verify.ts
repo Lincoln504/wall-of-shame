@@ -72,7 +72,7 @@ B) IF ARTICLE TEXT is UNAVAILABLE: apply the directional test to the DRAFT SUMMA
 
 HOUSE STANDARDS — enforce on EVERY entry:
 - "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, NO bullets, NO line breaks), plain layman language. Include a verbatim quote ONLY if you confirmed the exact wording appears in the ARTICLE TEXT — otherwise describe the claim as a paraphrase without quotation marks. A summary with no quoted text is correct; a fabricated quote is not.
-- "whyBad": a NUMBERED analysis beginning directly with "1." (no "Analysis:" label, no brackets), of ONLY as many points as carry real substance — normally 3 to 5. REQUIRED: 1. the quote + the claim it advances; 2. the manipulation tactic in EVERYDAY words, explained in the same sentence (never a bare academic label); 3. the concrete real-world harm it normalizes/justifies/hides. OPTIONAL: 4. a sentence beginning "External Context:" with a real, well-established fact stated generally — include ONLY if you genuinely have one; 5. "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply. NEVER pad to a fixed count and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — end at the last real point.
+- "whyBad": a NUMBERED analysis beginning directly with "1." (no "Analysis:" label, no brackets), of ONLY as many points as carry real substance — normally 3 to 5. REQUIRED: 1. the quote + the claim it advances; 2. the manipulation tactic in EVERYDAY words, explained in the same sentence (never a bare academic label); 3. the concrete real-world harm it normalizes/justifies/hides. OPTIONAL but ENCOURAGED: 4. a sentence beginning "External Context:" giving a broad, common-sense real-world fact stated generally (never a fabricated statistic, study, or citation) — add it whenever it helps a general reader grasp why the harm matters, skip it only when you have nothing genuine; 5. "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply. NEVER pad to a fixed count and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — end at the last real point.
 - NO VAGUE AUTHORITIES: never support a point by gesturing at unnamed sources — no "multiple news outlets reported", "studies show", "many experts agree", "research finds", "researchers found", "critics note", "reports indicate", "widely reported" — UNLESS that exact statement appears in the ARTICLE TEXT. Otherwise state a plain common fact in your own words, argue from the piece's own logic, or say nothing.
 - NO OVER-SPECIFICITY: no fabricated statute/section numbers, case names, precise statistics/percentages, or study titles/dates unless they literally appear in the ARTICLE TEXT. Name only extremely well-known institutions you are sure of (ADA, OSHA, the Civil Rights Act, the EPA).
 - Plain layman English, 150–280 words for whyBad, PLAIN TEXT ONLY (no markdown), and NO audit/verification metadata ("URL accessible", "Content confirmed", etc.).
@@ -139,9 +139,9 @@ async function verifyBatch(
 ): Promise<(RawFinding | null)[]> {
   let byId = new Map<string, BatchResult>();
   try {
-    const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: true });
+    const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: false });
     const text = await completeText(model, BATCH_GROUND_PROMPT, buildBatchUserText(items), {
-      reasoning: 'medium', temperature: 0.3, topP: 0.9, json: true, timeoutMs: 180000,
+      reasoning: false, temperature: 0.3, topP: 0.9, json: true, timeoutMs: 180000,
     });
     const parsed = safeParseJson<{ results?: BatchResult[] }>(text);
     const results = Array.isArray(parsed?.results) ? parsed.results : [];
