@@ -116,15 +116,18 @@ whyBad field must:
 - Start with "1. " (required — names a specific claim from the piece)
 - Contain "2. " (required — names the manipulation tactic in everyday words AND defines it in the same sentence)
 - Contain "3. " (required — explains what the piece DOES to harm: sanitize/launder/justify/excuse/normalize/propagandize, plus mechanism and consequence)
-- May contain "4. External Context:" (optional — a concrete, well-established real-world fact that sharpens the harm; PASS only if substantive)
-- May contain "5. Conflict of interest:" (optional — documented specific funding or institutional stake; PASS only if substantive)
+- MAY contain optional points 4 and 5 (encouraged where useful). Each such point is VALID if it is EITHER:
+    (a) a labeled context point — "External Context:" (a broad, common-sense real-world fact that sharpens the harm),
+        "Conflict of interest:" (a documented funding or institutional stake), or "Timeliness note:"; OR
+    (b) a substantive ADDITIONAL analytical point continuing the 1–3 critique (more harm mechanism, more consequence).
+  PASS as long as the point carries real substance.
 - Be 150–280 words
 - NOT start with "Analysis:" and NOT be surrounded by brackets
 - Contain NO markdown (no **, no __, no backticks, no # headers)
 - Contain NO ALL-CAPS non-acronym words
-- FAIL if point 4 is present but does NOT begin with "External Context:" or "Conflict of interest:"
-- FAIL if point 5 is present but does NOT begin with "Conflict of interest:" or "Timeliness note:"
-- FAIL if any point beyond 3 is a filler ("None," "N/A," "Not applicable," "No additional context")
+- FAIL a point beyond 3 ONLY if it is filler/placeholder ("None," "N/A," "Not applicable," "No additional context")
+  or a labeled context point whose label is present but whose content is empty/generic. Do NOT fail a substantive
+  unlabeled 4th/5th analytical point merely for lacking the "External Context:"/"Conflict of interest:" label.
 
 BANNED vague-authority phrases (if present, whyBad FAILS the format check):
 "multiple news outlets reported," "studies show," "many experts agree," "research finds,"
@@ -167,8 +170,10 @@ Evaluate each entry on SEVEN dimensions:
    Check: single-para summary, numbered whyBad (1./2./3. present), 150–280 words in whyBad,
    no markdown, no ALL-CAPS, no "Analysis:" label, no filler points, no banned vague-authority
    phrases, no metadata leakage, no over-specific fabrications.
-   Optional point 4 ("External Context:") and point 5 ("Conflict of interest:" / "Timeliness note:") are VALID — do NOT fail entries for having them, so long as they are substantive.
-   FAIL only if: point 4+ is present AND does not start with one of the allowed labels, OR any point is a filler placeholder.
+   Optional points 4 and 5 are VALID whether they are labeled context points ("External Context:",
+   "Conflict of interest:", "Timeliness note:") OR substantive additional analytical points — so long as
+   they carry real substance. FAIL only if a point beyond 3 is a filler placeholder, or a labeled point's
+   content is empty/generic. Do NOT fail a substantive unlabeled 4th/5th point for lacking a label.
    PASS / FAIL
 
 6. CATEGORY: Is the entry in the correct category from the list above?
