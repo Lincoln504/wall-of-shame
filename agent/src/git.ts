@@ -32,7 +32,7 @@ export function git(cmd: string, log?: (msg: string) => void): string {
  */
 export function hasDataChanges(): boolean {
   try {
-    const status = git('status --porcelain agent/data/');
+    const status = git('status --porcelain agent/data/findings.json agent/data/run-state.json');
     return status.length > 0;
   } catch {
     return false;
@@ -58,7 +58,7 @@ export function commitAndPush(addedCount: number, categoryLabel?: string, log?: 
 
   try {
     log?.(`  [git] staging data changes...`);
-    git('add agent/data/', log);
+    git('add agent/data/findings.json agent/data/run-state.json', log);
 
     log?.(`  [git] committing results...`);
     const message = addedCount > 0

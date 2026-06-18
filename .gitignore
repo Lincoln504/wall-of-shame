@@ -19,6 +19,7 @@ agent/data/cron.log
 agent/data/reports/
 agent/data/failures/
 agent/data/runs/
+agent/data/STOP_LOOP
 
 # Agent root debug artifacts (leftover from research sessions)
 agent/pi-research-*.md
