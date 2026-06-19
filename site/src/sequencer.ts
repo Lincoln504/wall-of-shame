@@ -49,6 +49,16 @@ export const TUNING = {
   AFFINITY_CAP: 3,         // cap accumulated affinity per category (no runaway)
   AFFINITY_GAIN: 9,        // weight multiplier per unit of affinity
   AFFINITY_BOOST_MAX: 26,  // cap a candidate's affinity weight multiplier
+  // Category coverage. Guarantees a long browse surfaces EVERY category, not just the high-yield
+  // ones: each category tracks how many steps since it last appeared ("gap"). A soft boost lifts a
+  // category's weight once its gap exceeds COVERAGE_SOFT_FRAC × (number of live categories), ramping
+  // with the gap; and a HARD backstop force-restricts the draw to any category whose gap reaches the
+  // live-category count — so no category waits longer than ~that many steps. The window is the live
+  // category count itself (you can't show C categories in fewer than C steps), and it shrinks as
+  // categories exhaust, so coverage stays tight. Soft boost usually satisfies it before the backstop.
+  COVERAGE_SOFT_FRAC: 0.45, // gap fraction (× live-cat count) at which the soft boost starts
+  COVERAGE_GAIN: 1.5,       // per-step soft lift for an overdue category (ramps with the gap)
+  COVERAGE_BOOST_MAX: 24,   // cap the soft coverage multiplier (keeps it from fully erasing randomness)
 };
 
 type Rng = () => number;
@@ -102,6 +112,18 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
   // boosts that category; all affinities decay each pick so a boost lasts ≈3 picks unless renewed.
   let avgDwell = 0;
   const catAff: Record<string, number> = {};
+  // Coverage bookkeeping: a monotonic step counter and the step at which each category last appeared.
+  let step = 0;
+  const catLastShown: Record<string, number> = {};
+  const NEVER = -1e9; // gap for a category never shown this session → maximally overdue
+
+  // Categories that still have at least one unshown (not-yet-served) entry — the set coverage
+  // must cycle through. Shrinks as categories exhaust, tightening the guarantee window.
+  function liveCategories(): Set<string> {
+    const s = new Set<string>();
+    for (const c of pool) if (!sessionServed.has(idOf(c))) s.add(c.category);
+    return s;
+  }
 
   function updateAffinity(dwellMs: number, cat: string | undefined) {
     // Decay every category each step (a boost fades unless the reader keeps engaging with it).
@@ -118,8 +140,10 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
   const idOf = (f: Finding) => f.id || f.url;
 
   // `useServed` ON = hard-exclude every card already served this session (the no-repeat guarantee);
-  // OFF is the exhaustion fallback (pool fully seen) so the draw never deadlocks.
-  function weights(capCat: boolean, capSev: boolean, useServed: boolean): number[] {
+  // OFF is the exhaustion fallback (pool fully seen) so the draw never deadlocks. `restrict` (the
+  // hard coverage backstop) limits the draw to candidates of overdue categories; null = no limit.
+  // `softStart` is the gap beyond which the soft coverage boost applies.
+  function weights(capCat: boolean, capSev: boolean, useServed: boolean, restrict: Set<string> | null, softStart: number): number[] {
     const out = new Array<number>(pool.length);
     for (let i = 0; i < pool.length; i++) {
       const c = pool[i];
@@ -127,6 +151,8 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
 
       // HARD no-repeat: a card already served this session is removed from the draw entirely.
       if (useServed && sessionServed.has(idOf(c))) { out[i] = 0; continue; }
+      // HARD coverage backstop: when categories are critically overdue, only they are eligible.
+      if (restrict && !restrict.has(c.category)) { out[i] = 0; continue; }
 
       // Hard run-length caps. A capped axis zeroes matching candidates.
       if (capCat && catRun.len >= TUNING.MAX_RUN && c.category === catRun.cat) { out[i] = 0; continue; }
@@ -150,6 +176,12 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       // own pace). Persists/decays across picks, so the lift spans the next few picks.
       const ca = catAff[c.category] ?? 0;
       if (ca > 0) w *= 1 + Math.min(TUNING.AFFINITY_BOOST_MAX, ca * TUNING.AFFINITY_GAIN);
+
+      // Coverage soft boost: the longer a category has gone unshown past softStart, the more its
+      // weight is lifted — so overdue categories surface on their own, usually before the hard
+      // backstop is ever needed. Never-shown categories (gap ≈ NEVER→huge) get the capped max.
+      const gap = step - (catLastShown[c.category] ?? NEVER);
+      if (gap > softStart) w *= 1 + Math.min(TUNING.COVERAGE_BOOST_MAX, TUNING.COVERAGE_GAIN * (gap - softStart));
 
       out[i] = w;
     }
@@ -175,31 +207,43 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     if (dwellMs > 0) updateAffinity(dwellMs, leftCategory ?? last?.category);
 
     if (pool.length === 0) return null;
-    if (pool.length === 1) { last = pool[0]; sessionServed.add(idOf(pool[0])); return pool[0]; }
+    if (pool.length === 1) { last = pool[0]; sessionServed.add(idOf(pool[0])); catLastShown[pool[0].category] = ++step; return pool[0]; }
 
-    // Try full constraints, then relax in order so the draw can never deadlock:
-    //   1. no-repeat + both caps   2. drop severity cap   3. drop both caps
-    //   4. drop EVERYTHING incl. no-repeat — only reached once the pool is genuinely exhausted
-    //      (every card served), at which point allowing a repeat beats showing nothing.
+    step++;
+    // Coverage window = the number of live categories (can't cover C categories in fewer than C
+    // steps). Any live category whose gap has reached the window is "overdue" → the hard backstop
+    // restricts the draw to overdue categories, guaranteeing none waits much longer than the window.
+    const live = liveCategories();
+    const window = Math.max(1, live.size);
+    const softStart = Math.floor(window * TUNING.COVERAGE_SOFT_FRAC);
+    const overdue = new Set<string>();
+    for (const cat of live) if (step - (catLastShown[cat] ?? NEVER) >= window) overdue.add(cat);
+    const forced = overdue.size ? overdue : null;
+
+    // Relax in order so the draw can never deadlock:
+    //   1-3. coverage backstop + no-repeat, dropping the run caps   4. drop the coverage restriction
+    //   (overdue cats all served)   5. drop no-repeat too — only once the pool is fully exhausted.
     let idx = -1;
-    const attempts: Array<[boolean, boolean, boolean]> = [
-      [true, true, true],
-      [true, false, true],
-      [false, false, true],
-      [false, false, false],
+    const attempts: Array<[boolean, boolean, boolean, Set<string> | null]> = [
+      [true, true, true, forced],
+      [true, false, true, forced],
+      [false, false, true, forced],
+      [false, false, true, null],
+      [false, false, false, null],
     ];
-    for (const [capCat, capSev, useServed] of attempts) {
-      idx = draw(weights(capCat, capSev, useServed));
+    for (const [capCat, capSev, useServed, restrict] of attempts) {
+      idx = draw(weights(capCat, capSev, useServed, restrict, softStart));
       if (idx >= 0) break;
     }
     if (idx < 0) idx = Math.floor(rng() * pool.length); // absolute last resort
 
     const picked = pool[idx];
 
-    // Update run-length state (independent axes) + record as served (the no-repeat guarantee).
+    // Update run-length state (independent axes), record as served (no-repeat), and stamp coverage.
     catRun = picked.category === catRun.cat ? { cat: catRun.cat, len: catRun.len + 1 } : { cat: picked.category, len: 1 };
     sevRun = picked.severity === sevRun.sev ? { sev: sevRun.sev, len: sevRun.len + 1 } : { sev: picked.severity, len: 1 };
     sessionServed.add(idOf(picked));
+    catLastShown[picked.category] = step;
     last = picked;
     return picked;
   }
@@ -213,7 +257,9 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     catRun = { cat: '', len: 0 };
     sevRun = { sev: '', len: 0 };
     avgDwell = 0;
+    step = 0;
     for (const k in catAff) delete catAff[k];
+    for (const k in catLastShown) delete catLastShown[k];
   }
 
   return { next, markServed, reset };
