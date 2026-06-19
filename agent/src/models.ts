@@ -139,10 +139,17 @@ export async function getModel(
   const hit = cache.get(key);
   if (hit) return hit;
 
+  // Canonical pi SDK resolution: ModelRegistry.create(authStorage, modelsJsonPath) loads the
+  // built-in models PLUS the custom providers defined in ~/.pi/agent/models.json (where the
+  // glm-coding provider lives), then find(provider, id) + getApiKeyAndHeaders(model) resolve
+  // auth. We pass modelsJsonPath EXPLICITLY (not relying on the default) so it's unambiguous.
   const agentDir = join(homedir(), '.pi', 'agent');
-  const registry = ModelRegistry.create(AuthStorage.create(join(agentDir, 'auth.json')));
+  const registry = ModelRegistry.create(
+    AuthStorage.create(join(agentDir, 'auth.json')),
+    join(agentDir, 'models.json'),
+  );
   const model = registry.find(provider, modelId);
-  if (!model) throw new Error(`Model ${provider}/${modelId} not found in registry.`);
+  if (!model) throw new Error(`Model ${provider}/${modelId} not found in registry (check ~/.pi/agent/models.json).`);
   (model as any).reasoning = reasoning;
 
   const auth = await registry.getApiKeyAndHeaders(model);
