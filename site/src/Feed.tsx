@@ -194,9 +194,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         >
+          {/* KEYED: remount FindingCard on every finding change so the fresh summary <p>
+              is the one justify.ts mutates. Without this, the feed reuses ONE card instance;
+              justify replaces the summary's text node with word-spans, and Solid's reactive
+              text update then targets a detached node — the summary freezes on the first
+              finding while the title/link advance (a title↔description desync). */}
           <div aria-live="polite">
-            <Show when={current()} fallback={<div style={s.empty}>No entries found.</div>}>
-              <FindingCard finding={current()!} onShare={props.onShare} variant="feed" />
+            <Show when={current()} keyed fallback={<div style={s.empty}>No entries found.</div>}>
+              {(f) => <FindingCard finding={f} onShare={props.onShare} variant="feed" />}
             </Show>
           </div>
         </div>
