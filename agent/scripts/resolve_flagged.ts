@@ -188,7 +188,21 @@ try {
         timeoutMs: 240_000, // 4 min for 5 entries
       });
 
-      batchResults = safeParseJson<AuditResult[]>(rawResponse);
+      const parsed = safeParseJson<AuditResult[] | AuditResult>(rawResponse);
+      // safeParseJson can return a non-array (a single {...} object or null) WITHOUT
+      // throwing — e.g. the model emits one result instead of a list. Guard before the
+      // for…of below, otherwise it throws "batchResults is not iterable" OUTSIDE this
+      // try/catch and crashes the whole resolution pass (leaving flagged-pending to grow
+      // unbounded). Wrap a lone valid result; otherwise treat as a failed batch.
+      if (Array.isArray(parsed)) {
+        batchResults = parsed;
+      } else if (parsed && typeof parsed === 'object' && (parsed as AuditResult).id) {
+        batchResults = [parsed as AuditResult];
+      } else {
+        log(`  batch ${b + 1} returned non-array JSON — skipping batch, will retry next run`);
+        totalErrors += batch.length;
+        continue;
+      }
     } catch (e) {
       log(`  batch ${b + 1} error: ${String(e).slice(0, 100)} — skipping batch, will retry next run`);
       totalErrors += batch.length;
