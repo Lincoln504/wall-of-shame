@@ -176,6 +176,26 @@ export interface RawFinding {
  * Add newly discovered findings to the store and state.
  * Performs deep deduplication and stealth URL verification.
  */
+// Stopwords dropped when building the semantic-duplicate key (significant words like nouns
+// and years are kept, so different articles stay distinct).
+const TITLE_STOPWORDS = new Set(['the', 'a', 'an', 'of', 'for', 'to', 'in', 'on', 'and', 'or', 'at', 'by', 'with', 'from', 'is', 'are', 'as', 'that', 'this', 'its', 'their']);
+/** Collapse a hostname to its registrable-ish root: inside.fifa.com & quality.fifa.com → fifa.com. */
+function rootDomain(hostOrUrl: string): string {
+  let h = (hostOrUrl || '').toLowerCase();
+  try { h = new URL(h.includes('://') ? h : `https://${h}`).hostname; } catch { /* use as-is */ }
+  h = h.replace(/^www\./, '');
+  const parts = h.split('.');
+  return parts.length > 2 ? parts.slice(-2).join('.') : h;
+}
+/** Root-domain-scoped key of a title's sorted significant words, so the SAME article republished
+ *  at a different URL and with a reworded title (e.g. "X World Cup 2026" vs "X for the 2026 World
+ *  Cup") collapses to one. URL-norm and exact-title-norm both miss these. */
+function titleDomainKey(title: string, hostOrUrl: string): string {
+  const words = (title || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter(w => w && !TITLE_STOPWORDS.has(w)).sort();
+  return `${rootDomain(hostOrUrl)}|${words.join(' ')}`;
+}
+
 export async function addFindings(
   store: FindingsStore,
   state: RunState,
@@ -201,6 +221,8 @@ export async function addFindings(
   }
   const existingUrls = new Set(store.findings.map(existing => canonicalizeUrl(existing.url)));
   const existingTitles = new Set(store.findings.map(existing => normalizeTitle(existing.title)));
+  // Semantic-duplicate guard (same article, different URL + reworded title).
+  const existingTitleKeys = new Set(store.findings.map(e => titleDomainKey(e.title, e.domain || e.url)));
 
   // Record a URL as permanently seen so duplicate / failed URLs are never
   // re-researched or re-verified in a later round. Idempotent.
@@ -231,9 +253,10 @@ export async function addFindings(
     }
 
     const title = normalizeTitle(f.title);
+    const titleKey = titleDomainKey(f.title, domain || url);
 
     // Deep deduplication (global: across every category and prior round)
-    if (globalSeen.has(canonUrl) || existingUrls.has(canonUrl) || existingTitles.has(title)) {
+    if (globalSeen.has(canonUrl) || existingUrls.has(canonUrl) || existingTitles.has(title) || existingTitleKeys.has(titleKey)) {
       log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
       markSeen(canonUrl);
       bump('duplicates');
@@ -278,6 +301,7 @@ export async function addFindings(
     store.findings.push(finding);
     existingUrls.add(canonUrl);
     existingTitles.add(title);
+    existingTitleKeys.add(titleKey);
     markSeen(canonUrl);
     added.push(finding);
   }
