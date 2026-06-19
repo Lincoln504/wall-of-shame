@@ -46,6 +46,15 @@ const commit = !args.includes('--no-commit');
 // drops the current top-N categories with probability THROTTLE. Over many rounds this
 // gently down-weights the leaders without ever starving anything. Disable with
 // PI_RESEARCH_TOP_THROTTLE=0; tune the count with --throttle-top N (default 4).
+//
+// DEDUP POLICY — category balancing is the ONE omission that is NOT tombstoned. A source
+// passed over because its category was throttled this round is simply never fetched, so it
+// never reaches markSeen/_audit_removed: it stays fully eligible for a future round when its
+// category is no longer saturated. (Everything else considered-but-unused — failed scrapes,
+// failed verification, duplicates, audit/quality removals — IS tombstoned so it is never
+// reprocessed; see findings.ts markSeen and the _audit_removed tombstone in the audit scripts.)
+// This is by construction: balance is applied by SKIPPING categories at intake, never by
+// pruning already-stored entries — so good, verified content is never deleted for balance.
 const TOP_N = numArg('--throttle-top', 4);
 const THROTTLE = (() => {
   const v = parseFloat(process.env['PI_RESEARCH_TOP_THROTTLE'] ?? '0.5');
