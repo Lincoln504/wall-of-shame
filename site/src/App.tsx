@@ -88,7 +88,11 @@ export default function App() {
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
   // Sorting controls the order ONLY when there is no search query; search is always semantic.
-  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity'>('default');
+  // Default is 'newest' so the latest discoveries sit at the top of the list — safe because
+  // share links are id-based permalinks (/entry/<id>), not page numbers, so reordering as the
+  // corpus grows never rots a shared link. 'default' is the deterministic category-interleaved
+  // ("Shuffled") view, now opt-in.
+  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity'>('newest');
   const [showDownload, setShowDownload] = createSignal(false);
   const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
@@ -333,10 +337,10 @@ export default function App() {
             <option value="low">Low</option>
           </select>
           <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
-            <option value="default">Default</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="severity">By Severity</option>
+            <option value="default">Shuffled</option>
           </select>
         </div>
       </div>

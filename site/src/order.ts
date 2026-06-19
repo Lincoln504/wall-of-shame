@@ -1,13 +1,17 @@
 /**
  * order.ts — deterministic, stable, category-interleaved ordering + pagination.
  *
- * Why deterministic: a generated share image hard-codes the page URL an entry
- * lives on (e.g. .../#/page/10). The order therefore must be reproducible across
- * loads. We key each entry's sort value off a hash of its STABLE id, not a
- * positional shuffle — so when the corpus grows (the agent adds entries toward
- * 1500), existing entries keep their relative order; a new entry just slots into
- * its hash position. (Absolute page numbers can still drift as the corpus grows,
- * but the order itself never randomly reshuffles.)
+ * This is the "Shuffled" view (opt-in). The DEFAULT list order is newest-first
+ * (by foundAt) so the latest discoveries sit on top; see App.tsx. Share links are
+ * id-based permalinks (/entry/<id>) resolved to whatever page the entry currently
+ * sits on, so neither the default time order nor this shuffle can rot a shared
+ * link as the corpus grows — page numbers are never embedded in a share URL.
+ *
+ * Why this view stays deterministic: we key each entry's sort value off a hash of
+ * its STABLE id, not a positional shuffle — so when the corpus grows (the agent
+ * adds entries toward 1500), existing entries keep their relative order in the
+ * Shuffled view; a new entry just slots into its hash position rather than
+ * reshuffling the whole list on every load.
  *
  * Why interleaved: the raw data clusters by category (rounds add a category at a
  * time). An id-hash sort already mixes categories well; a light greedy de-cluster
