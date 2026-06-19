@@ -64,6 +64,12 @@ export default function App() {
   const [justCleared, setJustCleared] = createSignal(false);             // transient "cleared" confirmation
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
+  // Feed footer stabilizer: the feed reports its CURRENT card height; the footer sits a
+  // consistent gap below it, and a spacer BELOW the footer (height = maxSeen − current) keeps
+  // the page total steady so it doesn't jump as cards of different heights swap in the feed.
+  const [feedCardH, setFeedCardH] = createSignal(0);
+  const [feedMaxH, setFeedMaxH] = createSignal(0);
+  const onFeedHeight = (h: number) => { setFeedCardH(h); setFeedMaxH(m => Math.max(m, h)); };
 
   const counts = useVisitCounts();
 
@@ -319,7 +325,7 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=14`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=15`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           Search engine of harmful English language web content.
@@ -452,7 +458,7 @@ export default function App() {
             when={feedPool().length > 0}
             fallback={<div style={s.empty}>No entries found.</div>}
           >
-            <Feed findings={feedPool()} onShare={handleShare} />
+            <Feed findings={feedPool()} onShare={handleShare} onHeight={onFeedHeight} />
           </Show>
         </Show>
       </Show>
@@ -470,7 +476,7 @@ export default function App() {
           </Show>
         </div>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=14`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=15`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>
@@ -485,6 +491,13 @@ export default function App() {
           <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
         </div>
       </footer>
+
+      {/* Feed-only stabilizer: absorbs the difference between the tallest card seen and the
+          current one BELOW the footer, so the footer hugs the card at a consistent gap while
+          the overall page height stays steady (no scroll jump as cards swap). */}
+      <Show when={viewMode() === 'feed'}>
+        <div aria-hidden="true" style={{ height: `${Math.max(0, feedMaxH() - feedCardH())}px` }} />
+      </Show>
 
       {/* The modal isolates its own errors; this boundary is a final backstop so a share
           failure can never propagate to (and blank) the rest of the page. */}

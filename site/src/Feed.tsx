@@ -48,7 +48,7 @@ const EDGE_FEATHER = 34;  // px the card edge fades over at each screen edge (so
 // This is a GPU-composited alpha mask — no blur filter, no extra DOM, effectively free per frame.
 const EDGE_MASK = `linear-gradient(to right, transparent 0, #000 ${EDGE_FEATHER}px, #000 calc(100% - ${EDGE_FEATHER}px), transparent 100%)`;
 
-export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void }) {
+export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void; onHeight?: (h: number) => void }) {
   const reducedMotion = usePrefersReducedMotion();
   const inputClass = useInputClass(); // 'pointer' → show side arrows; 'touch' → swipe only
 
@@ -211,9 +211,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     setCardW(cw);
     setGap(Math.max(GAP_MIN, (W - cw) / 2 + EDGE_OVERSHOOT));
     if (stageRef) {
-      let h = 0;
-      stageRef.querySelectorAll('.wos-feed-slot').forEach(el => { h = Math.max(h, (el as HTMLElement).offsetHeight); });
-      if (h > 0) setClipH(h);
+      // Measure the CURRENT card specifically (not the tallest visible) so the stage — and the
+      // footer right below it — sits a consistent gap under the actual card content. The page
+      // total is held steady by a stabilizer spacer placed BELOW the footer (in App), so the
+      // footer follows the card while the page height doesn't jump.
+      const els = stageRef.querySelectorAll('.wos-feed-slot');
+      const cur = els[currentIdx()] as HTMLElement | undefined;
+      const h = cur ? cur.offsetHeight : 0;
+      if (h > 0) { setClipH(h); props.onHeight?.(h); }
     }
   };
   onMount(() => {
