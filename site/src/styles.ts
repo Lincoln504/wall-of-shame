@@ -150,4 +150,9 @@ export const s: Record<string, any> = {
   feedArrowRight: { right: '0.15rem', transform: 'translateY(-50%)' },
   feedArrowBtnDisabled: { opacity: 0.32, cursor: 'default', 'box-shadow': 'none' },
   feedHint: { 'font-size': '0.72rem', color: '#bbb', 'text-align': 'center', 'margin-top': '1.4rem', 'letter-spacing': '0.02em', 'font-family': UI },
+  feedSwipeHint: {
+    display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.55rem',
+    'margin-top': '1.4rem', 'font-size': '0.8rem', color: '#b0ada4', 'letter-spacing': '0.03em', 'font-family': UI,
+  },
+  feedSwipeChev: { 'font-size': '1.35rem', 'line-height': 1, color: '#cfccc4', 'font-weight': '400' },
 };

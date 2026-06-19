@@ -41,7 +41,8 @@
 set -u
 cd "$(dirname "$0")"
 
-TARGET="${1:-1500}"
+TARGET="${1:-1000000}"   # default is effectively indefinite; pass an explicit arg to cap. The
+                         # >=TARGET break below remains as a safety ceiling.
 MAX_ROUNDS="${2:-300}"
 CONC="${3:-8}"
 MIN_AVAIL_MB="${4:-6000}"   # don't start a round unless this many MB are available

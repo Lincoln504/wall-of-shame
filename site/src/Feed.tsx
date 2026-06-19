@@ -12,7 +12,7 @@ import { createSignal, createMemo, createEffect, on, onMount, onCleanup, Show } 
 import type { Finding } from './types.js';
 import FindingCard from './FindingCard.js';
 import { createSequencer } from './sequencer.js';
-import { usePrefersReducedMotion } from './device.js';
+import { useInputClass, usePrefersReducedMotion } from './device.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
 import { s } from './styles.js';
 
@@ -27,6 +27,7 @@ const SLIDE_MS = 190;    // slide animation duration
 
 export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void }) {
   const reducedMotion = usePrefersReducedMotion();
+  const inputClass = useInputClass(); // 'pointer' → show side arrows; 'touch' → swipe only
 
   // A fresh sequencer whenever the candidate pool changes (data load or category/severity filter).
   const seq = createMemo(() => createSequencer(props.findings, SESSION_SEED));
@@ -144,10 +145,13 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   return (
     <div ref={stageRef}>
       <div style={s.feedStage}>
-        <button
-          style={{ ...s.feedArrowBtn, ...s.feedArrowLeft, ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
-          onClick={prev} disabled={!canBack()} aria-label="Previous entry"
-        >←</button>
+        {/* Desktop only: clickable carousel arrows. Mobile is swipe-only (no width to spare). */}
+        <Show when={inputClass() === 'pointer'}>
+          <button
+            style={{ ...s.feedArrowBtn, ...s.feedArrowLeft, ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
+            onClick={prev} disabled={!canBack()} aria-label="Previous entry"
+          >←</button>
+        </Show>
 
         <div
           ref={motionEl}
@@ -164,13 +168,25 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
           </div>
         </div>
 
-        <button
-          style={{ ...s.feedArrowBtn, ...s.feedArrowRight }}
-          onClick={next} aria-label="Next entry"
-        >→</button>
+        <Show when={inputClass() === 'pointer'}>
+          <button
+            style={{ ...s.feedArrowBtn, ...s.feedArrowRight }}
+            onClick={next} aria-label="Next entry"
+          >→</button>
+        </Show>
       </div>
 
-      <div style={s.feedHint}>Swipe or drag · or use ← → keys</div>
+      {/* Affordance: on touch, make the side-to-side swipe explicit (no buttons to imply it). */}
+      <Show
+        when={inputClass() === 'touch'}
+        fallback={<div style={s.feedHint}>Drag, use the side arrows, or ← → keys</div>}
+      >
+        <div class="wos-swipe-hint" style={s.feedSwipeHint}>
+          <span style={s.feedSwipeChev} aria-hidden="true">‹</span>
+          <span>swipe sideways to browse</span>
+          <span style={s.feedSwipeChev} aria-hidden="true">›</span>
+        </div>
+      </Show>
     </div>
   );
 }
