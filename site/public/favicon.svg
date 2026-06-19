@@ -2,7 +2,7 @@
   <rect width="32" height="32" fill="white"/>
   <!-- Border first, so the pin sits ABOVE it. -->
   <rect x="2" y="2" width="28" height="28" fill="none" stroke="#1a1a1a" stroke-width="4"/>
-  <g transform="translate(4.16, -3.2) rotate(25, 16, 16)">
+  <g transform="translate(4.16, 0) rotate(25, 16, 16)">
     <text x="16" y="20" font-size="18" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif">📌</text>
   </g>
   <!-- Clip the pin's point: a white box over the LEFT ~35% of the icon (right edge ≈ 11.2

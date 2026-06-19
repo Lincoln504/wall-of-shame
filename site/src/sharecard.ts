@@ -176,11 +176,11 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.strokeRect(x + lw / 2, y + lw / 2, s - lw, s - lw);
   // 📌 emoji, tilted 25° about the box center (matches the favicon's rotate(25)).
   // Pin sized + shifted to match the favicon exactly: emoji ≈0.5625·s (18/32), nudged
-  // 13% of the box to the RIGHT and 10% UP (screen-space, before the 25° rotation), so every
-  // icon in the project reads identically. (favicon.svg uses translate(4.16,-3.2) on a 32 box
-  // = +13% x, −10% y, + rotate(25).)
+  // 13% of the box to the RIGHT (screen-space, before the 25° rotation), so every icon in the
+  // project reads identically. (favicon.svg uses translate(4.16, 0) on a 32 box = +13% x,
+  // + rotate(25).)
   ctx.save();
-  ctx.translate(x + s / 2 + s * 0.13, y + s / 2 - s * 0.10);
+  ctx.translate(x + s / 2 + s * 0.13, y + s / 2);
   ctx.rotate(25 * Math.PI / 180);
   ctx.font = `${Math.round(s * 0.5625)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
   ctx.textAlign = 'center';
