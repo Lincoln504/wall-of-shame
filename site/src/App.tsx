@@ -2,11 +2,13 @@ import { createSignal, createResource, For, Show, createMemo, onCleanup, createE
 import type { FindingsStore, Finding } from './types.js';
 import { canonicalOrder, pageForIndex, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
-import { splitAnalysisPoints } from './format.js';
 import ShareModal from './ShareModal.js';
+import FindingCard from './FindingCard.js';
+import Feed from './Feed.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
 import { loadDocVectors, computeHybridScores, isModelCached, clearModelCache } from './semantic.js';
 import type { QueryEmbedder } from './query-embedder.js';
+import { s, categoryLabel } from './styles.js';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -16,19 +18,6 @@ async function fetchFindings(): Promise<FindingsStore> {
   const res = await fetch(`${BASE}findings.json`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to load findings: ${res.status}`);
   return res.json() as Promise<FindingsStore>;
-}
-
-const SEVERITY_COLOR: Record<string, string> = {
-  high: '#d32f2f',
-  medium: '#ef6c00',
-  low: '#c79a00',
-};
-
-function categoryLabel(key: string): string {
-  return key
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
 
 // "Updated today" / "Updated yesterday" / "Updated M/D/YYYY". Computed in the browser at
@@ -62,57 +51,17 @@ function jsonToCsv(findings: Finding[]) {
   return [headers.join(','), ...rows].join('\n');
 }
 
-function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Finding) => void }) {
-  const f = props.finding;
-  const color = SEVERITY_COLOR[f.severity] ?? '#757575';
-  const date = f.foundAt ? `Found ${new Date(f.foundAt).toLocaleDateString()}` : '';
-
-  return (
-    <article style={s.card}>
-      <div style={s.cardHeader}>
-        <span style={{ ...s.badge, background: color }}>{f.severity}</span>
-        <span style={s.categoryBadge}>{categoryLabel(f.category)}</span>
-        <Show when={props.score !== undefined}>
-          <span style={s.scoreBadge}>Match {Math.round(props.score! * 100)}%</span>
-        </Show>
-        <span style={s.date}>{date}</span>
-      </div>
-      <h3 style={s.cardTitle}>
-        <a href={f.url} target="_blank" rel="noopener noreferrer" style={s.titleLink}>{f.title}</a>
-      </h3>
-      <div style={s.domain}>{f.domain}</div>
-      <p class="wos-justify" style={s.summaryText}>{f.summary}</p>
-      <div style={s.whyBadBox}>
-        <div style={s.whyBadLabel}>Analysis</div>
-        <For each={splitAnalysisPoints(f.whyBad)}>
-          {pt => <p style={s.whyBadText}>{pt}</p>}
-        </For>
-      </div>
-      <div style={s.actions}>
-        <button style={s.shareBtn} onClick={() => props.onShare(f)} title="Share this entry as an image">
-          Share ↗
-        </button>
-      </div>
-    </article>
-  );
-}
-
 export default function App() {
   const [data] = createResource(fetchFindings);
   const [docVectors, setDocVectors] = createSignal<Map<string, Float32Array>>(new Map());
   const [search, setSearch] = createSignal('');
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
-  // Sorting controls the order ONLY when there is no search query; search is always semantic.
-  // The default ('newest') IS the canonical order: newest arrival batch on top, de-clustered
-  // within each batch, every entry locked in place (see order.ts). 'oldest' is that same order
-  // reversed; 'severity' groups by severity. There is no separate "shuffled" mode — the shuffle
-  // is baked into the default so latest entries always stack on top without same-category runs.
-  const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity'>('newest');
   const [showDownload, setShowDownload] = createSignal(false);
   const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
   const [dlProgress, setDlProgress] = createSignal<number | null>(null); // 0–100 while downloading, else null
   const [modelCached, setModelCached] = createSignal(false);             // weights present in Cache Storage
+  const [justCleared, setJustCleared] = createSignal(false);             // transient "cleared" confirmation
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
@@ -150,14 +99,24 @@ export default function App() {
       .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); setDlProgress(null); });
   };
 
-  // Delete the cached model weights. The in-memory model (if loaded this session) keeps
-  // working — the placeholder stays "Search…" — so search is uninterrupted; only the
-  // on-disk copy is dropped, so a future cold load re-downloads it (and typing then
-  // re-triggers ensureModel -> a fresh download from idle).
+  // Clear means CLEAR: drop the on-disk weights AND tear down the in-memory model + reset
+  // state to idle, so the UI honestly reflects an uncached, unloaded model (no lingering
+  // "ready" that reads as "nothing happened"). A future search re-downloads cold. Shows a
+  // brief confirmation so the action is legible.
   const clearModel = async () => {
     await clearModelCache();
+    embedder?.dispose();
+    embedder = null;
+    setModelState('idle');
     setModelCached(false);
+    setDlProgress(null);
+    setQueryVector(null);
+    setJustCleared(true);
+    clearTimeout(clearedTimer);
+    clearedTimer = setTimeout(() => setJustCleared(false), 2600);
   };
+  let clearedTimer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => clearTimeout(clearedTimer));
 
   // Embed the live query (debounced) whenever it or model readiness changes. Keyword
   // results render instantly and un-debounced via hybridScores; only the semantic
@@ -207,34 +166,48 @@ export default function App() {
 
   const keyOf = (f: Finding) => f.id || f.url;
 
-  // ── Filter + order ────────────────────────────────────────────────────────────
+  // ── View mode ───────────────────────────────────────────────────────────────────
+  // The site has three mutually-exclusive views:
+  //   entry  — a /entry/<id> permalink (single card, share-link target).
+  //   search — a query is active: a relevance-ranked LIST of results (with pagination).
+  //   feed   — the default: a one-card-at-a-time weighted-random feed (see Feed.tsx).
+  // Search replaces the feed in place; clearing the query returns to the feed. The canonical
+  // list order (order.ts) is now only the "backend" data ordering, used for stable share-page
+  // links — the visible default browsing experience is the feed.
+  type ViewMode = 'feed' | 'search' | 'entry';
+  const viewMode = createMemo<ViewMode>(() => (focusId() ? 'entry' : hasQuery() ? 'search' : 'feed'));
+
+  // The feed's candidate pool: the full corpus, narrowed by the category/severity filters
+  // (the sequencer handles ordering, so no sort here).
+  const feedPool = createMemo<Finding[]>(() => {
+    const d = data();
+    if (!d) return [];
+    const cat = category(), sev = severity();
+    let list = d.findings;
+    if (cat) list = list.filter(f => f.category === cat);
+    if (sev) list = list.filter(f => f.severity === sev);
+    return list;
+  });
+
+  // ── Search results list (only consumed in search mode) ──────────────────────────
+  // Filtered by category/severity, ranked by hybrid relevance high→low. When no query is
+  // active this falls back to canonical order (not shown — the feed renders instead).
   const filteredList = createMemo(() => {
     const d = data();
     if (!d) return [] as (Finding & { score?: number })[];
     const cat = category();
     const sev = severity();
     const scores = hybridScores();
-    const order = sortOrder();
 
     let list: (Finding & { score?: number })[] = d.findings.map(f => ({ ...f, score: scores.get(keyOf(f)) }));
     if (cat) list = list.filter(f => f.category === cat);
     if (sev) list = list.filter(f => f.severity === sev);
 
-    // Hybrid search: keep only entries with a relevance score, ranked high→low. Before
-    // the model loads this is keyword-only (exact/partial matches); once it loads, every
-    // entry gets a semantic score so the full corpus ranks.
     if (hasQuery()) {
       return list.filter(f => f.score !== undefined).sort((a, b) => (b.score! - a.score!));
     }
-    if (order === 'severity') {
-      const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
-      return [...list].sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3));
-    }
-    // 'newest' (default) = canonical order (newest batch on top, de-clustered, locked).
-    // 'oldest' = that same canonical order reversed (oldest batch on top, still de-clustered).
     const ci = canonicalIndex();
-    const dir = order === 'oldest' ? -1 : 1;
-    return [...list].sort((a, b) => dir * ((ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0)));
+    return [...list].sort((a, b) => (ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0));
   });
 
   // ── Routing via History API (no hash) ─────────────────────────────────────────
@@ -290,7 +263,7 @@ export default function App() {
     navigate(`${BASE}page/${targetPage}`);
   };
   // Reset to page 1 when the filter/sort changes (but respect the initial URL page).
-  createEffect(on([search, category, severity, sortOrder], () => setRawPage(1), { defer: true }));
+  createEffect(on([search, category, severity], () => setRawPage(1), { defer: true }));
 
   const pageCount = createMemo(() => totalPages(filteredList().length));
   const page = createMemo(() => clampPage(rawPage(), filteredList().length));
@@ -304,7 +277,7 @@ export default function App() {
 
   // Home: from any page or entry, clear filters and return to page 1 (the landing view).
   const goHome = () => {
-    setSearch(''); setCategory(''); setSeverity(''); setSortOrder('newest');
+    setSearch(''); setCategory(''); setSeverity('');
     navigate(`${BASE}page/1`);
     window.scrollTo({ top: 0 });
   };
@@ -381,12 +354,21 @@ export default function App() {
             <span style={s.progressPct}>Downloading search model… {dlProgress()}%</span>
           </div>
         </Show>
-        <Show when={dlProgress() === null && (modelCached() || modelState() === 'ready')}>
+        <Show when={dlProgress() === null && (justCleared() || modelCached() || modelState() === 'ready')}>
           <div style={s.modelStatusRow}>
-            <span style={s.cacheTick}>✓ Search model {modelCached() ? 'cached' : 'ready'}</span>
-            <Show when={modelCached()}>
-              <button type="button" style={s.clearModelBtn} onClick={clearModel}
-                title="Delete the cached model from this browser">Clear</button>
+            <Show
+              when={justCleared()}
+              fallback={
+                <>
+                  <span style={s.cacheTick}>✓ Search model {modelCached() ? 'cached' : 'ready'}</span>
+                  <Show when={modelCached()}>
+                    <button type="button" style={s.clearModelBtn} onClick={clearModel}
+                      title="Delete the cached model from this browser">Clear</button>
+                  </Show>
+                </>
+              }
+            >
+              <span style={s.clearedTick}>✓ Search model cleared from this browser</span>
             </Show>
           </div>
         </Show>
@@ -401,11 +383,6 @@ export default function App() {
             <option value="medium">Medium</option>
             <option value="low">Low</option>
           </select>
-          <select value={sortOrder()} onChange={e => setSortOrder(e.currentTarget.value as any)} style={s.select}>
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="severity">By Severity</option>
-          </select>
         </div>
       </div>
       </Show>
@@ -414,66 +391,79 @@ export default function App() {
       <Show when={data.error}><div style={s.error}>Failed to load findings.</div></Show>
 
       <Show when={data()}>
-        <Show
-          when={!focusId()}
-          fallback={
-            <Show
-              when={focusedFinding()}
-              fallback={
-                <div style={s.empty}>
-                  That entry could not be found — it may have been removed.
-                  <div style={{ 'margin-top': '1rem' }}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
-                </div>
-              }
-            >
-              <div style={s.backRow}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
-              <main style={s.grid}>
-                <FindingCard finding={focusedFinding()!} onShare={handleShare} />
-              </main>
-            </Show>
-          }
-        >
+        {/* ── Entry permalink ── */}
+        <Show when={viewMode() === 'entry'}>
+          <Show
+            when={focusedFinding()}
+            fallback={
+              <div style={s.empty}>
+                That entry could not be found — it may have been removed.
+                <div style={{ 'margin-top': '1rem' }}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
+              </div>
+            }
+          >
+            <div style={s.backRow}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
+            <main style={s.grid}>
+              <FindingCard finding={focusedFinding()!} onShare={handleShare} variant="feed" />
+            </main>
+          </Show>
+        </Show>
+
+        {/* ── Search results list (paginated) ── */}
+        <Show when={viewMode() === 'search'}>
           <Show when={filteredList().length === 0}>
-            <div style={s.empty}>{hasQuery() && modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
+            <div style={s.empty}>{modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
           </Show>
           <main style={s.grid}>
             <For each={paged()}>
-              {item => <FindingCard finding={item} score={item.score} onShare={handleShare} />}
+              {item => <FindingCard finding={item} score={item.score} onShare={handleShare} variant="list" />}
             </For>
           </main>
-
           <Show when={pageCount() > 1}>
             <Pagination page={page()} pageCount={pageCount()} onGo={goToPage} />
           </Show>
         </Show>
+
+        {/* ── Feed (default) ── */}
+        <Show when={viewMode() === 'feed'}>
+          <Show
+            when={feedPool().length > 0}
+            fallback={<div style={s.empty}>No entries found.</div>}
+          >
+            <Feed findings={feedPool()} onShare={handleShare} />
+          </Show>
+        </Show>
       </Show>
 
-      <footer style={s.footer}>
-        <div style={s.downloadArea} class="download-container">
-          <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download all content ↓</button>
-          <Show when={showDownload()}>
-            <div style={s.dropdown}>
-              <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
-              <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
-            </div>
-          </Show>
-        </div>
-        <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
-          <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-            <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
-          </a>
-          <div style={s.footerCta}>
-            <span style={s.footerCtaLabel}>You're reading</span>
-            <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+      {/* Footer appears only on search pages (the feed is a focused, chrome-light view). */}
+      <Show when={viewMode() === 'search'}>
+        <footer style={s.footer}>
+          <div style={s.downloadArea} class="download-container">
+            <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download all content ↓</button>
+            <Show when={showDownload()}>
+              <div style={s.dropdown}>
+                <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
+                <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
+              </div>
+            </Show>
           </div>
-        </div>
-        <div style={s.feedbackLine}>
-          <span>Feedback? Article review suggestions?</span>
-          <span style={s.feedbackArrow} aria-hidden="true">→</span>
-          <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
-        </div>
-      </footer>
+          <div style={s.footerMain}>
+            <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
+            <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+              <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
+            </a>
+            <div style={s.footerCta}>
+              <span style={s.footerCtaLabel}>You're reading</span>
+              <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+            </div>
+          </div>
+          <div style={s.feedbackLine}>
+            <span>Feedback? Article review suggestions?</span>
+            <span style={s.feedbackArrow} aria-hidden="true">→</span>
+            <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
+          </div>
+        </footer>
+      </Show>
 
       <ShareModal
         finding={shareTarget()?.finding ?? null}
@@ -517,109 +507,3 @@ function Pagination(props: { page: number; pageCount: number; onGo: (p: number) 
     </nav>
   );
 }
-
-// ── Inline styles ────────────────────────────────────────────────────────────
-
-const UI = `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-// Reverted to sans-serif per direction: headings/body all use the Inter (sans) stack.
-const SERIF = UI;
-
-const s: Record<string, any> = {
-  root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI, 'min-height': '100vh' },
-  header: { padding: '4rem 0 2rem', 'text-align': 'center' },
-  title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0', 'letter-spacing': '-0.02em', 'line-height': 1 },
-  homeLink: { 'text-decoration': 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.7rem', 'margin-bottom': '1.25rem' },
-  titleLogo: { height: '2.1rem', width: '2.1rem', display: 'block', 'flex-shrink': 0 },
-  subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
-  subMeta: { display: 'block', 'margin-top': '0.95rem', 'font-size': '0.8rem', color: '#999', 'line-height': 1.7 },
-  nowrap: { 'white-space': 'nowrap' },
-  inlineLink: { color: '#1a1a1a', 'text-decoration': 'underline', 'font-weight': '600' },
-  stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
-  stat: { 'font-size': '0.72rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.7rem', 'border-radius': '4px', 'font-weight': '500' },
-  controls: {
-    display: 'flex', 'flex-direction': 'column', gap: '0.65rem', 'margin-bottom': '2rem',
-    padding: '1.5rem 0', 'border-top': '1px solid #eee', 'border-bottom': '1px solid #eee',
-  },
-  filterRow: { display: 'flex', gap: '0.5rem', 'flex-wrap': 'wrap' },
-  modelStatusRow: { display: 'flex', 'align-items': 'center', gap: '0.6rem', 'min-height': '1.1rem' },
-  progressTrack: { flex: '1 1 auto', height: '4px', background: '#eceae4', 'border-radius': '999px', overflow: 'hidden' },
-  progressFill: { height: '100%', background: '#1a1a1a', 'border-radius': '999px', transition: 'width 0.2s ease' },
-  progressPct: { 'font-size': '0.72rem', color: '#888', 'white-space': 'nowrap', 'flex-shrink': 0 },
-  cacheTick: { 'font-size': '0.72rem', color: '#1a7f37', 'font-weight': '600' },
-  clearModelBtn: { 'font-family': UI, 'font-size': '0.7rem', color: '#999', background: 'none', border: 'none', padding: '0', cursor: 'pointer', 'text-decoration': 'none' },
-  searchRow: { display: 'flex', gap: '0.5rem', 'align-items': 'stretch' },
-  searchInput: {
-    flex: '1 1 auto', 'min-width': 0, 'box-sizing': 'border-box', padding: '0.75rem 1.1rem', 'border-radius': '8px',
-    border: '1.5px solid #ccc', background: '#fff', color: '#1a1a1a', 'font-size': '1.05rem',
-    outline: 'none', 'font-family': UI,
-    'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
-  },
-  goBtn: {
-    flex: '0 0 auto', padding: '0 1.4rem', 'border-radius': '8px', border: '1.5px solid #ccc',
-    background: '#e9e8e4', color: '#555', 'font-size': '1.05rem', 'font-weight': '600',
-    cursor: 'pointer', 'font-family': UI, 'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
-  },
-  select: {
-    padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
-    background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer', 'font-family': UI,
-  },
-  downloadArea: { position: 'relative', 'text-align': 'center', margin: '0' },
-  downloadAreaBtn: {
-    padding: '0.45rem 1rem', 'border-radius': '6px', border: '1px solid #ccc',
-    background: '#faf9f6', color: '#888', 'font-size': '0.8rem', cursor: 'pointer', 'font-weight': '500', 'font-family': UI,
-  },
-  dropdown: {
-    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', 'margin-top': '0.4rem', background: '#fff',
-    border: '1px solid #ddd', 'border-radius': '6px', 'box-shadow': '0 4px 12px rgba(0,0,0,0.1)', 'z-index': 10,
-    display: 'flex', 'flex-direction': 'column', 'min-width': '100px', overflow: 'hidden',
-  },
-  dropdownItem: { padding: '0.6rem 1rem', background: 'none', border: 'none', 'text-align': 'left', cursor: 'pointer', 'font-size': '0.85rem', color: '#333', 'font-family': UI },
-  semanticLoading: { 'font-size': '0.8rem', color: '#ef6c00', 'margin-bottom': '1rem', 'text-align': 'center', 'font-weight': '500' },
-  resultsBar: { 'font-size': '0.8rem', color: '#999', 'margin-bottom': '1.5rem', 'text-align': 'center', 'letter-spacing': '0.02em' },
-  grid: { display: 'flex', 'flex-direction': 'column', gap: '1.25rem' },
-  loading: { color: '#999', padding: '4rem', 'text-align': 'center' },
-  error: { color: '#d32f2f', padding: '2rem', 'text-align': 'center' },
-  empty: { color: '#999', padding: '4rem', 'text-align': 'center' },
-  card: {
-    background: '#fff', 'border-radius': '10px', border: '1px solid #ebe9e3',
-    padding: '1.4rem 1.6rem',
-    'box-shadow': '0 2px 10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-  },
-  cardHeader: { display: 'flex', gap: '0.75rem', 'align-items': 'center', 'margin-bottom': '0.85rem' },
-  badge: { 'font-size': '0.62rem', 'font-weight': '700', padding: '0.18rem 0.5rem', 'border-radius': '3px', color: '#fff', 'text-transform': 'uppercase', 'letter-spacing': '0.06em' },
-  categoryBadge: { 'font-size': '0.68rem', color: '#888', 'font-weight': '600', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' },
-  scoreBadge: { 'font-size': '0.62rem', color: '#ef6c00', 'font-weight': '700', 'text-transform': 'uppercase' },
-  date: { 'font-size': '0.72rem', color: '#bbb', 'margin-left': 'auto' },
-  cardTitle: { 'font-family': SERIF, 'font-size': '1.65rem', 'font-weight': '700', 'margin-bottom': '0.4rem', 'line-height': 1.25, 'letter-spacing': '-0.01em' },
-  titleLink: { color: '#1a1a1a', 'text-decoration': 'none', 'background-image': 'linear-gradient(#e8e6e0,#e8e6e0)', 'background-position': '0 100%', 'background-size': '100% 1px', 'background-repeat': 'no-repeat' },
-  domain: { 'font-family': SERIF, 'font-size': '0.92rem', color: '#a09a8e', 'margin-bottom': '1.1rem', 'font-style': 'italic' },
-  summaryText: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 1.25rem' },
-  whyBadBox: { background: '#fcfbf8', 'border-left': '3px solid #e4e1d9', padding: '1.1rem 1.25rem' },
-  whyBadLabel: { 'font-family': UI, 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.7rem', 'text-transform': 'uppercase', 'letter-spacing': '0.08em', 'margin-bottom': '0.6rem' },
-  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'left', margin: '0 0 0.7rem' },
-  actions: { display: 'flex', 'justify-content': 'flex-end', 'margin-top': '0.85rem' },
-  shareBtn: {
-    'font-family': UI, 'font-size': '0.78rem', 'font-weight': '600', color: '#1a1a1a',
-    background: '#fff', border: '1px solid #ddd', 'border-radius': '6px', padding: '0.4rem 0.85rem', cursor: 'pointer',
-  },
-  pagination: { display: 'flex', 'flex-wrap': 'wrap', gap: '0.35rem', 'justify-content': 'center', 'align-items': 'center', 'margin-top': '4rem' },
-  pageBtn: {
-    'font-family': UI, 'font-size': '0.85rem', 'min-width': '2.1rem', padding: '0.4rem 0.6rem',
-    border: '1px solid #ddd', background: '#fff', color: '#1a1a1a', 'border-radius': '6px', cursor: 'pointer',
-  },
-  pageBtnActive: { background: '#1a1a1a', color: '#fff', 'border-color': '#1a1a1a', 'font-weight': '700' },
-  pageEllipsis: { color: '#bbb', padding: '0 0.2rem' },
-  backRow: { 'margin-bottom': '1.5rem' },
-  backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
-  footer: { padding: '8rem 0 4rem', display: 'flex', 'flex-direction': 'column', 'align-items': 'center', gap: '2.75rem', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
-  footerMain: { display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap' },
-  feedbackLine: { display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.65rem', 'flex-wrap': 'wrap', 'font-size': '0.95rem', color: '#555', 'text-align': 'center' },
-  feedbackArrow: { 'font-size': '1.7rem', 'line-height': 1, color: '#1a1a1a', 'font-weight': '700' },
-  feedbackEmail: { color: '#1a1a1a', 'font-weight': '700', 'text-decoration': 'underline' },
-  footerMark: { width: '72px', height: '72px', display: 'block', 'flex-shrink': 0 },
-  qrLink: { 'flex-shrink': 0, 'line-height': 0 },
-  qr: { display: 'block', width: '72px', height: '72px', 'border-radius': '6px' },
-  footerCta: { display: 'flex', 'flex-direction': 'column', 'align-items': 'flex-start', gap: '0.25rem' },
-  footerCtaLabel: { 'font-size': '0.85rem', color: '#999' },
-  footerUrl: { 'font-size': '1.15rem', 'font-weight': '700', color: '#1a1a1a', 'text-decoration': 'none' },
-};

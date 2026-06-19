@@ -29,17 +29,25 @@ export async function isModelCached(): Promise<boolean> {
   } catch { return false; }
 }
 
-/** Delete this model's cached weights. Returns how many cache entries were removed.
- *  The in-memory model (if already loaded this session) keeps working; only the on-disk
- *  copy is removed, so a future cold load re-downloads it. */
+/** Delete the query model's cached weights. Returns how many cache entries were removed.
+ *  This app caches exactly ONE model in the 'transformers-cache' bucket, so the robust,
+ *  guaranteed-clean approach is to drop the whole bucket — that way clearing never depends
+ *  on transformers.js's internal cache-key URL format matching MODEL_ID. We first count the
+ *  model's entries (for the return value / confirmation), then delete the entire bucket,
+ *  falling back to per-entry deletes if dropping the bucket isn't permitted. */
 export async function clearModelCache(): Promise<number> {
   if (typeof caches === 'undefined') return 0;
   try {
     const cache = await caches.open(TRANSFORMERS_CACHE);
     const keys = await cache.keys();
-    const mine = keys.filter(req => req.url.includes(MODEL_ID));
-    await Promise.all(mine.map(req => cache.delete(req)));
-    return mine.length;
+    const removed = keys.length || (await cache.keys()).filter(r => r.url.includes(MODEL_ID)).length;
+    // Drop the entire single-model bucket — guaranteed to clear regardless of key format.
+    const dropped = await caches.delete(TRANSFORMERS_CACHE);
+    if (!dropped) {
+      // Bucket couldn't be deleted (rare); fall back to deleting every entry in it.
+      await Promise.all(keys.map(req => cache.delete(req)));
+    }
+    return removed;
   } catch { return 0; }
 }
 
