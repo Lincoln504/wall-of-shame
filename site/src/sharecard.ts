@@ -166,11 +166,10 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   // White background fill.
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, s, s);
-  // Dark border matched to the favicon's VISIBLE thickness. The favicon strokes width 8
-  // centered on the edge of a 32 box, so half (4px) is clipped — the visible band is 4/32 =
-  // 12.5% of the box, inset. Drawing fully inset here at 0.125 makes the card mark's border
-  // look proportionally identical to the favicon (the previous 0.16 read as too thick).
-  const lw = Math.max(2, s * 0.125);
+  // Dark border matched to the favicon's visible thickness. The favicon strokes a
+  // fully-visible 2.5px band on a 32 box (≈7.8%), edge-aligned. Drawing inset at the same
+  // ~0.08 ratio keeps the card mark's border proportionally identical to the favicon.
+  const lw = Math.max(2, s * 0.08);
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = lw;
   ctx.strokeRect(x + lw / 2, y + lw / 2, s - lw, s - lw);
@@ -345,7 +344,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
 
   ctx.fillStyle = C.muted;
   ctx.font = '600 26px Inter, sans-serif';
-  ctx.fillText('More', textX, centerY - 8);
+  ctx.fillText('Get more details at', textX, centerY - 8);
 
   const link = pageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
   let linkPx = 32;                                // auto-shrink the bold link to fit its column

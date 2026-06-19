@@ -344,8 +344,19 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
+        <p style={s.subtitle}>
+          English language search engine of web content judged harmful.
+          <span style={s.subMeta}>
+            <br />
+            Semantic search in your browser powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            <br />
+            Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
+            <br />
+            Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
+          </span>
+        </p>
         <Show when={data()}>
           <div style={s.stats}>
             <span style={s.stat}>{data()!.totalFindings} Entries</span>
@@ -445,21 +456,16 @@ export default function App() {
         </Show>
       </div>
 
-      <Show when={data()}>
-        <footer style={s.footer}>
-          <div style={s.footerText}>
-            English language search engine of web content judged harmful.
-            {' '}Semantic search in your browser powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-            {' '}Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
-            {' '}Made with{' '}
-            <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
-            {' '}· Data updated via GitHub Actions
-          </div>
-          <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-            <img src={`${import.meta.env.BASE_URL}qr.svg`} alt="QR code linking to Wall of Shame" width="80" height="80" style={s.qr} />
-          </a>
-        </footer>
-      </Show>
+      <footer style={s.footer}>
+        <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.footerMark} />
+        <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+          <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="104" height="104" style={s.qr} />
+        </a>
+        <div style={s.footerCta}>
+          <span style={s.footerCtaLabel}>Get more details at</span>
+          <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+        </div>
+      </footer>
 
       <ShareModal
         finding={shareTarget()?.finding ?? null}
@@ -519,7 +525,7 @@ const s: Record<string, any> = {
   subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
   subMeta: { 'font-size': '0.8rem', color: '#999' },
   nowrap: { 'white-space': 'nowrap' },
-  inlineLink: { color: '#666', 'text-decoration': 'underline' },
+  inlineLink: { color: '#1a1a1a', 'text-decoration': 'underline', 'font-weight': '600' },
   stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   stat: { 'font-size': '0.72rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.7rem', 'border-radius': '4px', 'font-weight': '500' },
   controls: {
@@ -591,9 +597,11 @@ const s: Record<string, any> = {
   pageEllipsis: { color: '#bbb', padding: '0 0.2rem' },
   backRow: { 'margin-bottom': '1.5rem' },
   backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
-  footer: { padding: '8rem 0 4rem', display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
-  footerText: { 'max-width': '420px', 'text-align': 'left', 'line-height': 1.6 },
-  footerLink: { color: '#1a1a1a', 'text-decoration': 'underline', 'font-weight': '600' },
+  footer: { padding: '8rem 0 4rem', display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footerMark: { width: '104px', height: '104px', display: 'block', 'flex-shrink': 0 },
   qrLink: { 'flex-shrink': 0, 'line-height': 0 },
-  qr: { display: 'block', width: '80px', height: '80px', 'border-radius': '6px' },
+  qr: { display: 'block', width: '104px', height: '104px', 'border-radius': '6px' },
+  footerCta: { display: 'flex', 'flex-direction': 'column', 'align-items': 'flex-start', gap: '0.25rem' },
+  footerCtaLabel: { 'font-size': '0.85rem', color: '#999' },
+  footerUrl: { 'font-size': '1.15rem', 'font-weight': '700', color: '#1a1a1a', 'text-decoration': 'none' },
 };
