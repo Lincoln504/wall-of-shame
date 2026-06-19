@@ -118,6 +118,9 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       if (pref.length) first = pref[SESSION_SEED % pref.length]!;
     }
     isFirstSeedOfPageLoad = false;
+    // Mark the externally-chosen first card served BEFORE drawing the lookahead, so the no-repeat
+    // guarantee covers it too (next() excludes the served set).
+    if (first) sequencer.markServed(first);
     setCurrent(first ?? sequencer.next(0));
     setNext(sequencer.next(0));
     setDragX(0);

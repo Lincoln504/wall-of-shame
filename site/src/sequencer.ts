@@ -19,11 +19,21 @@
 //     engagement with that category stays high, and fades on its own otherwise — never a bubble.
 //     Affinity is built from the dwell on the entry just left, attributed to THAT entry's
 //     category (passed in by the caller), so it can never apply to the first card.
-// State is minimal and in-memory only (a rolling average read-time + a small per-category score),
-// reset whenever the pool changes. recentlySeen suppression avoids immediate repeats. Every weight
-// stays > 0 (except the hard caps), so the draw can't deadlock and degenerate pools relax gracefully.
+//   • HARD no-repeat within a session: every card drawn this page-load is recorded in a
+//     session-scoped "served" set and excluded from all future draws, so a reader swiping/
+//     clicking through the feed never sees the same card twice — until a (filtered) pool is
+//     genuinely exhausted, at which point the draw relaxes and allows repeats rather than
+//     deadlocking. The set is module-level, so it persists across filter changes and the
+//     search/entry round-trip; only a real page reload starts a fresh no-repeat session.
+// State is minimal and in-memory only (a rolling average read-time + a small per-category score).
+// Every non-excluded weight stays > 0, so the draw can't deadlock and degenerate pools relax.
 
 import type { Finding } from './types.js';
+
+// Session ("one page load") scope: ids of every card served this session. Module-level so it
+// outlives any single sequencer instance — a filter change builds a new sequencer for the new
+// pool, but they all share this set, so a card seen under one filter won't reappear under another.
+const sessionServed = new Set<string>();
 
 export const TUNING = {
   MAX_RUN: 3,            // hard cap: max identical category OR severity in a row
@@ -31,8 +41,6 @@ export const TUNING = {
   P_REPEAT_SEV: 0.6,     // weight multiplier when a candidate repeats the last severity
   P_REPEAT_DOMAIN: 0.25, // weight multiplier when a candidate repeats the last source domain
   SEV_INV_FREQ_ALPHA: 0.35, // gentle inverse-frequency lift for rare severities (high/low)
-  RECENT_BUFFER: 75,     // ring buffer of recently-served ids — no-repeat window (scaled to pool)
-  RECENT_PENALTY: 0.02,  // weight multiplier for a recently-seen candidate (near, not hard, exclude)
   // Read-time → category affinity. Engagement is RELATIVE to the reader's own rolling pace, so
   // "a good amount longer than others" — not a fixed seconds threshold — is what counts.
   DWELL_AVG_ALPHA: 0.3,    // EMA weight folding each read-time into the rolling average pace
@@ -64,7 +72,11 @@ export interface Sequencer {
    * actually read (the feed uses a lookahead, so the sequencer's own last pick isn't it).
    */
   next(dwellMs?: number, leftCategory?: string): Finding | null;
-  /** Reset run/seen + engagement state (e.g. when the candidate pool changes). */
+  /** Record a finding as served this session (for a card chosen OUTSIDE next() — e.g. the feed's
+   *  preferred first card — so it's never re-drawn). next() marks its own picks automatically. */
+  markServed(f: Finding): void;
+  /** Reset per-instance run + engagement state. Does NOT clear the session-wide served set
+   *  (no-repeat is intended to span the whole page-load session). */
   reset(): void;
 }
 
@@ -103,35 +115,22 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     }
     avgDwell = avgDwell > 0 ? avgDwell * (1 - TUNING.DWELL_AVG_ALPHA) + dwellMs * TUNING.DWELL_AVG_ALPHA : dwellMs;
   }
-  // Ring buffer of recently-served ids. Scaled down for tiny pools so it never starves the draw.
-  const bufCap = Math.max(1, Math.min(TUNING.RECENT_BUFFER, Math.floor(pool.length / 2)));
-  let recent: string[] = [];
-  const recentSet = new Set<string>();
-
   const idOf = (f: Finding) => f.id || f.url;
 
-  function pushRecent(f: Finding) {
-    const id = idOf(f);
-    recent.push(id);
-    recentSet.add(id);
-    while (recent.length > bufCap) {
-      const ev = recent.shift()!;
-      if (!recent.includes(ev)) recentSet.delete(ev);
-    }
-  }
-
-  function weights(capCat: boolean, capSev: boolean, useRecent: boolean): number[] {
+  // `useServed` ON = hard-exclude every card already served this session (the no-repeat guarantee);
+  // OFF is the exhaustion fallback (pool fully seen) so the draw never deadlocks.
+  function weights(capCat: boolean, capSev: boolean, useServed: boolean): number[] {
     const out = new Array<number>(pool.length);
     for (let i = 0; i < pool.length; i++) {
       const c = pool[i];
       let w = 1;
 
-      // Hard run-length caps (the only hard rule). A capped axis zeroes matching candidates.
+      // HARD no-repeat: a card already served this session is removed from the draw entirely.
+      if (useServed && sessionServed.has(idOf(c))) { out[i] = 0; continue; }
+
+      // Hard run-length caps. A capped axis zeroes matching candidates.
       if (capCat && catRun.len >= TUNING.MAX_RUN && c.category === catRun.cat) { out[i] = 0; continue; }
       if (capSev && sevRun.len >= TUNING.MAX_RUN && c.severity === sevRun.sev) { out[i] = 0; continue; }
-
-      // Recently-seen suppression (soft).
-      if (useRecent && recentSet.has(idOf(c))) w *= TUNING.RECENT_PENALTY;
 
       // Independent variety-vs-consistency biases. The category repeat-penalty is suspended for
       // a category the reader is actively engaged with (has affinity) — there we WANT recurrence,
@@ -176,11 +175,12 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     if (dwellMs > 0) updateAffinity(dwellMs, leftCategory ?? last?.category);
 
     if (pool.length === 0) return null;
-    if (pool.length === 1) { last = pool[0]; return pool[0]; }
+    if (pool.length === 1) { last = pool[0]; sessionServed.add(idOf(pool[0])); return pool[0]; }
 
-    // Try full constraints, then relax in order so the draw can never deadlock on a
-    // degenerate pool (single category / single severity / all recently-seen):
-    //   1. full  2. drop severity cap  3. drop both caps  4. drop caps + recently-seen.
+    // Try full constraints, then relax in order so the draw can never deadlock:
+    //   1. no-repeat + both caps   2. drop severity cap   3. drop both caps
+    //   4. drop EVERYTHING incl. no-repeat — only reached once the pool is genuinely exhausted
+    //      (every card served), at which point allowing a repeat beats showing nothing.
     let idx = -1;
     const attempts: Array<[boolean, boolean, boolean]> = [
       [true, true, true],
@@ -188,31 +188,33 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       [false, false, true],
       [false, false, false],
     ];
-    for (const [capCat, capSev, useRecent] of attempts) {
-      idx = draw(weights(capCat, capSev, useRecent));
+    for (const [capCat, capSev, useServed] of attempts) {
+      idx = draw(weights(capCat, capSev, useServed));
       if (idx >= 0) break;
     }
     if (idx < 0) idx = Math.floor(rng() * pool.length); // absolute last resort
 
     const picked = pool[idx];
 
-    // Update run-length state (independent axes).
+    // Update run-length state (independent axes) + record as served (the no-repeat guarantee).
     catRun = picked.category === catRun.cat ? { cat: catRun.cat, len: catRun.len + 1 } : { cat: picked.category, len: 1 };
     sevRun = picked.severity === sevRun.sev ? { sev: sevRun.sev, len: sevRun.len + 1 } : { sev: picked.severity, len: 1 };
-    pushRecent(picked);
+    sessionServed.add(idOf(picked));
     last = picked;
     return picked;
+  }
+
+  function markServed(f: Finding) {
+    if (f) sessionServed.add(idOf(f));
   }
 
   function reset() {
     last = null;
     catRun = { cat: '', len: 0 };
     sevRun = { sev: '', len: 0 };
-    recent = [];
-    recentSet.clear();
     avgDwell = 0;
     for (const k in catAff) delete catAff[k];
   }
 
-  return { next, reset };
+  return { next, markServed, reset };
 }
