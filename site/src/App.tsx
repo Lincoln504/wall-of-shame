@@ -29,6 +29,20 @@ function categoryLabel(key: string): string {
     .join(' ');
 }
 
+// "Updated today" / "Updated yesterday" / "Updated M/D/YYYY". Computed in the browser at
+// render time against the visitor's local clock, so it stays correct on a static site
+// (no server, no rebuild needed) as days pass after the last data push.
+function formatUpdated(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Updated recently';
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dayMs = 86400000;
+  const diffDays = Math.round((startOf(new Date()) - startOf(d)) / dayMs);
+  if (diffDays <= 0) return 'Updated today';
+  if (diffDays === 1) return 'Updated yesterday';
+  return `Updated ${d.toLocaleDateString()}`;
+}
+
 function downloadFile(content: string, fileName: string, contentType: string) {
   const a = document.createElement('a');
   const file = new Blob([content], { type: contentType });
@@ -49,7 +63,7 @@ function jsonToCsv(findings: Finding[]) {
 function FindingCard(props: { finding: Finding; score?: number; onShare: (f: Finding) => void }) {
   const f = props.finding;
   const color = SEVERITY_COLOR[f.severity] ?? '#757575';
-  const date = f.foundAt ? new Date(f.foundAt).toLocaleDateString() : '';
+  const date = f.foundAt ? `Found ${new Date(f.foundAt).toLocaleDateString()}` : '';
 
   return (
     <article style={s.card}>
@@ -312,27 +326,15 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
+          <img src={`${BASE}favicon.svg`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
-        <p style={s.subtitle}>
-          English language search engine of web content judged harmful.
-          <span style={s.subMeta}>
-            <br />
-            Search powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-            <br />
-            Researched with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
-            <br />
-            Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
-          </span>
-        </p>
         <Show when={data()}>
           <div style={s.stats}>
             <span style={s.stat}>{data()!.totalFindings} Entries</span>
-            <span style={s.stat}>{categories().length} Categories</span>
             <Show when={counterEnabled() && counts()}>
-              <span style={s.stat}>{formatCount(counts()!.total)} Visits</span>
               <span style={s.stat}>{formatCount(counts()!.today)} Today</span>
             </Show>
-            <span style={s.stat}>Updated {new Date(data()!.lastUpdated).toLocaleDateString()}</span>
+            <span style={s.stat}>{formatUpdated(data()!.lastUpdated)}</span>
           </div>
         </Show>
       </header>
@@ -340,7 +342,7 @@ export default function App() {
       <Show when={!focusId()}>
       <div style={s.controls}>
         <input type="search"
-          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search library by keyword or idea'}
+          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by keyword or idea'}
           value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
         <div style={s.filterRow}>
           <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
@@ -385,9 +387,6 @@ export default function App() {
             </Show>
           }
         >
-          <div style={s.resultsBar}>
-            {filteredList().length} entries · page {page()} of {pageCount()}
-          </div>
           <Show when={filteredList().length === 0}>
             <div style={s.empty}>{hasQuery() && modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
           </Show>
@@ -417,8 +416,8 @@ export default function App() {
         <footer style={s.footer}>
           <div style={s.footerText}>
             English language search engine of web content judged harmful.
-            {' '}Search powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-            {' '}Researched with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
+            {' '}Semantic search in your browser powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            {' '}Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
             {' '}Made with{' '}
             <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
             {' '}· Data updated via GitHub Actions
@@ -481,8 +480,9 @@ const SERIF = UI;
 const s: Record<string, any> = {
   root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI, 'min-height': '100vh' },
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
-  title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
-  homeLink: { 'text-decoration': 'none', color: 'inherit', cursor: 'pointer', display: 'inline-block' },
+  title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0', 'letter-spacing': '-0.02em', 'line-height': 1 },
+  homeLink: { 'text-decoration': 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.7rem', 'margin-bottom': '1.25rem' },
+  titleLogo: { height: '2.1rem', width: '2.1rem', display: 'block', 'flex-shrink': 0 },
   subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
   subMeta: { 'font-size': '0.8rem', color: '#999' },
   nowrap: { 'white-space': 'nowrap' },
@@ -554,7 +554,7 @@ const s: Record<string, any> = {
   backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
   footer: { padding: '8rem 0 4rem', display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
   footerText: { 'max-width': '420px', 'text-align': 'left', 'line-height': 1.6 },
-  footerLink: { color: '#bbb', 'text-decoration': 'underline' },
+  footerLink: { color: '#1a1a1a', 'text-decoration': 'underline', 'font-weight': '600' },
   qrLink: { 'flex-shrink': 0, 'line-height': 0 },
   qr: { display: 'block', width: '80px', height: '80px', 'border-radius': '6px' },
 };

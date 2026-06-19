@@ -166,9 +166,11 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   // White background fill.
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, s, s);
-  // Thick dark border (the favicon uses stroke-width 8 on a 32 box; drawn fully inset here
-  // so it stays crisp instead of clipping at the canvas edge).
-  const lw = Math.max(2, s * 0.16);
+  // Dark border matched to the favicon's VISIBLE thickness. The favicon strokes width 8
+  // centered on the edge of a 32 box, so half (4px) is clipped — the visible band is 4/32 =
+  // 12.5% of the box, inset. Drawing fully inset here at 0.125 makes the card mark's border
+  // look proportionally identical to the favicon (the previous 0.16 read as too thick).
+  const lw = Math.max(2, s * 0.125);
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = lw;
   ctx.strokeRect(x + lw / 2, y + lw / 2, s - lw, s - lw);
@@ -281,10 +283,19 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   }, { blur: 16, alpha: 0.1, dy: 6 });
   y += titleLines.length * titleLineH + titlePx + 8;
 
-  // Domain.
+  // Domain (left) + the date this entry was FOUND (right). "Found" makes explicit that this
+  // is the discovery date, not the article's publication date.
   ctx.fillStyle = C.muted;
   ctx.font = 'italic 400 26px Inter, sans-serif';
   ctx.fillText(f.domain, MARGIN, y);
+  if (f.foundAt) {
+    ctx.save();
+    ctx.fillStyle = C.faint;
+    ctx.font = '400 22px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Found ${new Date(f.foundAt).toLocaleDateString()}`, W - MARGIN, y);
+    ctx.restore();
+  }
   y += 40;
 
   // Divider.
@@ -297,15 +308,17 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   y += 48;
 
   // Body: the descriptive summary (the hook + its verbatim quote), justified.
-  const footerRule = H - MARGIN - 150;   // divider above the footer block (taller: holds the QR)
+  const footerRule = H - MARGIN - 192;   // divider above the footer block (room for the large pin/QR row)
   const bodyTop = y;
   const bodyAvailH = footerRule - 28 - bodyTop;
   const body = layoutSummary(ctx, f.summary, bodyAvailH);
   body.draw(MARGIN, bodyTop);
 
-  // Footer — the brand mark and a stable "read more" permalink to this exact entry, in a
-  // light gray (never solid dark). The mark + wordmark sit on one row; the permalink on
-  // the next, prefixed "Read more at:".
+  // Footer — three elements on a shared centerline, left → right:
+  //   [push-pin mark]   [QR code]   [ "More" over the permalink ]
+  // The mark is sized equal to the QR; the QR is large and scannable; the permalink is the
+  // ONLY full-strength black element (it is the call to action). The "Wall of Shame"
+  // wordmark was removed — the mark alone now carries the brand on the card.
   ctx.strokeStyle = C.divider;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -313,33 +326,37 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.lineTo(W - MARGIN, footerRule);
   ctx.stroke();
 
-  const markS = 38;
-  const qrS = markS * 2;                          // QR twice the icon, per spec
-  const qrTop = footerRule + 24;
-  const centerY = qrTop + qrS / 2;                // shared centerline: QR center == icon center
+  const iconS = 152;                              // pin + QR share this size (large, scannable)
+  const rowTop = footerRule + 30;
+  const centerY = rowTop + iconS / 2;             // shared centerline for pin, QR, and text
 
-  // QR on the left — scan straight to this entry. It encodes the SAME permalink printed below.
-  drawQr(ctx, MARGIN, qrTop, qrS, pageUrl);
+  // Push-pin mark on the far left, sized to the QR.
+  drawMark(ctx, MARGIN, rowTop, iconS);
 
-  // Brand mark + wordmark, centered on the QR's horizontal centerline, to its right.
-  const iconX = MARGIN + qrS + 26;
-  drawMark(ctx, iconX, centerY - markS / 2, markS);
-  ctx.fillStyle = C.muted;                        // lighter gray — same family as the link
-  ctx.font = '700 26px Inter, sans-serif';
+  // QR in the middle — scans straight to this entry (encodes the permalink shown at right).
+  const qrX = MARGIN + iconS + 30;
+  drawQr(ctx, qrX, rowTop, iconS, pageUrl);
+
+  // Right column: "More" label (muted) over the permalink (full-strength black, bold).
+  const textX = qrX + iconS + 36;
+  const textW = (W - MARGIN) - textX;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Wall of Shame', iconX + markS + 16, centerY + 9);
 
-  // "Read more at: <link>" below the QR row — label muted, link the same color but larger.
-  const linkY = qrTop + qrS + 36;
-  const label = 'Read more at: ';
   ctx.fillStyle = C.muted;
-  ctx.font = '400 24px Inter, sans-serif';
-  ctx.fillText(label, MARGIN, linkY);
-  const labelW = ctx.measureText(label).width;
-  ctx.font = '600 28px Inter, sans-serif';       // link slightly larger
+  ctx.font = '600 26px Inter, sans-serif';
+  ctx.fillText('More', textX, centerY - 8);
+
   const link = pageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  ctx.fillText(link, MARGIN + labelW, linkY);
+  let linkPx = 32;                                // auto-shrink the bold link to fit its column
+  while (linkPx > 22) {
+    ctx.font = `700 ${linkPx}px Inter, sans-serif`;
+    if (ctx.measureText(link).width <= textW) break;
+    linkPx -= 1;
+  }
+  ctx.font = `700 ${linkPx}px Inter, sans-serif`;
+  ctx.fillStyle = C.ink;                          // full-strength black — the call to action
+  ctx.fillText(link, textX, centerY + 36);
 
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
