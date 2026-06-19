@@ -330,7 +330,7 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} class="wos-home" style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 class="wos-title" style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=15`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=16`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           Search engine of harmful English language web content.<br />Share what makes you mad!
@@ -481,7 +481,7 @@ export default function App() {
           </Show>
         </div>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=15`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=16`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>

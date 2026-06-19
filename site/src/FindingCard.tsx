@@ -34,7 +34,7 @@ export default function FindingCard(props: {
       </h3>
       <div style={s.domain}>{f().domain}</div>
       <p class="wos-justify" style={s.summaryText}>{f().summary}</p>
-      <div style={s.whyBadBox}>
+      <div class="wos-analysis-box" style={s.whyBadBox}>
         <div style={s.whyBadLabel}>Analysis</div>
         <For each={splitAnalysisPoints(f().whyBad)}>
           {pt => <p class="wos-analysis" style={s.whyBadText}>{pt}</p>}

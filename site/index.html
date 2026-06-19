@@ -6,7 +6,7 @@
     <!-- Discourage caching the HTML doc itself (hashed assets stay immutable). The reliable
          mechanism is the focus-time entry-bundle check in index.tsx; this is a cheap hint. -->
     <meta http-equiv="Cache-Control" content="no-cache" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=15" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=16" />
     <title>Wall of Shame</title>
     <meta name="description" content="A repository of web content judged to be harmful, and why — propaganda and op-eds whose framing normalizes, justifies, or hides the harm of regressive policies. Each entry is dissected with a scathing, evidence-grounded analysis." />
     <!-- Open Graph / social link unfurls. Hash routes (#/page/N) are invisible to
@@ -64,6 +64,19 @@
         .wos-analysis { font-size: 0.875rem !important; line-height: 1.42 !important; margin-bottom: 0.45rem !important; }
         .wos-title { font-size: 2rem !important; }
         .wos-home { gap: 0.5rem !important; }
+        /* Analysis box on mobile: same shading idea, but a full-width band — it reaches the card's
+           left/right edges instead of sitting inset, drops the left accent rule, and uses a slightly
+           deeper shade so the section still reads without that rule. Negative margins equal to the
+           feed card's 1.4rem horizontal padding pull it to the edges; the box keeps 1.4rem inner
+           padding so its text stays aligned with the description above. */
+        .wos-analysis-box {
+          background: #f0ede6 !important;
+          border-left: none !important;
+          border-radius: 0 !important;
+          margin-left: -1.4rem !important;
+          margin-right: -1.4rem !important;
+          padding: 1.1rem 1.4rem !important;
+        }
       }
     </style>
   </head>
