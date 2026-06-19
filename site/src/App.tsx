@@ -171,7 +171,7 @@ export default function App() {
   // Three mutually-exclusive views, mapped from just two routes + a transient query:
   //   feed   — the default (route `/`): a one-card-at-a-time weighted-random feed (Feed.tsx).
   //   search — a query is active: a single relevance-ranked, capped results list (no route).
-  //   entry  — route `/entry/<id>`: a single-card permalink, the share-link target.
+  //   entry  — route `/<id>`: a single-card permalink, the share-link target.
   // Search replaces the feed in place; clearing the query returns to the feed.
   // NOTE: the `viewMode` memo lives below, AFTER focusId() is declared — createMemo runs its
   // body eagerly on creation, so referencing focusId before its declaration would TDZ-crash.
@@ -210,13 +210,20 @@ export default function App() {
 
   // ── Routing via History API (no hash) ─────────────────────────────────────────
   // Two routes only:
-  //   /            — the feed (default browsing).
-  //   /entry/<id>  — STABLE single-entry permalink (resolved by exact-or-prefix id), the
-  //                  share-link target — id-based so a saved link never rots as the corpus grows.
-  // Search is a transient query state, never a URL.
+  //   /       — the feed (default browsing).
+  //   /<id>   — STABLE single-entry permalink at the TOP LEVEL (no /entry/ prefix), resolved by
+  //             exact-or-prefix id — the share-link target; id-based so a saved link never rots.
+  // Search is a transient query state, never a URL. Real static assets (favicon.svg, qr.svg,
+  // assets/, findings.json, …) are served by GitHub Pages directly and never reach this parser;
+  // only an unknown path hits 404.html → the SPA, where its first segment is read as an entry id.
   const parseFocus = (): string | null => {
-    const m = /\/entry\/([^/?#]+)/.exec(location.pathname);
-    return m ? decodeURIComponent(m[1]) : null;
+    const rest = location.pathname.slice(BASE.length).replace(/^\/+/, '').split(/[?#]/)[0];
+    const parts = rest.split('/').filter(Boolean);
+    if (parts.length === 0) return null;          // "/" → feed
+    let seg = parts[0];
+    if (seg === 'entry') seg = parts[1] ?? '';    // back-compat: old /entry/<id>
+    if (!seg || seg === 'page') return null;      // retired /page/N → feed
+    return decodeURIComponent(seg);
   };
   const [focusId, setFocusId] = createSignal<string | null>(parseFocus());
   // Declared here (not in the View-mode section above) because createMemo evaluates eagerly
@@ -228,14 +235,18 @@ export default function App() {
     setFocusId(parseFocus());
   };
   onMount(() => {
-    // Migrate links saved under the old routing to a clean current route: hash share links
-    // (#/f/<id>) become /entry/<id>; the retired pagination URLs (/page/N and #/page/N) — the
-    // old "click-through list" — resolve to the feed.
+    // Normalize links saved under older routing to the clean top-level form: hash share links
+    // (#/f/<id>) and the old /entry/<id> path both become /<id>; the retired pagination URLs
+    // (/page/N and #/page/N) resolve to the feed.
     const h = window.location.hash;
     const oldHashFocus = /#\/f\/([^/?#]+)/.exec(h);
+    const entryPath = /\/entry\/([^/?#]+)/.exec(location.pathname);
     if (oldHashFocus) {
-      history.replaceState(null, '', `${BASE}entry/${oldHashFocus[1]}`);
+      history.replaceState(null, '', `${BASE}${oldHashFocus[1]}`);
       setFocusId(oldHashFocus[1]);
+    } else if (entryPath) {
+      history.replaceState(null, '', `${BASE}${entryPath[1]}`);
+      setFocusId(entryPath[1]);
     } else if (/#\/page\/\d+/.test(h) || /\/page\/\d+/.test(location.pathname)) {
       history.replaceState(null, '', `${BASE}`);
     }
@@ -266,16 +277,14 @@ export default function App() {
   onMount(() => { const dispose = onResizeRejustify(collectJustifyEls); onCleanup(dispose); });
 
   // ── Share ─────────────────────────────────────────────────────────────────────
-  // The shared link is a STABLE per-entry permalink (/entry/<short id>), NOT a page number:
-  // page numbers drift as the corpus grows, so an old /page/N would later point at the
-  // wrong entry. The id is assigned once and never changes, so a saved image's link keeps
-  // resolving to the same article forever. The ids are UUIDv4; a 6-hex-char prefix is the
-  // shortest that stays collision-free past a few thousand entries (measured), so it keeps
-  // links short while the focused view resolves them by exact-or-prefix match. Older 8-char
-  // links still resolve (a longer prefix still uniquely starts-with the full id).
+  // The shared link is a STABLE per-entry permalink at the TOP LEVEL — /<short id> — short and
+  // clean (no /entry/ prefix). The id is assigned once and never changes, so a saved image's link
+  // resolves to the same article forever. The ids are UUIDv4; a 6-hex-char prefix is the shortest
+  // that stays collision-free past a few thousand entries (measured), and the focused view resolves
+  // it by exact-or-prefix match. Older /entry/<id> links still resolve (parseFocus handles them).
   const handleShare = (f: Finding) => {
     const shortId = (f.id || '').slice(0, 6) || encodeURIComponent(keyOf(f));
-    const pageUrl = `${location.origin}${BASE}entry/${shortId}`;
+    const pageUrl = `${location.origin}${BASE}${shortId}`;
     setShareTarget({ finding: f, page: 1, pageUrl });
   };
 

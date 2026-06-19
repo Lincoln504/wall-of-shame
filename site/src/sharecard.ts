@@ -228,7 +228,7 @@ function drawQr(ctx: CanvasRenderingContext2D, x: number, y: number, size: numbe
 export interface ShareCardOptions {
   finding: Finding;
   page: number;
-  /** Full stable permalink shown in the footer + share text, e.g. https://…/entry/43501243 */
+  /** Full stable permalink shown in the footer + share text, e.g. https://…/43501243 */
   pageUrl: string;
 }
 
@@ -346,7 +346,9 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.stroke();
 
   const iconS = 152;                              // pin + QR share this size (large, scannable)
-  const rowTop = footerRule + 30;
+  // Gap below the divider, raised 30 → 40 so the whole footer row (pin, QR, text) sits a little
+  // lower while the divider (footerRule) itself stays put. 40 keeps the icons within the bottom margin.
+  const rowTop = footerRule + 40;
   const centerY = rowTop + iconS / 2;             // shared centerline for pin, QR, and text
 
   // Push-pin mark on the far left, sized to the QR.
