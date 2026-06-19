@@ -66,8 +66,6 @@ export const s: Record<string, any> = {
     display: 'flex', 'flex-direction': 'column', 'min-width': '100px', overflow: 'hidden',
   },
   dropdownItem: { padding: '0.6rem 1rem', background: 'none', border: 'none', 'text-align': 'left', cursor: 'pointer', 'font-size': '0.85rem', color: '#333', 'font-family': UI },
-  semanticLoading: { 'font-size': '0.8rem', color: '#ef6c00', 'margin-bottom': '1rem', 'text-align': 'center', 'font-weight': '500' },
-  resultsBar: { 'font-size': '0.8rem', color: '#999', 'margin-bottom': '1.5rem', 'text-align': 'center', 'letter-spacing': '0.02em' },
   grid: { display: 'flex', 'flex-direction': 'column', gap: '1.25rem' },
   loading: { color: '#999', padding: '4rem', 'text-align': 'center' },
   error: { color: '#d32f2f', padding: '2rem', 'text-align': 'center' },
@@ -128,14 +126,8 @@ export const s: Record<string, any> = {
   // Events) gives mouse-drag on desktop and touch-flick on mobile; clickable carousel
   // arrows overlay the card's left/right edges on both; ←/→ keys also advance. Vertical
   // page scroll is preserved (touch-action: pan-y) so the header stays reachable.
-  // Stage does NOT clip — so the desktop arrows can sit out in the margin gutter (negative
-  // offsets) without being cut off. The horizontal slide is clipped by feedClip (inner).
-  feedStage: { position: 'relative', padding: '0.4rem 0' },
-  // overflow: clip contains the horizontal slide; clip-margin lets a card's resting box-shadow
-  // bleed. touch-action: pan-y keeps vertical PAGE scroll working while we own horizontal drags.
-  // No blanket user-select:none — card text stays highlightable; Feed.tsx suppresses selection
-  // inline ONLY while a drag is actively engaged (avoids mid-swipe flicker).
-  feedClip: { overflow: 'clip', 'overflow-clip-margin': '14px', 'touch-action': 'pan-y' },
+  // Full-bleed feed stage + per-slot transforms are styled inline in Feed.tsx (they derive from
+  // measured viewport/card widths). Only the round arrow button keeps a static style here.
   feedArrowBtn: {
     position: 'absolute', top: '50%', 'z-index': 2,
     'font-family': UI, display: 'flex', 'align-items': 'center', 'justify-content': 'center',
@@ -145,9 +137,6 @@ export const s: Record<string, any> = {
     padding: 0, 'user-select': 'none',
     transition: 'background 0.15s ease, color 0.15s ease, opacity 0.15s ease',
   },
-  // Out in the gutter, clear of the card edge (the stage doesn't clip, so negative offsets show).
-  feedArrowLeft: { left: '-3.75rem', transform: 'translateY(-50%)' },
-  feedArrowRight: { right: '-3.75rem', transform: 'translateY(-50%)' },
   feedArrowBtnDisabled: { opacity: 0.32, cursor: 'default', 'box-shadow': 'none' },
 
   // Section label above the content area: "Feed" vs "Results".
