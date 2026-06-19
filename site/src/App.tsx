@@ -1,6 +1,5 @@
 import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect, onMount, on, ErrorBoundary } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
-import { canonicalOrder, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
 import ShareModal from './ShareModal.js';
 import FindingCard from './FindingCard.js';
@@ -12,6 +11,10 @@ import type { QueryEmbedder } from './query-embedder.js';
 import { s, categoryLabel } from './styles.js';
 
 const BASE = import.meta.env.BASE_URL;
+
+// Search shows a single relevance-ranked list capped at this many results (no page-clicking).
+// Beyond this, a note invites the reader to refine — nobody scans past the top of a ranked search.
+const SEARCH_LIMIT = 50;
 
 async function fetchFindings(): Promise<FindingsStore> {
   // 'no-cache' = always revalidate with the server (cheap 304 when unchanged), so new
@@ -162,24 +165,14 @@ export default function App() {
     return computeHybridScores(docs, search(), queryVector(), docVectors());
   });
 
-  // ── Canonical deterministic order (for default view + stable share-page links) ─
-  const canonical = createMemo(() => canonicalOrder(data()?.findings ?? []));
-  const canonicalIndex = createMemo(() => {
-    const m = new Map<string, number>();
-    canonical().forEach((f, i) => m.set(f.id || f.url, i));
-    return m;
-  });
-
   const keyOf = (f: Finding) => f.id || f.url;
 
   // ── View mode ───────────────────────────────────────────────────────────────────
-  // The site has three mutually-exclusive views:
-  //   entry  — a /entry/<id> permalink (single card, share-link target).
-  //   search — a query is active: a relevance-ranked LIST of results (with pagination).
-  //   feed   — the default: a one-card-at-a-time weighted-random feed (see Feed.tsx).
-  // Search replaces the feed in place; clearing the query returns to the feed. The canonical
-  // list order (order.ts) is now only the "backend" data ordering, used for stable share-page
-  // links — the visible default browsing experience is the feed.
+  // Three mutually-exclusive views, mapped from just two routes + a transient query:
+  //   feed   — the default (route `/`): a one-card-at-a-time weighted-random feed (Feed.tsx).
+  //   search — a query is active: a single relevance-ranked, capped results list (no route).
+  //   entry  — route `/entry/<id>`: a single-card permalink, the share-link target.
+  // Search replaces the feed in place; clearing the query returns to the feed.
   // NOTE: the `viewMode` memo lives below, AFTER focusId() is declared — createMemo runs its
   // body eagerly on creation, so referencing focusId before its declaration would TDZ-crash.
   type ViewMode = 'feed' | 'search' | 'entry';
@@ -196,64 +189,57 @@ export default function App() {
     return list;
   });
 
-  // ── Search results list (only consumed in search mode) ──────────────────────────
-  // Filtered by category/severity, ranked by hybrid relevance high→low. When no query is
-  // active this falls back to canonical order (not shown — the feed renders instead).
-  const filteredList = createMemo(() => {
+  // ── Search results (only consumed in search mode) ───────────────────────────────
+  // One relevance-ranked list (hybrid keyword + semantic, high→low), narrowed by the
+  // category/severity filters. cappedResults is what renders; searchResults().length is
+  // kept for the "showing top N of M" note.
+  const searchResults = createMemo(() => {
     const d = data();
-    if (!d) return [] as (Finding & { score?: number })[];
+    if (!d || !hasQuery()) return [] as (Finding & { score?: number })[];
     const cat = category();
     const sev = severity();
     const scores = hybridScores();
-
-    let list: (Finding & { score?: number })[] = d.findings.map(f => ({ ...f, score: scores.get(keyOf(f)) }));
+    let list: (Finding & { score?: number })[] = d.findings
+      .map(f => ({ ...f, score: scores.get(keyOf(f)) }))
+      .filter(f => f.score !== undefined);
     if (cat) list = list.filter(f => f.category === cat);
     if (sev) list = list.filter(f => f.severity === sev);
-
-    if (hasQuery()) {
-      return list.filter(f => f.score !== undefined).sort((a, b) => (b.score! - a.score!));
-    }
-    const ci = canonicalIndex();
-    return [...list].sort((a, b) => (ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0));
+    return list.sort((a, b) => (b.score! - a.score!));
   });
+  const cappedResults = createMemo(() => searchResults().slice(0, SEARCH_LIMIT));
 
   // ── Routing via History API (no hash) ─────────────────────────────────────────
-  //   /page/N     — pagination
-  //   /entry/<id> — STABLE permalink to a single entry (resolved by exact-or-prefix id),
-  //                 so a link saved from a share card always finds the same article even
-  //                 as pagination shifts under it.
-  const parsePage = () => {
-    const m = /\/page\/(\d+)/.exec(location.pathname);
-    return m ? Math.max(1, parseInt(m[1], 10)) : 1;
-  };
+  // Two routes only:
+  //   /            — the feed (default browsing).
+  //   /entry/<id>  — STABLE single-entry permalink (resolved by exact-or-prefix id), the
+  //                  share-link target — id-based so a saved link never rots as the corpus grows.
+  // Search is a transient query state, never a URL.
   const parseFocus = (): string | null => {
     const m = /\/entry\/([^/?#]+)/.exec(location.pathname);
     return m ? decodeURIComponent(m[1]) : null;
   };
-  const [rawPage, setRawPage] = createSignal(parsePage());
   const [focusId, setFocusId] = createSignal<string | null>(parseFocus());
   // Declared here (not in the View-mode section above) because createMemo evaluates eagerly
   // and this reads focusId() — it must run after focusId's declaration or it TDZ-crashes.
   const viewMode = createMemo<ViewMode>(() => (focusId() ? 'entry' : hasQuery() ? 'search' : 'feed'));
-  // Push a new history entry and sync signals immediately (pushState never fires popstate).
+  // Push a new history entry and sync state immediately (pushState never fires popstate).
   const navigate = (path: string) => {
     history.pushState(null, '', path);
-    setRawPage(parsePage());
     setFocusId(parseFocus());
   };
   onMount(() => {
-    // Migrate old hash-based share links saved before the routing change.
+    // Migrate links saved under the old routing to a clean current route: hash share links
+    // (#/f/<id>) become /entry/<id>; the retired pagination URLs (/page/N and #/page/N) — the
+    // old "click-through list" — resolve to the feed.
     const h = window.location.hash;
-    const oldFocus = /#\/f\/([^/?#]+)/.exec(h);
-    const oldPage = /#\/page\/(\d+)/.exec(h);
-    if (oldFocus) {
-      history.replaceState(null, '', `${BASE}entry/${oldFocus[1]}`);
-      setFocusId(oldFocus[1]);
-    } else if (oldPage) {
-      history.replaceState(null, '', `${BASE}page/${oldPage[1]}`);
-      setRawPage(parseInt(oldPage[1], 10));
+    const oldHashFocus = /#\/f\/([^/?#]+)/.exec(h);
+    if (oldHashFocus) {
+      history.replaceState(null, '', `${BASE}entry/${oldHashFocus[1]}`);
+      setFocusId(oldHashFocus[1]);
+    } else if (/#\/page\/\d+/.test(h) || /\/page\/\d+/.test(location.pathname)) {
+      history.replaceState(null, '', `${BASE}`);
     }
-    const onPop = () => { setRawPage(parsePage()); setFocusId(parseFocus()); };
+    const onPop = () => setFocusId(parseFocus());
     window.addEventListener('popstate', onPop);
     onCleanup(() => window.removeEventListener('popstate', onPop));
   });
@@ -266,37 +252,15 @@ export default function App() {
   });
   // Jump to the top whenever a permalink is opened.
   createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
-  // Leaving an /entry/ permalink returns to the FEED (the landing experience), not a
-  // paginated/search page. Clears any query so the feed (not a results list) shows.
-  const clearFocus = () => {
-    setSearch('');
-    navigate(`${BASE}`);
-    window.scrollTo({ top: 0 });
-  };
-  // Reset to page 1 when the filter/sort changes (but respect the initial URL page).
-  createEffect(on([search, category, severity], () => setRawPage(1), { defer: true }));
+  // Leaving an entry returns to the feed (clearing any query so the feed, not results, shows).
+  const clearFocus = () => { setSearch(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
+  // Home: clear search + filters and return to the feed.
+  const goHome = () => { setSearch(''); setCategory(''); setSeverity(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
 
-  const pageCount = createMemo(() => totalPages(filteredList().length));
-  const page = createMemo(() => clampPage(rawPage(), filteredList().length));
-  const paged = createMemo(() => pageSlice(filteredList(), page()));
-
-  const goToPage = (p: number) => {
-    const np = clampPage(p, filteredList().length);
-    if (`${BASE}page/${np}` !== location.pathname) navigate(`${BASE}page/${np}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Home: from any page or entry, clear filters and return to page 1 (the landing view).
-  const goHome = () => {
-    setSearch(''); setCategory(''); setSeverity('');
-    navigate(`${BASE}page/1`);
-    window.scrollTo({ top: 0 });
-  };
-
-  // ── Knuth-Plass justification of the analysis text on each rendered page ───────
+  // ── Knuth-Plass justification of the analysis text on each rendered card ───────
   const collectJustifyEls = () => Array.from(document.querySelectorAll('.wos-justify')) as HTMLElement[];
   createEffect(() => {
-    paged(); focusedFinding(); // re-run whenever the visible cards (or focused entry) change
+    cappedResults(); focusedFinding(); // re-run whenever the visible results (or focused entry) change
     requestAnimationFrame(() => void justifyElements(collectJustifyEls()));
   });
   onMount(() => { const dispose = onResizeRejustify(collectJustifyEls); onCleanup(dispose); });
@@ -439,19 +403,19 @@ export default function App() {
           </Show>
         </Show>
 
-        {/* ── Search results list (paginated) ── */}
+        {/* ── Search results (single relevance-ranked, capped list) ── */}
         <Show when={viewMode() === 'search'}>
           <div style={s.sectionLabel}>Results</div>
-          <Show when={filteredList().length === 0}>
+          <Show when={searchResults().length === 0}>
             <div style={s.empty}>{modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
           </Show>
           <main style={s.grid}>
-            <For each={paged()}>
+            <For each={cappedResults()}>
               {item => <FindingCard finding={item} score={item.score} onShare={handleShare} variant="list" />}
             </For>
           </main>
-          <Show when={pageCount() > 1}>
-            <Pagination page={page()} pageCount={pageCount()} onGo={goToPage} />
+          <Show when={searchResults().length > SEARCH_LIMIT}>
+            <div style={s.resultsNote}>Showing the top {SEARCH_LIMIT} of {searchResults().length} matches — refine your search to narrow it.</div>
           </Show>
         </Show>
 
@@ -508,38 +472,5 @@ export default function App() {
         />
       </ErrorBoundary>
     </div>
-  );
-}
-
-function Pagination(props: { page: number; pageCount: number; onGo: (p: number) => void }) {
-  const windowed = createMemo(() => {
-    const { page, pageCount } = props;
-    const out: number[] = [];
-    const lo = Math.max(1, page - 2);
-    const hi = Math.min(pageCount, page + 2);
-    for (let i = lo; i <= hi; i++) out.push(i);
-    return out;
-  });
-  return (
-    <nav style={s.pagination}>
-      <button style={s.pageBtn} disabled={props.page <= 1} onClick={() => props.onGo(props.page - 1)}>‹ Prev</button>
-      <Show when={!windowed().includes(1)}>
-        <button style={s.pageBtn} onClick={() => props.onGo(1)}>1</button>
-        <span style={s.pageEllipsis}>…</span>
-      </Show>
-      <For each={windowed()}>
-        {p => (
-          <button
-            style={{ ...s.pageBtn, ...(p === props.page ? s.pageBtnActive : {}) }}
-            onClick={() => props.onGo(p)}
-          >{p}</button>
-        )}
-      </For>
-      <Show when={!windowed().includes(props.pageCount)}>
-        <span style={s.pageEllipsis}>…</span>
-        <button style={s.pageBtn} onClick={() => props.onGo(props.pageCount)}>{props.pageCount}</button>
-      </Show>
-      <button style={s.pageBtn} disabled={props.page >= props.pageCount} onClick={() => props.onGo(props.page + 1)}>Next ›</button>
-    </nav>
   );
 }
