@@ -1,21 +1,22 @@
 /**
  * order.ts — deterministic, stable, category-interleaved ordering + pagination.
  *
- * This is the "Shuffled" view (opt-in). The DEFAULT list order is newest-first
- * (by foundAt) so the latest discoveries sit on top; see App.tsx. Share links are
- * id-based permalinks (/entry/<id>) resolved to whatever page the entry currently
- * sits on, so neither the default time order nor this shuffle can rot a shared
- * link as the corpus grows — page numbers are never embedded in a share URL.
+ * This is THE single default list order: newest arrival batch on top, shuffled and
+ * de-clustered within each batch (no same-category run), and every entry locked in
+ * place once it lands — see canonicalOrder() below. New rounds prepend on top of the
+ * frozen older entries.
  *
- * Why this view stays deterministic: we key each entry's sort value off a hash of
- * its STABLE id, not a positional shuffle — so when the corpus grows (the agent
- * adds entries toward 1500), existing entries keep their relative order in the
- * Shuffled view; a new entry just slots into its hash position rather than
- * reshuffling the whole list on every load.
+ * Why it stays stable across loads and growth: each entry's batch is fixed by its
+ * immutable foundAt and its within-batch position by a hash of its STABLE id — no
+ * clock-based or positional randomness. So a new round forms a new top batch and
+ * prepends without disturbing any existing entry's position. Share links are id-based
+ * permalinks (/entry/<id>) resolved to whatever page the entry currently sits on, so
+ * reordering as the corpus grows toward 1500 never rots a shared link — page numbers
+ * are never embedded in a share URL.
  *
- * Why interleaved: the raw data clusters by category (rounds add a category at a
- * time). An id-hash sort already mixes categories well; a light greedy de-cluster
- * pass then removes the occasional adjacent same-category pair.
+ * Why de-clustered: the raw data clusters by category (a round merges a category at a
+ * time, so a batch arrives as same-category runs). The id-hash shuffle mixes them and
+ * a light greedy de-cluster pass removes any remaining adjacent same-category pair.
  */
 
 import type { Finding } from './types.js';
@@ -56,6 +57,22 @@ function keyFor(f: Finding): string {
   return f.id || f.url || f.title;
 }
 
+/** Stable identity "shuffle": order a set by a hash of each entry's id. Deterministic
+ *  (no clock, no positional randomness), so the same set always yields the same order. */
+function stableHashOrder(arr: Finding[]): Finding[] {
+  return arr
+    .map(f => ({ f, k: stableKey(keyFor(f)) }))
+    .sort((a, b) => a.k - b.k || (keyFor(a.f) < keyFor(b.f) ? -1 : 1))
+    .map(x => x.f);
+}
+
+// Arrivals whose foundAt differ by more than this belong to different batches.
+// Chosen well BELOW the inter-round gap (rounds complete minutes apart) so a new
+// round always forms its own NEW batch and never merges backward into an existing
+// one — that is what keeps already-placed entries locked. A single slow round may
+// split into adjacent sub-batches; harmless (each is still de-clustered and stable).
+const BATCH_GAP_MS = 90_000;
+
 /**
  * Greedy de-cluster: never place two adjacent entries of the same category when a
  * different-category entry remains. Deterministic — depends only on input order.
@@ -77,13 +94,38 @@ function decluster(arr: Finding[]): Finding[] {
   return out;
 }
 
-/** The canonical, deterministic, category-interleaved order of all findings. */
+/**
+ * The canonical list order: newest arrival batch on top, de-clustered within each
+ * batch, every entry locked once placed.
+ *
+ *   1. Sort all entries newest-first by foundAt.
+ *   2. Partition into arrival batches on foundAt gaps (a round's worth of entries
+ *      that came in together).
+ *   3. Within EACH batch independently: stable identity shuffle, then a greedy
+ *      de-cluster so no two same-category entries sit adjacent.
+ *   4. Concatenate batches newest → oldest.
+ *
+ * Stability ("locked in place"): a batch is de-clustered using ONLY its own members,
+ * and both a member's batch (its foundAt) and its within-batch position (its id hash)
+ * are immutable. So when the agent adds a new round, that round forms a NEW top batch
+ * and prepends — no existing entry changes position. New arrivals are shuffled (no
+ * same-category run) and stack on top of the locked older ones.
+ */
 export function canonicalOrder(findings: Finding[]): Finding[] {
-  const sorted = findings
-    .map(f => ({ f, k: stableKey(keyFor(f)) }))
-    .sort((a, b) => a.k - b.k || (keyFor(a.f) < keyFor(b.f) ? -1 : 1))
-    .map(x => x.f);
-  return decluster(sorted);
+  const byTimeDesc = [...findings].sort((a, b) => (b.foundAt || '').localeCompare(a.foundAt || ''));
+
+  const batches: Finding[][] = [];
+  let cur: Finding[] = [];
+  let prevT: number | null = null;
+  for (const f of byTimeDesc) {
+    const t = Date.parse(f.foundAt || '') || 0;
+    if (prevT !== null && prevT - t > BATCH_GAP_MS) { batches.push(cur); cur = []; }
+    cur.push(f);
+    prevT = t;
+  }
+  if (cur.length) batches.push(cur);
+
+  return batches.flatMap(b => decluster(stableHashOrder(b)));
 }
 
 export function totalPages(count: number): number {

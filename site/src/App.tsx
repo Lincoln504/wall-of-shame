@@ -88,11 +88,11 @@ export default function App() {
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
   // Sorting controls the order ONLY when there is no search query; search is always semantic.
-  // Default is 'newest' so the latest discoveries sit at the top of the list — safe because
-  // share links are id-based permalinks (/entry/<id>), not page numbers, so reordering as the
-  // corpus grows never rots a shared link. 'default' is the deterministic category-interleaved
-  // ("Shuffled") view, now opt-in.
-  const [sortOrder, setSortOrder] = createSignal<'default' | 'newest' | 'oldest' | 'severity'>('newest');
+  // The default ('newest') IS the canonical order: newest arrival batch on top, de-clustered
+  // within each batch, every entry locked in place (see order.ts). 'oldest' is that same order
+  // reversed; 'severity' groups by severity. There is no separate "shuffled" mode — the shuffle
+  // is baked into the default so latest entries always stack on top without same-category runs.
+  const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity'>('newest');
   const [showDownload, setShowDownload] = createSignal(false);
   const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
@@ -192,15 +192,15 @@ export default function App() {
     if (hasQuery()) {
       return list.filter(f => f.score !== undefined).sort((a, b) => (b.score! - a.score!));
     }
-    if (order === 'oldest') return [...list].sort((a, b) => a.foundAt.localeCompare(b.foundAt));
-    if (order === 'newest') return [...list].sort((a, b) => b.foundAt.localeCompare(a.foundAt));
     if (order === 'severity') {
       const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
       return [...list].sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3));
     }
-    // default: shuffled = canonical deterministic order
+    // 'newest' (default) = canonical order (newest batch on top, de-clustered, locked).
+    // 'oldest' = that same canonical order reversed (oldest batch on top, still de-clustered).
     const ci = canonicalIndex();
-    return [...list].sort((a, b) => (ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0));
+    const dir = order === 'oldest' ? -1 : 1;
+    return [...list].sort((a, b) => dir * ((ci.get(keyOf(a)) ?? 0) - (ci.get(keyOf(b)) ?? 0)));
   });
 
   // ── Routing via History API (no hash) ─────────────────────────────────────────
@@ -340,7 +340,6 @@ export default function App() {
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="severity">By Severity</option>
-            <option value="default">Shuffled</option>
           </select>
         </div>
       </div>
