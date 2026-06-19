@@ -350,7 +350,7 @@ export default function App() {
           <div style={s.stats}>
             <span style={s.stat}>{data()!.totalFindings} Entries</span>
             <Show when={counterEnabled() && counts()}>
-              <span style={s.stat}>{formatCount(counts()!.today)} Today</span>
+              <span style={s.stat}>{formatCount(counts()!.today)} visits today</span>
             </Show>
             <span style={s.stat}>{formatUpdated(data()!.lastUpdated)}</span>
           </div>
