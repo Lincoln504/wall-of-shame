@@ -371,9 +371,12 @@ export default function App() {
 
       <Show when={!focusId()}>
       <div style={s.controls}>
-        <input type="search"
-          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by idea or keyword'}
-          value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
+        <div style={s.searchRow}>
+          <input type="search"
+            placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by idea or keyword'}
+            value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
+          <button type="button" onClick={ensureModel} style={s.goBtn} aria-label="Search">Go</button>
+        </div>
         <Show when={dlProgress() !== null}>
           <div style={s.modelStatusRow}>
             <div style={s.progressTrack}><div style={{ ...s.progressFill, width: `${dlProgress()}%` }} /></div>
@@ -545,12 +548,18 @@ const s: Record<string, any> = {
   progressFill: { height: '100%', background: '#1a1a1a', 'border-radius': '999px', transition: 'width 0.2s ease' },
   progressPct: { 'font-size': '0.72rem', color: '#888', 'white-space': 'nowrap', 'flex-shrink': 0 },
   cacheTick: { 'font-size': '0.72rem', color: '#1a7f37', 'font-weight': '600' },
-  clearModelBtn: { 'font-family': UI, 'font-size': '0.7rem', color: '#999', background: 'none', border: 'none', padding: '0', cursor: 'pointer', 'text-decoration': 'underline' },
+  clearModelBtn: { 'font-family': UI, 'font-size': '0.7rem', color: '#999', background: 'none', border: 'none', padding: '0', cursor: 'pointer', 'text-decoration': 'none' },
+  searchRow: { display: 'flex', gap: '0.5rem', 'align-items': 'stretch' },
   searchInput: {
-    width: '100%', 'box-sizing': 'border-box', padding: '0.75rem 1.1rem', 'border-radius': '8px',
+    flex: '1 1 auto', 'min-width': 0, 'box-sizing': 'border-box', padding: '0.75rem 1.1rem', 'border-radius': '8px',
     border: '1.5px solid #ccc', background: '#fff', color: '#1a1a1a', 'font-size': '1.05rem',
     outline: 'none', 'font-family': UI,
     'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
+  },
+  goBtn: {
+    flex: '0 0 auto', padding: '0 1.4rem', 'border-radius': '8px', border: '1.5px solid #ccc',
+    background: '#e9e8e4', color: '#555', 'font-size': '1.05rem', 'font-weight': '600',
+    cursor: 'pointer', 'font-family': UI, 'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
   },
   select: {
     padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
