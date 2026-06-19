@@ -20,4 +20,35 @@ window.addEventListener('vite:preloadError', (e) => {
   location.reload();
 });
 
+// Proactively pull the latest app after a deploy. When the tab regains focus, compare the
+// running ENTRY bundle filename (its content hash changes ONLY when code changes — data-only
+// deploys keep it stable, so this never reload-storms during constant ingestion) against the
+// live index.html. A mismatch means this tab is running a stale bundle → reload to the fresh
+// app + data. This is what stops a user from being stuck on an old, buggy build. import.meta.url
+// is the running chunk's own URL; if it doesn't look hashed (dev), the check is inert (safe).
+const CURRENT_ENTRY = (import.meta.url.match(/index-[A-Za-z0-9_-]+\.js/) || [])[0] || '';
+let lastUpdateCheck = 0;
+function checkForUpdate() {
+  if (!CURRENT_ENTRY || document.visibilityState !== 'visible') return;
+  const now = Date.now();
+  if (now - lastUpdateCheck < 30_000) return; // throttle network checks
+  lastUpdateCheck = now;
+  fetch(`${import.meta.env.BASE_URL}?_=${now}`, { cache: 'no-store' })
+    .then((r) => (r.ok ? r.text() : ''))
+    .then((html) => {
+      const m = html.match(/index-[A-Za-z0-9_-]+\.js/);
+      if (!m) return;
+      if (m[0] !== CURRENT_ENTRY) {
+        if (sessionStorage.getItem('wos-stale-reloaded') === '1') return; // guard against a reload loop
+        sessionStorage.setItem('wos-stale-reloaded', '1');
+        location.reload();
+      } else {
+        sessionStorage.removeItem('wos-stale-reloaded');
+      }
+    })
+    .catch(() => { /* offline / transient — try again next focus */ });
+}
+document.addEventListener('visibilitychange', checkForUpdate);
+window.addEventListener('focus', checkForUpdate);
+
 render(() => <App />, document.getElementById('root')!);
