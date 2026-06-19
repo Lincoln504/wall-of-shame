@@ -169,8 +169,9 @@ export default function App() {
   // Search replaces the feed in place; clearing the query returns to the feed. The canonical
   // list order (order.ts) is now only the "backend" data ordering, used for stable share-page
   // links — the visible default browsing experience is the feed.
+  // NOTE: the `viewMode` memo lives below, AFTER focusId() is declared — createMemo runs its
+  // body eagerly on creation, so referencing focusId before its declaration would TDZ-crash.
   type ViewMode = 'feed' | 'search' | 'entry';
-  const viewMode = createMemo<ViewMode>(() => (focusId() ? 'entry' : hasQuery() ? 'search' : 'feed'));
 
   // The feed's candidate pool: the full corpus, narrowed by the category/severity filters
   // (the sequencer handles ordering, so no sort here).
@@ -220,6 +221,9 @@ export default function App() {
   };
   const [rawPage, setRawPage] = createSignal(parsePage());
   const [focusId, setFocusId] = createSignal<string | null>(parseFocus());
+  // Declared here (not in the View-mode section above) because createMemo evaluates eagerly
+  // and this reads focusId() — it must run after focusId's declaration or it TDZ-crashes.
+  const viewMode = createMemo<ViewMode>(() => (focusId() ? 'entry' : hasQuery() ? 'search' : 'feed'));
   // Push a new history entry and sync signals immediately (pushState never fires popstate).
   const navigate = (path: string) => {
     history.pushState(null, '', path);
