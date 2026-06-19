@@ -58,7 +58,8 @@ function jsonToCsv(findings: Finding[]) {
 export default function App() {
   const [data] = createResource(fetchFindings);
   const [docVectors, setDocVectors] = createSignal<Map<string, Float32Array>>(new Map());
-  const [search, setSearch] = createSignal('');
+  const [searchInput, setSearchInput] = createSignal(''); // live text in the box (every keystroke)
+  const [search, setSearch] = createSignal('');            // COMMITTED query — debounced 1s after typing stops; drives results, the view switch, and the model load
   const [category, setCategory] = createSignal('');
   const [severity, setSeverity] = createSignal('');
   const [showDownload, setShowDownload] = createSignal(false);
@@ -131,6 +132,15 @@ export default function App() {
   };
   let clearedTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(clearedTimer));
+
+  // Debounce: commit the live box text to `search` only after the user has stopped typing for 1s,
+  // so nothing searches/recomputes/switches view on every keystroke. Emptying the box commits
+  // immediately (instant return to the feed — no 1s lag when clearing).
+  createEffect(on(searchInput, (val) => {
+    if (val.trim() === '') { setSearch(''); return; }
+    const t = setTimeout(() => setSearch(val), 1000);
+    onCleanup(() => clearTimeout(t));
+  }, { defer: true }));
 
   // Load the query model ONLY when the QUERY itself changes — never as a reaction to model state.
   // So clicking "Clear" while a query sits in the box does NOT immediately re-download/re-embed;
@@ -279,9 +289,9 @@ export default function App() {
   // Jump to the top whenever a permalink is opened.
   createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
   // Leaving an entry returns to the feed (clearing any query so the feed, not results, shows).
-  const clearFocus = () => { setSearch(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
+  const clearFocus = () => { setSearchInput(''); setSearch(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
   // Home: clear search + filters and return to the feed.
-  const goHome = () => { setSearch(''); setCategory(''); setSeverity(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
+  const goHome = () => { setSearchInput(''); setSearch(''); setCategory(''); setSeverity(''); navigate(`${BASE}`); window.scrollTo({ top: 0 }); };
 
   // ── Knuth-Plass justification of the analysis text on each rendered card ───────
   const collectJustifyEls = () => Array.from(document.querySelectorAll('.wos-justify')) as HTMLElement[];
@@ -345,7 +355,7 @@ export default function App() {
         <div style={s.searchRow}>
           <input type="search"
             placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by idea or keyword'}
-            value={search()} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
+            value={searchInput()} onInput={e => setSearchInput(e.currentTarget.value)} style={s.searchInput} />
         </div>
         <Show when={dlProgress() !== null}>
           <div style={s.modelStatusRow}>
