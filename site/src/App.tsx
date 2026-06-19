@@ -351,8 +351,6 @@ export default function App() {
         <p style={s.subtitle}>
           English language search engine of web content judged harmful.
           <span style={s.subMeta}>
-            Semantic search in your browser powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-            <br />
             Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
             <br />
             Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
