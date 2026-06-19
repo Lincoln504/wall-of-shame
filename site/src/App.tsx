@@ -1,6 +1,6 @@
 import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect, onMount, on } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
-import { canonicalOrder, pageForIndex, totalPages, clampPage, pageSlice } from './order.js';
+import { canonicalOrder, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
 import ShareModal from './ShareModal.js';
 import FindingCard from './FindingCard.js';
@@ -158,11 +158,6 @@ export default function App() {
     canonical().forEach((f, i) => m.set(f.id || f.url, i));
     return m;
   });
-  const canonicalPage = createMemo(() => {
-    const m = new Map<string, number>();
-    canonical().forEach((f, i) => m.set(f.id || f.url, pageForIndex(i)));
-    return m;
-  });
 
   const keyOf = (f: Finding) => f.id || f.url;
 
@@ -256,11 +251,12 @@ export default function App() {
   });
   // Jump to the top whenever a permalink is opened.
   createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
+  // Leaving an /entry/ permalink returns to the FEED (the landing experience), not a
+  // paginated/search page. Clears any query so the feed (not a results list) shows.
   const clearFocus = () => {
-    if (!/\/entry\//.test(location.pathname)) return;
-    const f = focusedFinding();
-    const targetPage = f ? (canonicalPage().get(keyOf(f)) ?? 1) : 1;
-    navigate(`${BASE}page/${targetPage}`);
+    setSearch('');
+    navigate(`${BASE}`);
+    window.scrollTo({ top: 0 });
   };
   // Reset to page 1 when the filter/sort changes (but respect the initial URL page).
   createEffect(on([search, category, severity], () => setRawPage(1), { defer: true }));
