@@ -30,7 +30,10 @@ const SESSION_SEED = (Date.now() & 0xffffffff) >>> 0;
 // categories. Module-level so it fires only on the initial load — returning to the feed from
 // an entry/search within the same session (no reload) re-seeds normally (random). A user-set
 // category filter takes precedence (the first card is then naturally that category).
-const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'media', 'spectacle', 'war', 'current_affairs', 'technology'];
+// First-card seed categories on a fresh load. Excludes `media` (1 entry) and `current_affairs`
+// (3) — both are residual-only by classify.ts design (topical pieces are reassigned to their real
+// subject), so they're effectively never seeded and only dilute this list.
+const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'spectacle', 'war', 'technology'];
 let isFirstSeedOfPageLoad = true;
 
 // Feed position persists across LEAVING the feed (opening a search or an entry) and returning

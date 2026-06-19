@@ -57,6 +57,15 @@ export PI_RESEARCH_WORKER_CONCURRENCY="${PI_RESEARCH_WORKER_CONCURRENCY:-4}"
 # Stagger category starts within a round (ms) so the pool isn't hit by every
 # category's first burst simultaneously. Consumed by run.ts.
 export WOS_CATEGORY_STAGGER_MS="${WOS_CATEGORY_STAGGER_MS:-1500}"
+# Category balancing (soft top-down damper, NOT a forced flat distribution). Every round
+# attempts all categories; the current top-N by count are each skipped with probability
+# THROTTLE that round. Defaults (top-4, p=0.5) left the high-yield leader (economics) at
+# ~2.8x the even share, so widen to top-6 @ p=0.6: this compresses the over-represented
+# cluster (economics/healthcare/war/climate/labor/technology) toward the pack while still
+# never starving the tail or emptying a round — the natural yield-driven variation we want
+# is preserved, just with the runaway leader reined in. TOP_N is passed as --throttle-top.
+export PI_RESEARCH_TOP_THROTTLE="${PI_RESEARCH_TOP_THROTTLE:-0.6}"
+WOS_THROTTLE_TOP="${WOS_THROTTLE_TOP:-6}"
 
 count() { node -e "console.log(require('./data/findings.json').totalFindings||0)" 2>/dev/null || echo 0; }
 avail_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 999999; }
@@ -93,7 +102,7 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   # IO priority keeps the user's interactive Firefox responsive on this shared machine.
   # Children (node workers, camoufox) inherit the priority.
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \
-    nice -n 15 ionice -c3 timeout 3600 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
+    nice -n 15 ionice -c3 timeout 3600 npx tsx src/main.ts --all --concurrency "$CONC" --throttle-top "$WOS_THROTTLE_TOP" --no-commit >> "$LOG" 2>&1
   RC=$?
   AFTER=$(count)
   ADDED=$(( AFTER - BEFORE ))
