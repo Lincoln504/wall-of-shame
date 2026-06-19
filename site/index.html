@@ -52,8 +52,11 @@
          "Wall of Shame" + the icon read as one balanced, centered unit instead of wrapping with
          the icon stranded to the right. */
       @media (max-width: 600px) {
-        .wos-justify { line-height: 1.5 !important; }
-        .wos-analysis { line-height: 1.55 !important; }
+        /* Body paragraphs (description + analysis): slightly tighter line spacing AND a slightly
+           smaller gap between paragraphs — subtle, mobile only. Inline styles set both, so the
+           line-height and margin-bottom overrides need !important. */
+        .wos-justify { line-height: 1.45 !important; margin-bottom: 1rem !important; }
+        .wos-analysis { line-height: 1.5 !important; margin-bottom: 0.55rem !important; }
         .wos-title { font-size: 2rem !important; }
         .wos-home { gap: 0.5rem !important; }
       }
