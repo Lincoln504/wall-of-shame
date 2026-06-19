@@ -71,12 +71,9 @@
            padding so its text stays aligned with the description above. */
         .wos-analysis-box {
           background: #f0ede6 !important;
-          /* Desktop draws the section's accent as a 3px line on the LEFT edge; on mobile the box
-             is a full-width band, so move that same 3px rule (same color) to the TOP and BOTTOM
-             edges instead — two horizontal rules spanning the card width. */
-          border-left: none !important;
-          border-top: 3px solid #e4e1d9 !important;
-          border-bottom: 3px solid #e4e1d9 !important;
+          /* Desktop draws the section's accent as a 3px line on the LEFT edge; on mobile, fully
+             enclose the section with that same 3px rule (same color) on ALL FOUR sides. */
+          border: 3px solid #e4e1d9 !important;
           border-radius: 0 !important;
           margin-left: -1.4rem !important;
           margin-right: -1.4rem !important;
