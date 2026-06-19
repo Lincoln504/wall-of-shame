@@ -17,7 +17,7 @@
 import { createSignal, createMemo, createEffect, on, onMount, onCleanup, For, Show } from 'solid-js';
 import type { Finding } from './types.js';
 import FindingCard from './FindingCard.js';
-import { createSequencer } from './sequencer.js';
+import { createSequencer, type Sequencer } from './sequencer.js';
 import { useInputClass, usePrefersReducedMotion } from './device.js';
 import { justifyElements } from './justify.js';
 import { s } from './styles.js';
@@ -32,6 +32,15 @@ const SESSION_SEED = (Date.now() & 0xffffffff) >>> 0;
 // category filter takes precedence (the first card is then naturally that category).
 const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'media', 'spectacle', 'war', 'current_affairs', 'technology'];
 let isFirstSeedOfPageLoad = true;
+
+// Feed position persists across LEAVING the feed (opening a search or an entry) and returning
+// within the same session — so deleting a query drops the reader back exactly where they were,
+// not at the first card. Keyed by the pool ARRAY REFERENCE: a category/severity filter change
+// produces a new pool array → no restore → a correct fresh feed for the new filter. The whole
+// sequencer instance is preserved too, so recent-history suppression and read-time affinity
+// carry over rather than resetting on return.
+type FeedSession = { pool: Finding[]; seq: Sequencer; current: Finding | null; next: Finding | null; prevStack: Finding[] };
+let savedSession: FeedSession | null = null;
 
 const ENGAGE_PX = 6;      // movement before a press becomes a drag (taps/clicks pass through)
 const COMMIT_PX = 70;     // drag distance that commits a move
@@ -52,8 +61,9 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const reducedMotion = usePrefersReducedMotion();
   const inputClass = useInputClass(); // 'pointer' → show side arrows; 'touch' → swipe only
 
-  // A fresh sequencer whenever the candidate pool changes (data load or category/severity filter).
-  const seq = createMemo(() => createSequencer(props.findings, SESSION_SEED));
+  // The sequencer for the current pool. Created fresh when the pool changes, or restored from the
+  // saved session when returning to the same pool (see the seed effect below).
+  let sequencer!: Sequencer;
   const [current, setCurrent] = createSignal<Finding | null>(null);
   const [next, setNext] = createSignal<Finding | null>(null);          // lookahead (rendered peeking)
   const [prevStack, setPrevStack] = createSignal<Finding[]>([]);
@@ -81,14 +91,25 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const dwellMs = () => performance.now() - shownAt;
   const step = () => cardW() + gap(); // distance to shift the track by one card
 
-  // Seed / reseed the feed when the pool changes.
-  createEffect(on(seq, (sequencer) => {
+  // Seed / reseed the feed when the pool changes — or restore the saved position when returning
+  // to the same pool (deleting a search, leaving an entry) so the reader lands where they were.
+  createEffect(on(() => props.findings, (findings) => {
+    if (savedSession && savedSession.pool === findings) {
+      sequencer = savedSession.seq;
+      setPrevStack(savedSession.prevStack);
+      setCurrent(savedSession.current);
+      setNext(savedSession.next);
+      setDragX(0);
+      shownAt = performance.now();
+      return;
+    }
+    sequencer = createSequencer(findings, SESSION_SEED);
     setPrevStack([]);
     // Fresh page load only: bias the first card to a preferred category (when the pool is the
     // full corpus — a user filter already narrows it, so respect that).
     let first: Finding | null = null;
     if (isFirstSeedOfPageLoad) {
-      const pref = props.findings.filter(f => PREFERRED_FIRST.includes(f.category));
+      const pref = findings.filter(f => PREFERRED_FIRST.includes(f.category));
       if (pref.length) first = pref[SESSION_SEED % pref.length]!;
     }
     isFirstSeedOfPageLoad = false;
@@ -97,6 +118,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     setDragX(0);
     shownAt = performance.now();
   }));
+
+  // Keep the saved session in lock-step with the live position, so leaving the feed at any moment
+  // captures the exact card on screen (and its neighbours) for an accurate restore on return.
+  createEffect(() => {
+    const cur = current(), nx = next(), st = prevStack();
+    if (!sequencer) return;
+    savedSession = { pool: props.findings, seq: sequencer, current: cur, next: nx, prevStack: st };
+  });
 
   // Re-index after a slide settles. Forward: current→prev, next→current, draw a fresh
   // dwell-aware lookahead. Back: current→next (so forward returns here), pop history.
@@ -108,7 +137,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       setCurrent(nx);
       // Credit the read-time to the card actually just left (cur) — not the sequencer's own last
       // pick, which is one ahead due to the lookahead — so its category gets the engagement boost.
-      setNext(seq().next(dwellMs(), cur?.category));
+      setNext(sequencer.next(dwellMs(), cur?.category));
     } else {
       const st = prevStack();
       if (!st.length) return;

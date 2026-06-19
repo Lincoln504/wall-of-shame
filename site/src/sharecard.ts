@@ -157,11 +157,12 @@ function layoutSummary(ctx: CanvasRenderingContext2D, text: string, availH: numb
   return { height: 0, draw: () => {} };
 }
 
-// Draw the Wall of Shame mark — matches the favicon exactly: a white square with a thick
-// dark border and the 📌 push-pin emoji tilted 25°. At (x, y) with side `s`. The emoji is
-// rendered with fillText (color emoji from the system font) so the card icon is identical
-// to the browser-tab favicon. Wrapped in save/restore so the temporary center alignment
-// and middle baseline don't leak into the footer text drawn afterwards.
+// Draw the Wall of Shame mark — matches favicon.svg EXACTLY (kept in lock-step with it):
+// a white square, a thick dark border, the 📌 push-pin emoji tilted 25° and nudged right,
+// then a white box clipping the pin's point over the left ~35% of the interior. At (x, y)
+// with side `s`. The emoji is rendered with fillText (color emoji from the system font) so
+// the card icon is identical to the browser-tab favicon. Drawing order mirrors the SVG:
+// bg → border → pin → white clip box (interior only, so it never covers the border).
 function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
   // White background fill.
   ctx.fillStyle = '#ffffff';
@@ -185,6 +186,11 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.textBaseline = 'middle';
   ctx.fillText('📌', 0, Math.round(s * 0.06));
   ctx.restore();
+  // White clip box over the pin's point — the favicon's `<rect x="4" y="4" width="7.2"
+  // height="24">` on the 32 box: left = inner border edge (x+lw), width 7.2/32 = 0.225·s,
+  // full interior height (s − 2·lw). Interior-only so the dark border stays intact.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x + lw, y + lw, s * 0.225, s - lw * 2);
 }
 
 /**

@@ -6,6 +6,7 @@ import ShareModal from './ShareModal.js';
 import FindingCard from './FindingCard.js';
 import Feed from './Feed.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
+import { useInputClass } from './device.js';
 import { loadDocVectors, computeHybridScores, isModelCached, clearModelCache } from './semantic.js';
 import type { QueryEmbedder } from './query-embedder.js';
 import { s, categoryLabel } from './styles.js';
@@ -66,6 +67,7 @@ export default function App() {
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
   const counts = useVisitCounts();
+  const inputClass = useInputClass(); // 'touch' on mobile → show the swipe affordance hint
 
   // ── Semantic search ──────────────────────────────────────────────────────────
   // Document vectors are PRECOMPUTED (scripts/embed.mjs, granite-r2 q8) and shipped as
@@ -86,17 +88,25 @@ export default function App() {
   // bundle is dynamically imported here, so visitors who never search never download it —
   // keeping the footprint minimal and the placeholder honest. A progress callback drives
   // the download bar; a fully-cached load jumps straight to 100 and shows no bar.
+  // loadGen invalidates an in-flight load if the user clears mid-download: a stale completion
+  // must NOT flip the UI back to "ready"/"cached" after a clear (that desync was the source of
+  // the post-clear confusion). Every clear bumps the generation; a load only commits if its
+  // generation is still current.
+  let loadGen = 0;
   const ensureModel = () => {
     if (modelState() !== 'idle') return;
+    const gen = ++loadGen;
     setModelState('loading');
     setDlProgress(modelCached() ? null : 0);
     import('./query-embedder.js')
       .then(async m => {
-        embedder = new m.QueryEmbedder();
-        await embedder.load(p => { if (p < 100) setDlProgress(p); });
+        const inst = new m.QueryEmbedder();
+        await inst.load(p => { if (gen === loadGen && p < 100) setDlProgress(p); });
+        if (gen !== loadGen) { inst.dispose(); return; } // cleared mid-load → discard
+        embedder = inst;
       })
-      .then(() => { setModelState('ready'); setDlProgress(null); setModelCached(true); })
-      .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); setDlProgress(null); });
+      .then(() => { if (gen !== loadGen) return; setModelState('ready'); setDlProgress(null); setModelCached(true); })
+      .catch(err => { if (gen !== loadGen) return; console.error('Query model load failed:', err); setModelState('idle'); setDlProgress(null); });
   };
 
   // Clear means CLEAR: drop the on-disk weights AND tear down the in-memory model + reset
@@ -104,6 +114,7 @@ export default function App() {
   // "ready" that reads as "nothing happened"). A future search re-downloads cold. Shows a
   // brief confirmation so the action is legible.
   const clearModel = async () => {
+    loadGen++; // invalidate any in-flight load so it can't resurrect "ready"/"cached" after this clear
     await clearModelCache();
     embedder?.dispose();
     embedder = null;
@@ -345,8 +356,7 @@ export default function App() {
         <div style={s.searchRow}>
           <input type="search"
             placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by idea or keyword'}
-            value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
-          <button type="button" onClick={ensureModel} style={s.goBtn} aria-label="Search">Go</button>
+            value={search()} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
         </div>
         <Show when={dlProgress() !== null}>
           <div style={s.modelStatusRow}>
@@ -447,7 +457,8 @@ export default function App() {
 
         {/* ── Feed (default) ── */}
         <Show when={viewMode() === 'feed'}>
-          <div style={s.sectionLabel}>Feed</div>
+          {/* Mobile has no side arrows, so the section label doubles as the swipe affordance. */}
+          <div style={s.sectionLabel}>{inputClass() === 'touch' ? 'Feed — swipe to browse' : 'Feed'}</div>
           <Show
             when={feedPool().length > 0}
             fallback={<div style={s.empty}>No entries found.</div>}

@@ -51,11 +51,6 @@ export const s: Record<string, any> = {
     outline: 'none', 'font-family': UI,
     'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
   },
-  goBtn: {
-    flex: '0 0 auto', padding: '0 1.4rem', 'border-radius': '2px', border: '1.5px solid #ccc',
-    background: '#e9e8e4', color: '#555', 'font-size': '1.05rem', 'font-weight': '600',
-    cursor: 'pointer', 'font-family': UI, 'box-shadow': '0 2px 8px rgba(0,0,0,0.06)',
-  },
   select: {
     padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
     background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer', 'font-family': UI,
