@@ -122,7 +122,9 @@ SEVERITY RUBRIC (calibrate honestly — do not inflate):
 Severity scale: low | medium | high ONLY. If no articles qualify, return {"queries": [...], "findings": []}. Max 8 entries.`;
 
 function buildExtractionPrompt(categoryKey: string): string {
-  return EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
+  // Temporal grounding so the analysis can reason about how current/dated a piece is.
+  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return `Current Date: ${currentDate}\n\n` + EXTRACTION_PROMPT.replaceAll('<CATEGORY_KEY>', categoryKey);
 }
 
 export interface ResearchResult {

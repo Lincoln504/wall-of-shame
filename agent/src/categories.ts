@@ -15,7 +15,7 @@ export const CATEGORIES: Category[] = [
     - BLAMING THE POOR: Language that treats economic hardship as a personal failure or "dependency" rather than a systemic issue.
     - SAFETY AS BURDEN: Framing workplace safety rules as unnecessary "red tape" that hurts the economy.
     - GENERAL NARRATIVE: Broadly presenting worker rights as an obstacle to progress or individual freedom.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'economics',
@@ -33,7 +33,7 @@ export const CATEGORIES: Category[] = [
     - WALL STREET & BAILOUTS: Defending public rescues of banks and large firms ("too big to fail") while opposing the same help for ordinary people, and framing the safety rules put in place after financial crises as needless red tape.
     - FINANCIAL EXTRACTION: Presenting the private-equity model that loads companies, housing, and hospitals with debt and strips them as "efficiency," and excusing predatory lending and junk fees as just the market at work.
     - IDEOLOGICAL SHIELDS: New ways of framing the economy that protect concentrated wealth from being challenged.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'race',
@@ -48,7 +48,7 @@ export const CATEGORIES: Category[] = [
     - ATTACKING PROTESTERS: Presenting civil rights movements as "divisive" or "dangerous" to justify shutting them down.
     - XENOPHOBIC OVERLAP: Where arguments about "racial purity" meet fear-mongering about demographic change.
     - TEACHING REVISIONISM: Systematic efforts to change what is taught in schools to hide the history of racial injustice.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'gender',
@@ -63,7 +63,7 @@ export const CATEGORIES: Category[] = [
     - BODILY AUTONOMY ATTACKS: Dehumanizing language against reproductive healthcare and women's right to make their own medical decisions; framing forced birth as "protection."
     - ANTI-FEMINIST GRIEVANCE: Presenting feminism itself as the problem, mocking women's advancement, or recasting men as the real victims of equality.
     - VIOLENCE MINIMIZATION: Downplaying, excusing, or victim-blaming domestic and sexual violence against women.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'immigration',
@@ -78,7 +78,7 @@ export const CATEGORIES: Category[] = [
     - REMOVING PROTECTIONS: Arguing for the removal of legal rights and the normalization of mass detention.
     - NATIVIST IDENTITY: Defining the nation in a way that excludes certain groups and presents integration as a failure.
     - BUREAUCRATIC HARASSMENT: Using procedural changes to make it impossible for immigrants to maintain legal status.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'religion',
@@ -93,7 +93,7 @@ export const CATEGORIES: Category[] = [
     - CLASSROOM CAPTURE: Pushing specific religious teachings into public schools and using public money for religious purposes.
     - MARGINALIZING MINORITIES: Presenting a diverse society as a form of "persecution" against the majority religion.
     - ERODING SEPARATION: Efforts to break down the wall between religious power and government authority.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'climate',
@@ -108,7 +108,7 @@ export const CATEGORIES: Category[] = [
     - SUBSIDY PROTECTION: Defending help for the fossil fuel industry while attacking help for renewable energy.
     - OFFSET DISTRACTION: Using unverified carbon offsets as a way to avoid actually reducing pollution.
     - INEVITABILITY ARGUMENTS: Claiming that environmental collapse is unavoidable to justify continuing to pollute.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'health',
@@ -123,7 +123,7 @@ export const CATEGORIES: Category[] = [
     - ATTACKING PUBLIC SAFETY: Framing health rules (like masking or clean air) as "tyranny" to undermine safety measures.
     - SKEWNING RISK: Exaggerating the risks of medicine while pretending the risks of the disease don't exist.
     - FREEDOM AS DEFLECTION: Using "medical freedom" as a way to ignore the need for collective public health safety.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'democracy',
@@ -138,7 +138,7 @@ export const CATEGORIES: Category[] = [
     - BYPASSING THE PEOPLE: Using the courts to pass unpopular policies that couldn't get through the normal law-making process.
     - REJECTING RESULTS: Normalizing the refusal to accept election losses and using government power against political rivals.
     - ATTACKING INSTITUTIONS: Broad efforts to destroy trust in the foundations of democratic government.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'policing',
@@ -153,7 +153,7 @@ export const CATEGORIES: Category[] = [
     - ATTACKING REFORM: Claiming that trying to fix the system is the main cause of crime and social problems.
     - HARSHER SENTENCING: Pushing for mass incarceration and using "law and order" language to target specific communities.
     - EXPANDING CONTROL: Arguing for more surveillance and police power through new technology and laws.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'technology',
@@ -168,7 +168,7 @@ export const CATEGORIES: Category[] = [
     - ETHICS DISMISSAL: Calling safety and ethical concerns "anti-progress" or "hysterical."
     - REMOVING PRIVACY: Fighting against laws that protect data in favor of letting companies "police themselves."
     - TECH AS DESTINY: Claiming that harmful tech trends are "unavoidable" so people stop trying to regulate them.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'disability',
@@ -183,7 +183,7 @@ export const CATEGORIES: Category[] = [
     - JUSTIFYING EXCLUSION: Defending the refusal to provide accommodations in schools or jobs under the guise of "merit."
     - FOCUS ON CONTROL: Prioritizing institutionalization over letting people live in their own communities with their rights intact.
     - PERSONALIZING FAILURE: Treating disability as an individual problem to be "fixed" rather than a civil rights issue.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'war',
@@ -199,7 +199,7 @@ export const CATEGORIES: Category[] = [
     - DOMESTIC MILITARISM: Bringing military gear and tactics into local policing and government.
     - INEVITABLE CONFLICT: Framing global fights as "unavoidable" to justify spending forever on the military.
     - STATE-VIOLENCE WHITEWASHING: Opinion and PR that justifies, sanitizes, or denies the documented human cost of a state's military actions and occupations — including content that reframes the harm of the State of Israel's military operations in Gaza and the occupied territories as necessary, proportionate, or fabricated, the same way it treats any government laundering the toll of its own armed force.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'spectacle',
@@ -245,7 +245,7 @@ export const CATEGORIES: Category[] = [
     - REGULATORY CAPTURE: Framing the takeover of an agency by the very business it is supposed to oversee as "expertise" or "cooperation."
     - REFORM AS NAIVE: Mocking efforts to get money out of politics or end legalized bribery as hopeless, extreme, or a distraction.
     - BOTH-SIDES LAUNDERING: Using "everyone does it" to wave away specific, documented corruption and discourage accountability.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'media',
@@ -260,7 +260,7 @@ export const CATEGORIES: Category[] = [
     - OWNER INTEREST: Coverage that quietly serves the financial or political stake of a billionaire owner, advertiser, or parent company.
     - SAVVY-STYLE DISTRACTION: Covering politics as pure strategy and horse-race spectacle to avoid examining who actually gets hurt.
     - MANUFACTURING CONSENT FOR HARM: Cheerleading war, austerity, or crackdowns by amplifying official sources and sidelining the people harmed.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'healthcare',
@@ -275,7 +275,7 @@ export const CATEGORIES: Category[] = [
     - BLAMING THE PATIENT: Treating medical debt and going without care as personal failures of responsibility rather than failures of the system.
     - INDUSTRY AS REFORMER: Letting insurers, hospital chains, and drug companies pose as the solution to the very problems they profit from.
     - MARKET MAGIC: Claiming "competition" and "choice" will fix healthcare while ignoring how sick people cannot shop around in an emergency.
-    - AND OTHER strategies: These are just starting points; find the underlying mechanisms of framing and intentionality.`,
+    - AND OTHER strategies: These are just starting points — not a checklist or a limit. Examine every further angle, consideration, and topic relevant to this category, and surface whatever framing, mechanism, or intent is being used to normalize, defend, or launder harm.`,
   },
   {
     key: 'oligarchy',

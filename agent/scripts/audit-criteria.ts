@@ -61,7 +61,10 @@ export const VALID_SEVERITIES = ['low', 'medium', 'high'] as const;
  * When used for targeted resolution (resolve_flagged.ts), the caller appends the
  * prior audit note to each entry block so the model has context on what was ambiguous.
  */
-export const AUDIT_SYSTEM = `You are auditing the Wall of Shame database — a scathing search engine of bad, disagreeable, harmful, and malevolent web content.
+const AUDIT_DATE = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+export const AUDIT_SYSTEM = `Current Date: ${AUDIT_DATE}
+
+You are auditing the Wall of Shame database — a scathing search engine of bad, disagreeable, harmful, and malevolent web content.
 
 ═══ THE WALL'S STANCE (read every entry from here) ═══
 
