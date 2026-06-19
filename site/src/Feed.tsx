@@ -88,8 +88,10 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   let busy = false;            // one move at a time (covers arrows, keys, and slide animation)
   let stageRef: HTMLDivElement | undefined;
 
-  // drag bookkeeping
-  let armed = false, dragging = false, startX = 0, startT = 0, pid = -1;
+  // drag bookkeeping. `scrolling` locks a gesture to the vertical axis: once a press resolves to
+  // a vertical-dominant move it's a page scroll and can never also slide the card (no diagonal
+  // where both happen at once); only a horizontal-dominant move engages the card drag.
+  let armed = false, dragging = false, scrolling = false, startX = 0, startY = 0, startT = 0, pid = -1;
 
   const dwellMs = () => performance.now() - shownAt;
   const step = () => cardW() + gap(); // distance to shift the track by one card
@@ -192,13 +194,19 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     // Touch has no such ambiguity: a swipe navigates anywhere, while a stationary long-press
     // still triggers native selection (we engage a drag only past ENGAGE_PX of movement).
     if (e.pointerType === 'mouse' && isTextOrInteractive(e.target)) return;
-    armed = true; dragging = false; startX = e.clientX; startT = performance.now(); pid = e.pointerId;
+    armed = true; dragging = false; scrolling = false;
+    startX = e.clientX; startY = e.clientY; startT = performance.now(); pid = e.pointerId;
   };
   const onPointerMove = (e: PointerEvent) => {
     if (!armed) return;
     const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
     if (!dragging) {
-      if (Math.abs(dx) < ENGAGE_PX) return;
+      if (scrolling) return; // gesture already committed to vertical scroll — ignore horizontal
+      if (Math.abs(dx) < ENGAGE_PX && Math.abs(dy) < ENGAGE_PX) return;
+      // Axis lock: a vertical-dominant gesture is a page scroll — leave it to the browser (pan-y)
+      // and never slide the card too. Only a horizontal-dominant gesture engages the card drag.
+      if (Math.abs(dy) >= Math.abs(dx)) { scrolling = true; return; }
       dragging = true;
       setDragActive(true); // now an intentional drag — block selection flicker until release
       setSliding(false);
