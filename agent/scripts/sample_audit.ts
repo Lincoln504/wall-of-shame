@@ -78,13 +78,24 @@ const rawFindings = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
 const findings: any[] = rawFindings.findings;
 
 let sample: any[];
+const isGrounded = (f: any) => /article-grounded/.test(f.verificationLog || '');
 if (RECENT_ARG !== undefined) {
   const recentN = Math.max(0, parseInt(RECENT_ARG));
   const recentEntries = findings.slice(-recentN);
   const olderEntries = findings.slice(0, findings.length - recentN);
-  const olderSample = olderEntries.filter((_, i) => i % 7 === 3);
-  sample = [...recentEntries, ...olderSample];
-  log(`Total: ${findings.length} — recent: ${recentEntries.length} (all) + older: ${olderSample.length} (~15% of ${olderEntries.length}) = ${sample.length} entries`);
+  // Prioritize re-GROUNDING older entries never verified against their own source page
+  // (desk-audit only, verify gate miss/omitted, legacy/unmarked). Entries already grounded are
+  // skipped here so coverage TRENDS to 100% over successive audits; once an entry is audited
+  // against its live article below it's marked grounded and drops out — so this slice is
+  // self-rotating through the not-grounded backlog. A light sample of grounded entries keeps
+  // them under ongoing QA.
+  const olderNotGrounded = olderEntries.filter(f => !isGrounded(f));
+  const olderGrounded = olderEntries.filter(isGrounded);
+  const REGROUND_CAP = Math.max(0, Number(process.env['WOS_AUDIT_REGROUND_CAP']) || 40);
+  const regroundBatch = olderNotGrounded.slice(0, REGROUND_CAP);
+  const groundedSample = olderGrounded.filter((_, i) => i % 11 === 5);
+  sample = [...recentEntries, ...regroundBatch, ...groundedSample];
+  log(`Total: ${findings.length} — recent ${recentEntries.length} (all) + reground ${regroundBatch.length}/${olderNotGrounded.length} not-grounded + QA ${groundedSample.length} grounded = ${sample.length}`);
 } else {
   const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
   const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
@@ -154,37 +165,62 @@ try {
     fixes.forEach(r => log(`  ✎ FIX    ${r.id}`));
     flags.forEach(r => log(`  ⚑ FLAG   ${r.id} — ${r.overall_reason}`));
 
-    if (!DRY_RUN && (removes.length > 0 || fixes.length > 0 || flags.length > 0)) {
-      const removeUrls = new Set(removes.map(r => r.id));
-      const fixMap = new Map(fixes.map(r => [r.id, r]));
+    const removeUrls = new Set(removes.map(r => r.id));
+    const flagUrls = new Set(flags.map(r => r.id));
+    const fixMap = new Map(fixes.map(r => [r.id, r]));
+    // Entries audited against their LIVE article this batch (scraped, not removed, not flagged
+    // ambiguous) → mark grounded so corpus coverage trends to 100% and they aren't re-selected
+    // by the re-grounding sampler above. FIX entries with an article count too (fixed FROM it).
+    const day = new Date().toISOString().slice(0, 10);
+    const groundUrls = new Set(
+      (items as any[]).filter(it => it.article && !removeUrls.has(it.url) && !flagUrls.has(it.url)).map(it => it.url),
+    );
+    // Not-yet-grounded entries whose own source the unified scraper (fetch + stealth browser)
+    // could not fetch this batch. We count a re-ground attempt; after REGROUND_MAX_TRIES the
+    // source is treated as dead/hostile and the entry is REMOVED — an entry we can never verify
+    // against its source is not published (no accuracy gaps). New entries can't reach here:
+    // verify.ts already drops unscrapeable findings at admission; this only drains the legacy
+    // backlog. (Scrapeable not-grounded entries get grounded above and exit the backlog.)
+    const REGROUND_MAX_TRIES = Math.max(1, Number(process.env['WOS_REGROUND_MAX_TRIES']) || 3);
+    const unscrapeableUrls = new Set(
+      (items as any[]).filter(it => !it.article && !removeUrls.has(it.url) && !flagUrls.has(it.url)).map(it => it.url),
+    );
 
+    if (!DRY_RUN && (removeUrls.size > 0 || fixes.length > 0 || flags.length > 0 || groundUrls.size > 0 || unscrapeableUrls.size > 0)) {
       const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
+      let regroundRemoved = 0;
 
       for (const f of latest.findings) {
         const fix = fixMap.get(f.url);
-        if (!fix) continue;
-        if (fix.corrected_summary) f.summary = fix.corrected_summary;
-        if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
-        if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
-          f.category = fix.corrected_category;
+        if (fix) {
+          if (fix.corrected_summary) f.summary = fix.corrected_summary;
+          if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
+          if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
+            f.category = fix.corrected_category;
+          }
+          if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
+            f.severity = fix.corrected_severity;
+          }
         }
-        if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
-          f.severity = fix.corrected_severity;
+        if (groundUrls.has(f.url)) {
+          f.verificationLog = `audit-grounded ${day}`;
+          if (f.regroundTries) delete f.regroundTries; // grounded — clear any prior failure count
+        } else if (unscrapeableUrls.has(f.url) && !isGrounded(f)) {
+          f.regroundTries = (f.regroundTries || 0) + 1;
+          if (f.regroundTries >= REGROUND_MAX_TRIES) { removeUrls.add(f.url); regroundRemoved++; }
         }
       }
 
-      if (removes.length > 0) {
+      if (removeUrls.size > 0) {
         latest.findings = latest.findings.filter((f: any) => !removeUrls.has(f.url));
         latest.totalFindings = latest.findings.length;
       }
 
-      if (removes.length > 0 || fixes.length > 0) {
-        latest.lastUpdated = new Date().toISOString();
-        writeAtomic(FINDINGS_PATH, latest);
-        log(`  applied: ${removes.length} removed, ${fixes.length} fixed`);
-      }
+      latest.lastUpdated = new Date().toISOString();
+      writeAtomic(FINDINGS_PATH, latest);
+      log(`  applied: ${removeUrls.size} removed (${removes.length} by audit, ${regroundRemoved} unscrapeable), ${fixes.length} fixed, ${groundUrls.size} grounded`);
 
-      if (removes.length > 0) {
+      if (removeUrls.size > 0) {
         const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
         if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
         for (const url of removeUrls) state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));

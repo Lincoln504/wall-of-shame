@@ -239,26 +239,37 @@ export async function groundFindings(
   if (findings.length === 0) return findings;
   log(`  [verify] grounding ${findings.length} finding(s) against live article text (batched via ${VERIFY_MODEL_ID})...`);
 
-  // Phase 1 — scrape every article concurrently.
+  // Phase 1 — scrape every article concurrently (reuses the reviewer's in-memory scrape when
+  // present; otherwise re-fetches via the unified two-layer scraper: fast fetch → stealth browser).
   const scraped = await mapWithConcurrency(findings, SCRAPE_CONCURRENCY, (f) => scrapeOne(f, log));
-  const items = scraped.map((r, i) => (r.ok ? r.value : { f: findings[i]!, article: null }));
-  const scrapedCount = items.filter(it => it.article).length;
-  log(`  [verify] scraped ${scrapedCount}/${items.length} article(s); verifying in batches of ${BATCH_SIZE}...`);
+  const allItems = scraped.map((r, i) => (r.ok ? r.value : { f: findings[i]!, article: null }));
 
-  // Phase 2 — verify in batches (each batch = one big-context call).
+  // STRICT GROUNDING (no accuracy gaps): an entry whose own source page the unified scraper
+  // cannot fetch — fast fetch AND stealth browser both failed — can never be verified against
+  // its source, so it is DROPPED, never admitted. The research layer already fetched this URL
+  // to write the draft, so a re-scrape normally succeeds; a persistent failure means a dead or
+  // hostile link that should not be published. Every admitted entry is grounded against an
+  // actual scrape of its own page.
+  const items = allItems.filter(it => it.article);
+  const unscrapeable = allItems.filter(it => !it.article);
+  unscrapeable.forEach(it => log(`  [verify] ${it.f.domain ?? it.f.url}: source unscrapeable (fetch+browser both failed) — DROPPED (cannot verify against source)`));
+  log(`  [verify] scraped ${items.length}/${allItems.length}; dropping ${unscrapeable.length} unscrapeable; verifying ${items.length} in batches of ${BATCH_SIZE}...`);
+  if (items.length === 0) return [];
+
+  // Phase 2 — verify the scrapeable findings in batches (each batch = one big-context call).
   const batches = chunk(items, BATCH_SIZE);
   const settled = await mapWithConcurrency(batches, BATCH_CONCURRENCY, (b) => verifyBatch(b, log));
 
   const out: RawFinding[] = [];
-  let dropped = 0;
+  let droppedUnsupported = 0;
   settled.forEach((r, bi) => {
     if (r.ok) {
-      r.value.forEach((v) => { if (v === null) dropped++; else out.push(v); });
+      r.value.forEach((v) => { if (v === null) droppedUnsupported++; else out.push(v); });
     } else {
-      batches[bi]!.forEach(it => out.push(it.f)); // batch threw entirely — keep originals
+      batches[bi]!.forEach(it => out.push(it.f)); // model batch threw — keep (article WAS scraped; audit re-grounds)
     }
   });
-  log(`  [verify] kept ${out.length}, dropped ${dropped} (unsupported by source)`);
+  log(`  [verify] kept ${out.length}, dropped ${droppedUnsupported + unscrapeable.length} (${droppedUnsupported} unsupported by source, ${unscrapeable.length} unscrapeable)`);
   // Strip pipeline-only field before findings are written to disk.
   return out.map(({ _articleText: _, ...rest }) => rest as RawFinding);
 }
