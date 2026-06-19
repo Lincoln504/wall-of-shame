@@ -13,11 +13,15 @@
 //     share ~11%) so it needs no such correction;
 //   • a hard cap: never more than MAX_RUN (3) of the same category in a row, and independently
 //     never more than 3 of the same severity in a row;
-//   • a dwell nudge: if the reader lingered on the entry just left, gently lift candidates that
-//     share its category/severity for the NEXT pick only — a lean toward "more like that",
-//     decaying immediately so it never compounds into a bubble.
-// recentlySeen suppression avoids immediate repeats. Every weight stays > 0 (except the hard
-// caps), so the draw can never deadlock on a real corpus, and degenerate pools relax gracefully.
+//   • a read-time affinity: reading an entry a good amount LONGER THAN THE READER'S OWN PACE
+//     (relative, not a fixed seconds threshold) lifts that CATEGORY's weight for the upcoming
+//     picks. The boost decays each pick (≈3-pick half-life) so it stays elevated only while
+//     engagement with that category stays high, and fades on its own otherwise — never a bubble.
+//     Affinity is built from the dwell on the entry just left, attributed to THAT entry's
+//     category (passed in by the caller), so it can never apply to the first card.
+// State is minimal and in-memory only (a rolling average read-time + a small per-category score),
+// reset whenever the pool changes. recentlySeen suppression avoids immediate repeats. Every weight
+// stays > 0 (except the hard caps), so the draw can't deadlock and degenerate pools relax gracefully.
 
 import type { Finding } from './types.js';
 
@@ -28,10 +32,14 @@ export const TUNING = {
   SEV_INV_FREQ_ALPHA: 0.35, // gentle inverse-frequency lift for rare severities (high/low)
   RECENT_BUFFER: 20,     // ring buffer of recently-served ids to avoid near-repeats
   RECENT_PENALTY: 0.02,  // weight multiplier for a recently-seen candidate (near, not hard, exclude)
-  DWELL_FLOOR_MS: 4000,  // below this: fast browsing, no affinity nudge
-  DWELL_CEIL_MS: 25000,  // at/above this: clearly engaged, full affinity nudge
-  DWELL_CAT_GAIN: 0.8,   // up to +80% weight on same-category candidates at max dwell
-  DWELL_SEV_GAIN: 0.5,   // up to +50% weight on same-severity candidates at max dwell
+  // Read-time → category affinity. Engagement is RELATIVE to the reader's own rolling pace, so
+  // "a good amount longer than others" — not a fixed seconds threshold — is what counts.
+  DWELL_AVG_ALPHA: 0.3,    // EMA weight folding each read-time into the rolling average pace
+  DWELL_MIN_AVG_MS: 1500,  // floor on the comparison baseline (avoids a tiny avg flagging everything)
+  AFFINITY_DECAY: 0.55,    // per-pick decay of a category's affinity → a boost lasts ≈3 picks
+  AFFINITY_CAP: 3,         // cap accumulated affinity per category (no runaway)
+  AFFINITY_GAIN: 2.2,      // weight multiplier per unit of affinity
+  AFFINITY_BOOST_MAX: 6,   // cap a candidate's affinity weight multiplier
 };
 
 type Rng = () => number;
@@ -48,12 +56,14 @@ function mulberry32(a: number): Rng {
   };
 }
 
-const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
-
 export interface Sequencer {
-  /** Pick the next entry. dwellMs = ms the reader spent on the entry just left (0 if none). */
-  next(dwellMs?: number): Finding | null;
-  /** Reset run/seen state (e.g. when the candidate pool changes). */
+  /**
+   * Pick the next entry. `dwellMs` = ms the reader spent on the entry just left (0 if none);
+   * `leftCategory` = that entry's category, so the read-time affinity is credited to what was
+   * actually read (the feed uses a lookahead, so the sequencer's own last pick isn't it).
+   */
+  next(dwellMs?: number, leftCategory?: string): Finding | null;
+  /** Reset run/seen + engagement state (e.g. when the candidate pool changes). */
   reset(): void;
 }
 
@@ -74,6 +84,24 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
   let last: Finding | null = null;
   let catRun = { cat: '', len: 0 };
   let sevRun = { sev: '', len: 0 };
+  // Engagement model (minimal, in-memory): a rolling average read-time (the reader's own pace)
+  // and a small per-category affinity score. A read meaningfully longer than the rolling average
+  // boosts that category; all affinities decay each pick so a boost lasts ≈3 picks unless renewed.
+  let avgDwell = 0;
+  const catAff: Record<string, number> = {};
+
+  function updateAffinity(dwellMs: number, cat: string | undefined) {
+    // Decay every category each step (a boost fades unless the reader keeps engaging with it).
+    for (const k in catAff) { catAff[k] *= TUNING.AFFINITY_DECAY; if (catAff[k] < 0.02) delete catAff[k]; }
+    // Compare to the reader's PRIOR pace (before folding in this read) so a long read isn't
+    // diluted by its own value. The very first read just sets the baseline (ratio ≈ 1 → no boost).
+    const baseAvg = avgDwell > 0 ? avgDwell : dwellMs;
+    if (cat && baseAvg > 0) {
+      const ratio = dwellMs / Math.max(TUNING.DWELL_MIN_AVG_MS, baseAvg);
+      if (ratio > 1) catAff[cat] = Math.min(TUNING.AFFINITY_CAP, (catAff[cat] || 0) + (ratio - 1));
+    }
+    avgDwell = avgDwell > 0 ? avgDwell * (1 - TUNING.DWELL_AVG_ALPHA) + dwellMs * TUNING.DWELL_AVG_ALPHA : dwellMs;
+  }
   // Ring buffer of recently-served ids. Scaled down for tiny pools so it never starves the draw.
   const bufCap = Math.max(1, Math.min(TUNING.RECENT_BUFFER, Math.floor(pool.length / 2)));
   let recent: string[] = [];
@@ -91,8 +119,7 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     }
   }
 
-  function weights(dwellMs: number, capCat: boolean, capSev: boolean, useRecent: boolean): number[] {
-    const aff = clamp01((dwellMs - TUNING.DWELL_FLOOR_MS) / (TUNING.DWELL_CEIL_MS - TUNING.DWELL_FLOOR_MS));
+  function weights(capCat: boolean, capSev: boolean, useRecent: boolean): number[] {
     const out = new Array<number>(pool.length);
     for (let i = 0; i < pool.length; i++) {
       const c = pool[i];
@@ -114,11 +141,10 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       // Severity inverse-frequency normalization (severity axis only).
       w *= sevInvWeight[c.severity] ?? 1;
 
-      // Dwell-time affinity nudge (last dwell only; decays next pick).
-      if (aff > 0 && last) {
-        if (c.category === last.category) w *= 1 + aff * TUNING.DWELL_CAT_GAIN;
-        if (c.severity === last.severity) w *= 1 + aff * TUNING.DWELL_SEV_GAIN;
-      }
+      // Read-time affinity: lift categories the reader has been dwelling on (relative to their
+      // own pace). Persists/decays across picks, so the lift spans the next few picks.
+      const ca = catAff[c.category] ?? 0;
+      if (ca > 0) w *= 1 + Math.min(TUNING.AFFINITY_BOOST_MAX, ca * TUNING.AFFINITY_GAIN);
 
       out[i] = w;
     }
@@ -137,7 +163,12 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     return w.length - 1; // float-rounding fallback
   }
 
-  function next(dwellMs = 0): Finding | null {
+  function next(dwellMs = 0, leftCategory?: string): Finding | null {
+    // Fold the read just finished into the engagement model BEFORE drawing (attributed to the
+    // entry actually left). dwellMs 0 (seed/first picks) is a no-op, so affinity never applies
+    // to the first card.
+    if (dwellMs > 0) updateAffinity(dwellMs, leftCategory ?? last?.category);
+
     if (pool.length === 0) return null;
     if (pool.length === 1) { last = pool[0]; return pool[0]; }
 
@@ -152,7 +183,7 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       [false, false, false],
     ];
     for (const [capCat, capSev, useRecent] of attempts) {
-      idx = draw(weights(dwellMs, capCat, capSev, useRecent));
+      idx = draw(weights(capCat, capSev, useRecent));
       if (idx >= 0) break;
     }
     if (idx < 0) idx = Math.floor(rng() * pool.length); // absolute last resort
@@ -173,6 +204,8 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
     sevRun = { sev: '', len: 0 };
     recent = [];
     recentSet.clear();
+    avgDwell = 0;
+    for (const k in catAff) delete catAff[k];
   }
 
   return { next, reset };

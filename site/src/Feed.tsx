@@ -48,7 +48,7 @@ const EDGE_FEATHER = 34;  // px the card edge fades over at each screen edge (so
 // This is a GPU-composited alpha mask — no blur filter, no extra DOM, effectively free per frame.
 const EDGE_MASK = `linear-gradient(to right, transparent 0, #000 ${EDGE_FEATHER}px, #000 calc(100% - ${EDGE_FEATHER}px), transparent 100%)`;
 
-export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void; onHeight?: (h: number) => void }) {
+export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void }) {
   const reducedMotion = usePrefersReducedMotion();
   const inputClass = useInputClass(); // 'pointer' → show side arrows; 'touch' → swipe only
 
@@ -106,7 +106,9 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       if (!nx) return;
       if (cur) setPrevStack(st => [...st, cur]);
       setCurrent(nx);
-      setNext(seq().next(dwellMs())); // dwell on the card just left nudges the new lookahead
+      // Credit the read-time to the card actually just left (cur) — not the sequencer's own last
+      // pick, which is one ahead due to the lookahead — so its category gets the engagement boost.
+      setNext(seq().next(dwellMs(), cur?.category));
     } else {
       const st = prevStack();
       if (!st.length) return;
@@ -211,14 +213,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     setCardW(cw);
     setGap(Math.max(GAP_MIN, (W - cw) / 2 + EDGE_OVERSHOOT));
     if (stageRef) {
-      // Measure the CURRENT card specifically (not the tallest visible) so the stage — and the
-      // footer right below it — sits a consistent gap under the actual card content. The page
-      // total is held steady by a stabilizer spacer placed BELOW the footer (in App), so the
-      // footer follows the card while the page height doesn't jump.
+      // Measure the CURRENT card specifically (not the tallest visible) so the stage hugs the
+      // actual content — the page stays minimal (no permanent extra space) and the footer sits a
+      // consistent gap below the card. Height changes between cards are smoothed by the animated
+      // min-height transition on the stage, so a taller/shorter card eases in rather than jumping.
       const els = stageRef.querySelectorAll('.wos-feed-slot');
       const cur = els[currentIdx()] as HTMLElement | undefined;
       const h = cur ? cur.offsetHeight : 0;
-      if (h > 0) { setClipH(h); props.onHeight?.(h); }
+      if (h > 0) setClipH(h);
     }
   };
   onMount(() => {
@@ -252,7 +254,11 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
         position: 'relative', width: '100vw', left: '50%', transform: 'translateX(-50%)',
         padding: '0.4rem 0', overflow: 'clip', 'overflow-clip-margin': '20px',
         'touch-action': 'pan-y',
+        // Stage hugs the current card; height eases between cards of different sizes (a single
+        // short transition per swap — not per-frame — so it's cheap), keeping the page minimal
+        // without a jarring jump as the footer below settles to the new height.
         'min-height': `${clipH() || FALLBACK_H}px`,
+        transition: 'min-height 280ms ease',
         // Soft-clip the card edges at the screen edge (cheap GPU alpha mask, no blur filter).
         '-webkit-mask-image': EDGE_MASK, 'mask-image': EDGE_MASK,
         ...(dragActive() ? { 'user-select': 'none', '-webkit-user-select': 'none' } : {}),
