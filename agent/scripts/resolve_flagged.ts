@@ -104,6 +104,8 @@ if (!DRY_RUN && exhausted.length > 0) {
   writeAtomic(FINDINGS_PATH, latest);
 
   const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+  // Exhausted entries failed resolution after every attempt — a QUALITY failure. Keep them
+  // tombstoned so discovery never re-adds the same rejected content.
   if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
   for (const url of exhaustedUrls) {
     log(`  ✗ EXPIRED  ${url}`);
@@ -274,6 +276,8 @@ if (!DRY_RUN && decidedUrls.size > 0) {
   writeAtomic(FINDINGS_PATH, latest);
 
   if (toRemove.size > 0) {
+    // Audit-driven removals are QUALITY failures — keep them tombstoned so discovery never
+    // re-adds the same rejected content.
     const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
     if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
     for (const url of toRemove) state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));

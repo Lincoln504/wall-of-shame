@@ -160,6 +160,9 @@ try {
       writeAtomic(FINDINGS_PATH, latest);
 
       if (removes.length > 0) {
+        // Audit-driven removals are QUALITY failures (bad/misclassified/unverifiable) — keep them
+        // tombstoned so discovery never re-adds the same rejected content. (Any future
+        // distribution/balancing-based pruning must NOT tombstone — those should stay rediscoverable.)
         const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
         if (!state.seenUrls['_audit_removed']) state.seenUrls['_audit_removed'] = [];
         for (const url of removeUrls) state.seenUrls['_audit_removed'].push(canonicalizeUrl(url));

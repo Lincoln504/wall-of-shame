@@ -224,8 +224,12 @@ export async function addFindings(
   // Semantic-duplicate guard (same article, different URL + reworded title).
   const existingTitleKeys = new Set(store.findings.map(e => titleDomainKey(e.title, e.domain || e.url)));
 
-  // Record a URL as permanently seen so duplicate / failed URLs are never
-  // re-researched or re-verified in a later round. Idempotent.
+  // Record a URL as seen. By policy this is called ONLY for URLs that actually make it onto
+  // the wall — NOT for duplicates, failed-verification links, or audit-removed entries. That
+  // keeps seenUrls a mirror of the live corpus: a link that was never used (failed to verify)
+  // or was later pruned is NOT permanently tombstoned, so a future round can rediscover and
+  // (re-)add it if it now qualifies/resolves. Live-wall dedup is enforced separately via
+  // existingUrls/existingTitles below, so dropping the failed/duplicate marks is safe. Idempotent.
   const markSeen = (canon: string) => {
     if (!globalSeen.has(canon)) {
       globalSeen.add(canon);
@@ -258,7 +262,6 @@ export async function addFindings(
     // Deep deduplication (global: across every category and prior round)
     if (globalSeen.has(canonUrl) || existingUrls.has(canonUrl) || existingTitles.has(title) || existingTitleKeys.has(titleKey)) {
       log(`    [skipped] duplicate found: ${title.slice(0, 40)}...`);
-      markSeen(canonUrl);
       bump('duplicates');
       continue;
     }
@@ -268,13 +271,11 @@ export async function addFindings(
       const isValid = await verifyUrl(url);
       if (!isValid) {
         log(`    [skipped] URL failed verification: ${url}`);
-        markSeen(canonUrl);
         bump('failedVerify');
         continue;
       }
     } catch {
       log(`    [skipped] URL verification error: ${url}`);
-      markSeen(canonUrl);
       bump('failedVerify');
       continue;
     }
