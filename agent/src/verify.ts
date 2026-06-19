@@ -137,6 +137,7 @@ async function verifyBatch(
   items: { f: RawFinding; article: string | null }[],
   log: (m: string) => void,
 ): Promise<(RawFinding | null)[]> {
+  const day = new Date().toISOString().slice(0, 10);
   let byId = new Map<string, BatchResult>();
   try {
     const model = await getOpenRouterModel(VERIFY_MODEL_ID, { reasoning: false });
@@ -148,12 +149,15 @@ async function verifyBatch(
     byId = new Map(results.filter(r => r && typeof r.id === 'string').map(r => [r.id as string, r]));
   } catch (err) {
     log(`    [verify] batch error (${String(err).slice(0, 60)}) — keeping desk audit for ${items.length} entr${items.length === 1 ? 'y' : 'ies'}`);
-    return items.map(it => it.f); // failure isolation: never lose the batch
+    // Failure isolation: never lose the batch. Mark provenance so the maintenance
+    // audit knows these entered WITHOUT the article-grounding gate and can re-check
+    // them first — the fail-open path must never masquerade as fully verified.
+    return items.map(it => ({ ...it.f, verificationLog: `desk-audit only (verify unavailable) ${day}` }));
   }
 
   return items.map((it) => {
     const r = byId.get(it.f.url);
-    if (!r) return it.f; // model omitted it — keep the desk audit
+    if (!r) return { ...it.f, verificationLog: `desk-audit only (verify omitted) ${day}` }; // model omitted it
     if (r.valid === false) {
       log(`    [verify] ${it.f.domain ?? it.f.url}: article does not support the entry — DROPPED`);
       return null;
@@ -161,9 +165,13 @@ async function verifyBatch(
     const summary = (r.summary ?? '').trim();
     const whyBad = normalizeWhyBad(r.whyBad ?? '');
     if (summaryOk(summary) && whyBadOk(whyBad)) {
-      return { ...it.f, summary, whyBad, verificationLog: `DeepSeek verify: article-grounded ${new Date().toISOString().slice(0, 10)}` };
+      // Distinguish a source-grounded pass (article present) from a draft-only
+      // standards pass (article was UNAVAILABLE) — both validated direction, but
+      // only the former checked quotes/claims against the live page.
+      const basis = it.article ? 'article-grounded' : 'standards-checked (source unavailable)';
+      return { ...it.f, summary, whyBad, verificationLog: `DeepSeek verify: ${basis} ${day}` };
     }
-    return it.f; // returned output failed quality gates — keep the desk audit
+    return { ...it.f, verificationLog: `desk-audit only (verify gate miss) ${day}` }; // output failed quality gates
   });
 }
 

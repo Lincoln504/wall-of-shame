@@ -43,6 +43,11 @@ import {
 const RESEARCH_ATTEMPTS = 2;
 const REVIEW_ATTEMPTS = 2;
 const RETRY_DELAY_MS = 5000;
+// Offset each category's start so a high-concurrency round does not fire every
+// category's first search/scrape burst at t=0 against pi-research's fixed-size
+// browser pool (the thundering herd that queues out the healthcheck and trips
+// scrape timeouts). Tunable via WOS_CATEGORY_STAGGER_MS; 0 disables.
+const CATEGORY_STAGGER_MS = Math.max(0, Number(process.env['WOS_CATEGORY_STAGGER_MS']) || 1500);
 
 export interface RoundOptions {
   /** Categories to process this round. */
@@ -293,6 +298,7 @@ export async function runRound(opts: RoundOptions): Promise<RoundResult> {
   const settled = await mapWithConcurrency(
     categories, concurrency,
     (cat) => researchAndReview(cat, store, state, log),
+    { staggerMs: CATEGORY_STAGGER_MS },
   );
 
   return mergeAndPersist(categories, settled, store, state, {
@@ -315,6 +321,7 @@ export async function runSeedRound(opts: RoundOptions): Promise<RoundResult> {
   const settled = await mapWithConcurrency(
     categories, concurrency,
     (cat) => evaluateSeeds(cat, store, state, log),
+    { staggerMs: CATEGORY_STAGGER_MS },
   );
 
   return mergeAndPersist(categories, settled, store, state, {

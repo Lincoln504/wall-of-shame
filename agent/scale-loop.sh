@@ -2,11 +2,29 @@
 # Sustained discovery loop toward the target corpus size. Each round is a full
 # all-category discovery pass; rounds are SEQUENTIAL (no git push races).
 #
+# WHY SEQUENTIAL — NEVER run two rounds (two `main.ts` processes) at once:
+#   findings.json and run-state.json are read-modify-write whole-file artifacts
+#   (loadFindings → append → atomic tmp+rename). Two concurrent processes each load
+#   a snapshot and the last to save SILENTLY OVERWRITES the other's appended entries
+#   — a lost-update race that destroys findings and corrupts the seenUrls dedup set.
+#   Parallelism lives INSIDE a round instead: categories run concurrently (Phase 1)
+#   feeding one shared browser pool, then a single sequential fan-in persists them.
+#   Scale throughput with the browser pool + category concurrency below, NOT by
+#   launching more loop processes.
+#
+# THROUGHPUT (the bottleneck is the fixed browser pool, not CPU — runs are I/O-bound):
+#   - The pool has WORKER_THREADS browsers × WORKER_CONCURRENCY pages = task slots.
+#     We keep 4 proven-stable Firefox processes and raise pages/browser (4) for 16
+#     in-flight slots — double the old 8 with NO extra browser processes (the safe
+#     lever; new processes are what froze the host on 2026-06-15, not extra pages).
+#   - Category concurrency (CONC) is set just above the per-round category count so
+#     categories keep the pool fed; WOS_CATEGORY_STAGGER_MS offsets their starts so
+#     the first search/scrape burst doesn't hit the pool all at once.
+#
 # SAFETY (after a memory-pressure freeze on 2026-06-15):
-#   - Default concurrency is LOW (3). Each concurrent category spawns a camoufox
-#     (Firefox) stealth browser; ~13 at once exhausted RAM on a 6-core/31GB host
-#     that also runs other heavy services, thrashing swap until the machine froze.
-#     Keep this small; raise only with headroom to spare.
+#   - ~13 Firefox PROCESSES at once exhausted RAM on this 6-core/31GB host under
+#     other load. We stay at 4 browser processes; raise WORKER_THREADS only with
+#     headroom to spare and watch `node scripts/monitor.mjs`.
 #   - The log goes to DISK (next to this script), never /tmp — /tmp is tmpfs (RAM).
 #   - A pre-round MemAvailable guard waits if free memory is low, so a round never
 #     starts into a near-OOM condition.
@@ -25,15 +43,24 @@ cd "$(dirname "$0")"
 
 TARGET="${1:-1500}"
 MAX_ROUNDS="${2:-300}"
-CONC="${3:-3}"
+CONC="${3:-8}"
 MIN_AVAIL_MB="${4:-6000}"   # don't start a round unless this many MB are available
 AUDIT_INTERVAL="${5:-3}"    # run maintenance audit every N rounds (0 = disabled)
 LOG="$(cd "$(dirname "$0")" && pwd)/scale-loop.log"   # on disk, *.log is gitignored
 
+# Browser pool sizing (env-overridable). 4 browser processes × 4 pages = 16 task
+# slots. Raise PI_RESEARCH_WORKER_THREADS only with memory headroom (more processes,
+# not more pages, is what risks an OOM freeze on this host).
+export PI_RESEARCH_WORKER_THREADS="${PI_RESEARCH_WORKER_THREADS:-4}"
+export PI_RESEARCH_WORKER_CONCURRENCY="${PI_RESEARCH_WORKER_CONCURRENCY:-4}"
+# Stagger category starts within a round (ms) so the pool isn't hit by every
+# category's first burst simultaneously. Consumed by run.ts.
+export WOS_CATEGORY_STAGGER_MS="${WOS_CATEGORY_STAGGER_MS:-1500}"
+
 count() { node -e "console.log(require('./data/findings.json').totalFindings||0)" 2>/dev/null || echo 0; }
 avail_mb() { awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 999999; }
 
-echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC min_avail=${MIN_AVAIL_MB}MB audit_every=${AUDIT_INTERVAL}" | tee -a "$LOG"
+echo "[loop] start $(date -u +%FT%TZ) target=$TARGET max_rounds=$MAX_ROUNDS concurrency=$CONC pool=${PI_RESEARCH_WORKER_THREADS}x${PI_RESEARCH_WORKER_CONCURRENCY} stagger=${WOS_CATEGORY_STAGGER_MS}ms min_avail=${MIN_AVAIL_MB}MB audit_every=${AUDIT_INTERVAL}" | tee -a "$LOG"
 
 # Accumulates total new entries since the last audit ran. Passed as --recent=N so the
 # maintenance audit always covers EVERY entry added in the inter-audit gap, not just

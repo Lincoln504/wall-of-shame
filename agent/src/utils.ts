@@ -270,14 +270,22 @@ export function isErrorOrBlockedPage(text: string): boolean {
  * independently: a rejected mapper does NOT cancel the others — its slot in the
  * results array is an { error } sentinel so the caller can decide per item.
  * This is the failure-isolation primitive behind concurrent research rounds.
+ *
+ * `opts.staggerMs` offsets each worker's START by workerIndex × staggerMs, so the
+ * first wave of tasks does not all fire at t=0. At the category level this smooths
+ * the thundering herd of simultaneous search/scrape bursts hitting pi-research's
+ * fixed-size browser pool, which otherwise queues out the pre-flight healthcheck
+ * and trips per-task scrape timeouts. Default 0 = no stagger (existing behavior).
  */
 export async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
   mapper: (item: T, index: number) => Promise<R>,
+  opts?: { staggerMs?: number },
 ): Promise<Array<{ ok: true; value: R } | { ok: false; error: unknown }>> {
   const results: Array<{ ok: true; value: R } | { ok: false; error: unknown }> = new Array(items.length);
   const concurrency = Math.max(1, Math.min(limit, items.length || 1));
+  const staggerMs = Math.max(0, opts?.staggerMs ?? 0);
   let next = 0;
 
   async function worker(): Promise<void> {
@@ -292,6 +300,8 @@ export async function mapWithConcurrency<T, R>(
     }
   }
 
-  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  await Promise.all(Array.from({ length: concurrency }, (_unused, k) =>
+    (staggerMs ? new Promise<void>(r => setTimeout(r, k * staggerMs)) : Promise.resolve()).then(worker),
+  ));
   return results;
 }

@@ -90,12 +90,29 @@ function engineLogStats(sinceIso) {
   return { present: true, warn, error, top };
 }
 
+// Verification provenance: bucket every entry by how it cleared the final gate so
+// we can SEE that the corpus is fully verified, not just trust it. Article-grounded
+// = checked against the live page; the rest entered on a fail-open path (verify
+// down / source unscrapeable) and the maintenance audit re-checks them first.
+function provenance(findings) {
+  const out = { grounded: 0, standards: 0, deskAudit: 0, unmarked: 0 };
+  for (const f of findings?.findings || []) {
+    const v = String(f.verificationLog || '');
+    if (/article-grounded/.test(v)) out.grounded++;
+    else if (/standards-checked/.test(v)) out.standards++;
+    else if (/desk-audit only/.test(v)) out.deskAudit++;
+    else out.unmarked++;
+  }
+  return out;
+}
+
 function snapshot() {
   const log = read(LOG);
   const lines = log ? log.split('\n') : [];
   const findings = readJson(FINDINGS);
   const flagged = readJson(FLAGGED);
   const corpus = findings?.totalFindings ?? 0;
+  const prov = provenance(findings);
   const proc = loopProc();
 
   // Round telemetry: parse "round N exit=R dur=Ds added=A findings=F" from the CURRENT loop session
@@ -139,7 +156,7 @@ function snapshot() {
   const engine = engineLogStats(startIso);
 
   return { corpus, target, remaining, flaggedN: flagged?.flagged?.length ?? 0, proc, done, avgAdded,
-           perHour, etaHours, totalAdded, totalDur, tally, catFail, auditLine, recentErr, engine, mem: memAvailMb() };
+           perHour, etaHours, totalAdded, totalDur, tally, catFail, auditLine, recentErr, engine, prov, mem: memAvailMb() };
 }
 
 function render(s) {
@@ -156,6 +173,10 @@ function render(s) {
   L.push(`             ${s.avgAdded.toFixed(1)} entries/round · ${s.perHour.toFixed(1)} entries/hour`);
   L.push(`  ETA to ${s.target}: ${s.etaHours != null ? fmtDur(s.etaHours * 3600) + ` (~${s.remaining} to go)` : 'n/a (need ≥1 completed round)'}`);
   L.push(`  Flagged pending: ${s.flaggedN}`);
+  const pv = s.prov;
+  const provTotal = pv.grounded + pv.standards + pv.deskAudit + pv.unmarked;
+  const gpct = provTotal ? ((pv.grounded / provTotal) * 100).toFixed(0) : '0';
+  L.push(`  Verification:    ${pv.grounded} article-grounded (${gpct}%) · ${pv.standards} standards-only · ${pv.deskAudit} desk-audit · ${pv.unmarked} legacy/unmarked`);
   L.push('');
   L.push('  pi-research / pipeline errors (this session):');
   const anyErr = [...s.tally.values()].some(v => v > 0);
