@@ -124,19 +124,17 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
       [ "$RRC" -eq 124 ] && echo "[loop] WARNING resolution pass hit 900s timeout" | tee -a "$LOG"
     fi
 
-    # Post-audit: sync findings to site, rebuild embeddings, commit+push everything.
-    # This ensures audit fixes (FIX_IN_PLACE, REMOVE, resolved flags) reach the live
-    # site and are durable in git — not just applied to local disk.
+    # Post-audit: sync findings to site, commit+push. Embeddings are NOT regenerated here —
+    # the deploy workflow (.github/workflows/deploy.yml) recomputes them from this committed
+    # findings.json on every deploy, so embedding locally would just burn CPU on this
+    # resource-constrained host (competing with the scrapers) to produce the same vectors.
+    # The committed embeddings.bin/meta remain in git as CI's continue-on-error fallback.
     echo "[loop] ── post-audit sync ──" | tee -a "$LOG"
     cp data/findings.json ../site/public/findings.json
-    ESTART=$(date +%s)
-    node ../site/scripts/embed.mjs >> "$LOG" 2>&1
-    ERC=$?
-    echo "[loop] embed exit=$ERC dur=$(( $(date +%s) - ESTART ))s" | tee -a "$LOG"
     # Paths relative to agent/ (our CWD); site lives one level up.
-    GIT_CHANGED=$(git status --porcelain data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json ../site/public/embeddings.bin ../site/public/embeddings.meta.json 2>/dev/null)
+    GIT_CHANGED=$(git status --porcelain data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json 2>/dev/null)
     if [ -n "$GIT_CHANGED" ]; then
-      git add data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json ../site/public/embeddings.bin ../site/public/embeddings.meta.json >> "$LOG" 2>&1
+      git add data/findings.json data/run-state.json data/flagged-review.json ../site/public/findings.json >> "$LOG" 2>&1
       git commit -m "chore: post-audit corpus sync $(date -u +%FT%TZ) ($(count) entries)" >> "$LOG" 2>&1
       git pull --rebase --autostash origin main >> "$LOG" 2>&1
       git push origin main >> "$LOG" 2>&1
