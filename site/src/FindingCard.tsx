@@ -20,7 +20,7 @@ export default function FindingCard(props: {
   const date = () => (f().foundAt ? `Found ${new Date(f().foundAt).toLocaleDateString()}` : '');
 
   return (
-    <article style={props.variant === 'feed' ? s.cardFeed : s.card}>
+    <article class={props.variant === 'feed' ? 'wos-card-feed' : 'wos-card-list'} style={props.variant === 'feed' ? s.cardFeed : s.card}>
       <div style={s.cardHeader}>
         <span style={{ ...s.badge, background: color() }}>{f().severity}</span>
         <span style={s.categoryBadge}>{categoryLabel(f().category)}</span>

@@ -75,9 +75,16 @@
              enclose the section with that same 3px rule (same color) on ALL FOUR sides. */
           border: 3px solid #e4e1d9 !important;
           border-radius: 0 !important;
-          margin-left: -1.4rem !important;
-          margin-right: -1.4rem !important;
-          padding: 1.1rem 1.4rem !important;
+        }
+        /* Break the band out to the card edges. The negative margin must equal THAT card's own
+           horizontal padding — which differs by variant (feed 1.4rem vs list/search 1.65rem) — or
+           the band sits inset. Scoping per card class keeps the band flush to the edge in BOTH the
+           feed and the search-results list; inner padding matches so the text stays aligned. */
+        .wos-card-feed .wos-analysis-box {
+          margin-left: -1.4rem !important; margin-right: -1.4rem !important; padding: 1.1rem 1.4rem !important;
+        }
+        .wos-card-list .wos-analysis-box {
+          margin-left: -1.65rem !important; margin-right: -1.65rem !important; padding: 1.1rem 1.65rem !important;
         }
       }
     </style>
