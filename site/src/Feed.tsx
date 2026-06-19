@@ -38,6 +38,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
 
   const [dragX, setDragX] = createSignal(0);
   const [sliding, setSliding] = createSignal(false); // CSS transform transition on/off
+  const [dragActive, setDragActive] = createSignal(false); // suppress text selection only mid-drag
 
   let shownAt = performance.now();
   let busy = false;            // one move at a time (covers buttons, keys, and slide animation)
@@ -95,9 +96,27 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const prev = () => commitMove(false);
 
   // ── Pointer drag (mouse + touch, unified) ──────────────────────────────────────
+  // Is the press target selectable text or an interactive control (not bare card whitespace)?
+  const isTextOrInteractive = (target: EventTarget | null): boolean => {
+    let n = target as Element | null;
+    while (n && n !== motionEl) {
+      const tag = n.tagName;
+      if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' ||
+          tag === 'SELECT' || tag === 'LABEL' ||
+          tag === 'P' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'SPAN') return true;
+      n = n.parentElement;
+    }
+    return false;
+  };
+
   const onPointerDown = (e: PointerEvent) => {
     if (busy) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return; // left button only
+    // On a precise pointer (mouse), a press starting on text or a link is a selection/click,
+    // never a drag — so text stays highlightable and the card drags only from whitespace.
+    // Touch has no such ambiguity: a swipe navigates anywhere, while a stationary long-press
+    // still triggers native selection (we engage a drag only past ENGAGE_PX of movement).
+    if (e.pointerType === 'mouse' && isTextOrInteractive(e.target)) return;
     armed = true; dragging = false; startX = e.clientX; startT = performance.now(); pid = e.pointerId;
   };
   const onPointerMove = (e: PointerEvent) => {
@@ -106,6 +125,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     if (!dragging) {
       if (Math.abs(dx) < ENGAGE_PX) return;
       dragging = true;
+      setDragActive(true); // now an intentional drag — block selection flicker until release
       setSliding(false);
       try { motionEl?.setPointerCapture(pid); } catch { /* ignore */ }
     }
@@ -114,6 +134,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const endDrag = () => {
     if (!armed) return;
     armed = false;
+    setDragActive(false);
     try { motionEl?.releasePointerCapture(pid); } catch { /* ignore */ }
     if (!dragging) return; // was a tap/click — let it through (link / Share button)
     dragging = false;
@@ -162,7 +183,12 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       <div style={s.feedClip}>
         <div
           ref={motionEl}
-          style={{ ...s.feedMotion, transform: `translateX(${dragX()}px)`, transition: sliding() ? `transform ${SLIDE_MS}ms ease` : 'none' }}
+          style={{
+            ...s.feedMotion,
+            transform: `translateX(${dragX()}px)`,
+            transition: sliding() ? `transform ${SLIDE_MS}ms ease` : 'none',
+            ...(dragActive() ? { 'user-select': 'none', '-webkit-user-select': 'none' } : {}),
+          }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}

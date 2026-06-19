@@ -88,6 +88,7 @@ export const s: Record<string, any> = {
     background: '#fff', 'border-radius': '12px', border: '1px solid #ebe9e3',
     padding: '1.2rem 1.4rem',
     'box-shadow': '0 2px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)',
+    cursor: 'grab', // whitespace is the drag handle; text blocks below override to I-beam
   },
   cardHeader: { display: 'flex', gap: '0.75rem', 'align-items': 'center', 'margin-bottom': '0.85rem' },
   badge: { 'font-size': '0.62rem', 'font-weight': '700', padding: '0.18rem 0.5rem', 'border-radius': '3px', color: '#fff', 'text-transform': 'uppercase', 'letter-spacing': '0.06em' },
@@ -96,11 +97,11 @@ export const s: Record<string, any> = {
   date: { 'font-size': '0.72rem', color: '#bbb', 'margin-left': 'auto' },
   cardTitle: { 'font-family': SERIF, 'font-size': '1.65rem', 'font-weight': '700', 'margin-bottom': '0.4rem', 'line-height': 1.25, 'letter-spacing': '-0.01em' },
   titleLink: { color: '#1a1a1a', 'text-decoration': 'none', 'background-image': 'linear-gradient(#e8e6e0,#e8e6e0)', 'background-position': '0 100%', 'background-size': '100% 1px', 'background-repeat': 'no-repeat' },
-  domain: { 'font-family': SERIF, 'font-size': '0.92rem', color: '#a09a8e', 'margin-bottom': '1.1rem', 'font-style': 'italic' },
-  summaryText: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 1.25rem' },
+  domain: { 'font-family': SERIF, 'font-size': '0.92rem', color: '#a09a8e', 'margin-bottom': '1.1rem', 'font-style': 'italic', cursor: 'text' },
+  summaryText: { 'font-family': SERIF, 'font-size': '1.05rem', color: '#3a3a3a', 'line-height': 1.6, 'text-align': 'justify', hyphens: 'auto', margin: '0 0 1.25rem', cursor: 'text' },
   whyBadBox: { background: '#fcfbf8', 'border-left': '3px solid #e4e1d9', padding: '1.1rem 1.25rem' },
   whyBadLabel: { 'font-family': UI, 'font-weight': '700', color: '#1a1a1a', 'font-size': '0.7rem', 'text-transform': 'uppercase', 'letter-spacing': '0.08em', 'margin-bottom': '0.6rem' },
-  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'left', margin: '0 0 0.7rem' },
+  whyBadText: { 'font-family': SERIF, 'font-size': '0.95rem', color: '#444', 'line-height': 1.65, 'text-align': 'left', margin: '0 0 0.7rem', cursor: 'text' },
   actions: { display: 'flex', 'justify-content': 'flex-end', 'margin-top': '0.85rem' },
   shareBtn: {
     'font-family': UI, 'font-size': '0.78rem', 'font-weight': '600', color: '#1a1a1a',
@@ -137,9 +138,10 @@ export const s: Record<string, any> = {
   feedStage: { position: 'relative', padding: '0.4rem 0' },
   // overflow: clip contains the slide; clip-margin lets the card's resting box-shadow bleed.
   feedClip: { overflow: 'clip', 'overflow-clip-margin': '14px' },
+  // No blanket user-select:none — card text must stay highlightable. Selection is suppressed
+  // by Feed.tsx ONLY while a drag is actively engaged (inline, to avoid mid-swipe flicker).
   feedMotion: {
     width: '100%', 'will-change': 'transform', 'touch-action': 'pan-y',
-    'user-select': 'none', '-webkit-user-select': 'none', cursor: 'grab',
   },
   feedArrowBtn: {
     position: 'absolute', top: '50%', 'z-index': 2,
