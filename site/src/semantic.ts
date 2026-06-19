@@ -130,8 +130,8 @@ export function computeHybridScores(
 /** Load the precomputed document vectors. Returns id → normalized Float32 vector. */
 export async function loadDocVectors(base: string): Promise<Map<string, Float32Array>> {
   const [meta, buf] = await Promise.all([
-    fetch(`${base}embeddings.meta.json`).then(r => { if (!r.ok) throw new Error(`meta ${r.status}`); return r.json(); }),
-    fetch(`${base}embeddings.bin`).then(r => { if (!r.ok) throw new Error(`bin ${r.status}`); return r.arrayBuffer(); }),
+    fetch(`${base}embeddings.meta.json`, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(`meta ${r.status}`); return r.json(); }),
+    fetch(`${base}embeddings.bin`, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(`bin ${r.status}`); return r.arrayBuffer(); }),
   ]);
   const dim: number = meta.dim;
   const ids: string[] = meta.ids;

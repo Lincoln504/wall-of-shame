@@ -11,7 +11,9 @@ import type { QueryEmbedder } from './query-embedder.js';
 const BASE = import.meta.env.BASE_URL;
 
 async function fetchFindings(): Promise<FindingsStore> {
-  const res = await fetch(`${BASE}findings.json`);
+  // 'no-cache' = always revalidate with the server (cheap 304 when unchanged), so new
+  // entries appear on refresh instead of waiting out GitHub Pages' 10-min asset cache.
+  const res = await fetch(`${BASE}findings.json`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to load findings: ${res.status}`);
   return res.json() as Promise<FindingsStore>;
 }
@@ -344,7 +346,7 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=10`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           English language search engine of web content judged harmful.
@@ -458,7 +460,7 @@ export default function App() {
 
       <footer style={s.footer}>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=10`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="104" height="104" style={s.qr} />
           </a>
