@@ -306,7 +306,7 @@ export default function App() {
           English language search engine of web content judged harmful.
           <span style={s.subMeta}>
             <br />
-            Search powered by IBM granite-embedding-small-english-r2.
+            Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
             <br />
             Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
           </span>
@@ -402,7 +402,7 @@ export default function App() {
 
       <footer style={s.footer}>
         English language search engine of web content judged harmful.
-        {' '}Search powered by IBM granite-embedding-small-english-r2.
+        {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
         {' '}Made with{' '}
         <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
         {' '}· Data updated via GitHub Actions
@@ -461,8 +461,9 @@ const s: Record<string, any> = {
   root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI },
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
   title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
-  subtitle: { color: '#666', 'font-size': '1.05rem', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '500px' },
+  subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
   subMeta: { 'font-size': '0.8rem', color: '#999' },
+  nowrap: { 'white-space': 'nowrap' },
   inlineLink: { color: '#666', 'text-decoration': 'underline' },
   stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   stat: { 'font-size': '0.72rem', color: '#888', background: '#fff', border: '1px solid #eee', padding: '0.25rem 0.7rem', 'border-radius': '4px', 'font-weight': '500' },
