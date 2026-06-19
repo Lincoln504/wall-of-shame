@@ -29,17 +29,18 @@ export const TUNING = {
   MAX_RUN: 3,            // hard cap: max identical category OR severity in a row
   P_REPEAT_CAT: 0.5,     // weight multiplier when a candidate repeats the last category
   P_REPEAT_SEV: 0.6,     // weight multiplier when a candidate repeats the last severity
+  P_REPEAT_DOMAIN: 0.25, // weight multiplier when a candidate repeats the last source domain
   SEV_INV_FREQ_ALPHA: 0.35, // gentle inverse-frequency lift for rare severities (high/low)
-  RECENT_BUFFER: 20,     // ring buffer of recently-served ids to avoid near-repeats
+  RECENT_BUFFER: 75,     // ring buffer of recently-served ids — no-repeat window (scaled to pool)
   RECENT_PENALTY: 0.02,  // weight multiplier for a recently-seen candidate (near, not hard, exclude)
   // Read-time → category affinity. Engagement is RELATIVE to the reader's own rolling pace, so
   // "a good amount longer than others" — not a fixed seconds threshold — is what counts.
   DWELL_AVG_ALPHA: 0.3,    // EMA weight folding each read-time into the rolling average pace
   DWELL_MIN_AVG_MS: 1500,  // floor on the comparison baseline (avoids a tiny avg flagging everything)
-  AFFINITY_DECAY: 0.55,    // per-pick decay of a category's affinity → a boost lasts ≈3 picks
+  AFFINITY_DECAY: 0.6,     // per-pick decay of a category's affinity → a boost lasts ≈3 picks
   AFFINITY_CAP: 3,         // cap accumulated affinity per category (no runaway)
-  AFFINITY_GAIN: 5,        // weight multiplier per unit of affinity
-  AFFINITY_BOOST_MAX: 14,  // cap a candidate's affinity weight multiplier
+  AFFINITY_GAIN: 9,        // weight multiplier per unit of affinity
+  AFFINITY_BOOST_MAX: 26,  // cap a candidate's affinity weight multiplier
 };
 
 type Rng = () => number;
@@ -138,6 +139,9 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       if (last) {
         if (c.category === last.category && !((catAff[c.category] ?? 0) > 0)) w *= TUNING.P_REPEAT_CAT;
         if (c.severity === last.severity) w *= TUNING.P_REPEAT_SEV;
+        // Source diversity: discourage two entries from the same domain back-to-back (soft, so it
+        // relaxes when a domain dominates a tiny filtered pool). Guarded on a real domain string.
+        if (last.domain && c.domain === last.domain) w *= TUNING.P_REPEAT_DOMAIN;
       }
 
       // Severity inverse-frequency normalization (severity axis only).

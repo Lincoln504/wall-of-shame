@@ -14,8 +14,13 @@ import '@fontsource/inter/700.css';
 // chunks. A sessionStorage guard prevents a reload loop if the import fails for any other
 // reason (e.g. the user is genuinely offline).
 window.addEventListener('vite:preloadError', (e) => {
-  if (sessionStorage.getItem('wos-chunk-reloaded') === '1') return;
-  sessionStorage.setItem('wos-chunk-reloaded', '1');
+  // Recover from each stale chunk (this site deploys frequently, so a long-open tab's lazy
+  // chunk hashes go missing repeatedly), but never tight-loop: reload at most once per 20s.
+  // If a reload doesn't fix it (genuinely broken chunk, offline), the window guard stops it.
+  const now = Date.now();
+  const last = Number(sessionStorage.getItem('wos-chunk-reload-at') || 0);
+  if (now - last < 20000) return;
+  sessionStorage.setItem('wos-chunk-reload-at', String(now));
   e.preventDefault();
   location.reload();
 });

@@ -351,7 +351,7 @@ export default function App() {
         <Show when={dlProgress() !== null}>
           <div style={s.modelStatusRow}>
             <div style={s.progressTrack}><div style={{ ...s.progressFill, width: `${dlProgress()}%` }} /></div>
-            <span style={s.progressPct}>Downloading search model… {dlProgress()}%</span>
+            <span style={s.progressPct}>Downloading embedding model… {dlProgress()}%</span>
           </div>
         </Show>
         <Show when={dlProgress() === null && (justCleared() || modelCached() || modelState() === 'ready')}>
@@ -360,7 +360,7 @@ export default function App() {
               when={justCleared()}
               fallback={
                 <>
-                  <span style={s.cacheTick}>✓ Search model {modelCached() ? 'cached' : 'ready'}</span>
+                  <span style={s.cacheTick}>Embedding model {modelCached() ? 'cached' : 'ready'}</span>
                   <Show when={modelCached()}>
                     <button type="button" style={s.clearModelBtn} onClick={clearModel}
                       title="Delete the cached model from this browser">Clear</button>
@@ -368,7 +368,7 @@ export default function App() {
                 </>
               }
             >
-              <span style={s.clearedTick}>✓ Search model cleared from this browser</span>
+              <span style={s.clearedTick}>Embedding model cleared from this browser</span>
             </Show>
           </div>
         </Show>

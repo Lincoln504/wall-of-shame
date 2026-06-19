@@ -38,7 +38,8 @@ export default function ShareModal(props: Props) {
   let dialogRef: HTMLDialogElement | undefined;
   const [blob, setBlob] = createSignal<Blob | null>(null);
   const [imgUrl, setImgUrl] = createSignal('');
-  const [status, setStatus] = createSignal('');
+  const [status, setStatus] = createSignal('');   // operation feedback only (copied/downloaded/share)
+  const [genFailed, setGenFailed] = createSignal(false); // image couldn't be generated → shown in the preview
   const [generating, setGenerating] = createSignal(false);
   const mobile = isMobileDevice();
 
@@ -57,7 +58,7 @@ export default function ShareModal(props: Props) {
     // closed; the render below still runs.
     try { if (dialogRef && !dialogRef.open) dialogRef.showModal(); } catch { /* leave closed */ }
     revoke();
-    setBlob(null); setImgUrl(''); setStatus(''); setGenerating(true);
+    setBlob(null); setImgUrl(''); setStatus(''); setGenFailed(false); setGenerating(true);
     void (async () => {
       try {
         const { renderShareCard } = await import('./sharecard.js');
@@ -66,8 +67,11 @@ export default function ShareModal(props: Props) {
         setBlob(b);
         setImgUrl(objUrl);
       } catch (e) {
+        // Most common cause is a stale lazy chunk after a deploy (the sharecard-*.js hash this
+        // tab booted with was replaced server-side). index.tsx's vite:preloadError handler
+        // reloads to the fresh bundle; here we just show a calm status in the preview.
         console.error('share card render failed:', e);
-        setStatus('Could not generate the image.');
+        setGenFailed(true);
       } finally { setGenerating(false); }
     })();
   }));
@@ -135,8 +139,10 @@ export default function ShareModal(props: Props) {
     >
       <button style={st.x} onClick={close} aria-label="Close">✕</button>
 
+      {/* The preview is the single place that reflects image status (generating / unavailable);
+          the row below is reserved for operation feedback (copied / downloaded), never duplicated. */}
       <div style={st.preview}>
-        <Show when={imgUrl()} fallback={<div style={st.skeleton}>{generating() ? 'Generating image…' : (status() || '…')}</div>}>
+        <Show when={imgUrl()} fallback={<div style={st.skeleton}>{generating() ? 'Generating image…' : (genFailed() ? 'Preview unavailable' : '…')}</div>}>
           <img src={imgUrl()} alt="Share card preview" style={st.img} />
         </Show>
       </div>
