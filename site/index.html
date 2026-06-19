@@ -69,22 +69,18 @@
            deeper shade so the section still reads without that rule. Negative margins equal to the
            feed card's 1.4rem horizontal padding pull it to the edges; the box keeps 1.4rem inner
            padding so its text stays aligned with the description above. */
+        /* Analysis section on mobile: a fully-enclosed bordered box — 3px rule (the desktop accent
+           color) on ALL FOUR sides. It sits INSET within the card's content area (no edge breakout)
+           so card-white shows around it and every side of the border is clearly visible. Identical
+           in the feed and the search/list cards, so the section looks the same in both views (this
+           also removes the old full-bleed margin that differed by card padding and left search cards
+           looking inconsistently inset). */
         .wos-analysis-box {
           background: #f0ede6 !important;
-          /* Desktop draws the section's accent as a 3px line on the LEFT edge; on mobile, fully
-             enclose the section with that same 3px rule (same color) on ALL FOUR sides. */
           border: 3px solid #e4e1d9 !important;
-          border-radius: 0 !important;
-        }
-        /* Break the band out to the card edges. The negative margin must equal THAT card's own
-           horizontal padding — which differs by variant (feed 1.4rem vs list/search 1.65rem) — or
-           the band sits inset. Scoping per card class keeps the band flush to the edge in BOTH the
-           feed and the search-results list; inner padding matches so the text stays aligned. */
-        .wos-card-feed .wos-analysis-box {
-          margin-left: -1.4rem !important; margin-right: -1.4rem !important; padding: 1.1rem 1.4rem !important;
-        }
-        .wos-card-list .wos-analysis-box {
-          margin-left: -1.65rem !important; margin-right: -1.65rem !important; padding: 1.1rem 1.65rem !important;
+          border-radius: 2px !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
         }
       }
     </style>
