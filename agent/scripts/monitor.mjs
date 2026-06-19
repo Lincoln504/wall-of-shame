@@ -25,6 +25,11 @@ const AGENT = path.join(__dirname, '..');
 const LOG = path.join(AGENT, 'scale-loop.log');
 const FINDINGS = path.join(AGENT, 'data', 'findings.json');
 const FLAGGED = path.join(AGENT, 'data', 'flagged-review.json');
+// pi-research writes a structured JSON-lines engine log (WARN/ERROR always; INFO/DEBUG
+// only when PI_RESEARCH_DEBUG=true). Default sink is $TMPDIR/pi-research.log, redirectable
+// via PI_RESEARCH_LOG_PATH. We read it directly so engine-level faults surface here too.
+const PI_LOG = process.env.PI_RESEARCH_LOG_PATH || process.env.PI_RESEARCH_LOG_FILE ||
+  path.join(process.env.TMPDIR || '/tmp', 'pi-research.log');
 
 const watchArg = process.argv.find(a => a.startsWith('--watch'));
 const WATCH = watchArg ? (parseInt(watchArg.split('=')[1]) || 30) : 0;
@@ -61,6 +66,28 @@ function loopProc() {
 function memAvailMb() {
   try { return Math.round(+execSync("awk '/MemAvailable/{print $2}' /proc/meminfo", { encoding: 'utf8' }).trim() / 1024); }
   catch { return null; }
+}
+
+// Parse pi-research's JSON-lines engine log: group WARN/ERROR at or after `sinceIso`
+// by a normalized message (URLs/numbers stripped) so recurring faults aggregate.
+function engineLogStats(sinceIso) {
+  const raw = read(PI_LOG);
+  if (!raw) return { present: false, warn: 0, error: 0, top: [] };
+  const groups = new Map();
+  let warn = 0, error = 0;
+  for (const line of raw.split('\n')) {
+    if (!line || (line[0] !== '{')) continue;
+    let e; try { e = JSON.parse(line); } catch { continue; }
+    if (e.level !== 'WARN' && e.level !== 'ERROR') continue;
+    if (sinceIso && e.timestamp && e.timestamp < sinceIso) continue;
+    if (e.level === 'WARN') warn++; else error++;
+    const msg = String(e.errorMessage || e.message || '')
+      .replace(/https?:\/\/\S+/g, '<url>').replace(/\b\d[\d.,]*\b/g, 'N').slice(0, 70).trim();
+    const key = `${e.level} ${msg}`;
+    groups.set(key, (groups.get(key) || 0) + 1);
+  }
+  const top = [...groups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  return { present: true, warn, error, top };
 }
 
 function snapshot() {
@@ -107,8 +134,12 @@ function snapshot() {
   // Last audit result block
   const auditLine = session.filter(l => /AUDIT RESULTS:|maintenance audit exit=/.test(l)).pop() || '(no audit this session yet)';
 
+  // pi-research structured engine log, scoped to this loop session's start timestamp.
+  const startIso = (session.find(l => /\[loop\] start /.test(l))?.match(/start (\S+Z)/) || [])[1] || null;
+  const engine = engineLogStats(startIso);
+
   return { corpus, target, remaining, flaggedN: flagged?.flagged?.length ?? 0, proc, done, avgAdded,
-           perHour, etaHours, totalAdded, totalDur, tally, catFail, auditLine, recentErr, mem: memAvailMb() };
+           perHour, etaHours, totalAdded, totalDur, tally, catFail, auditLine, recentErr, engine, mem: memAvailMb() };
 }
 
 function render(s) {
@@ -131,6 +162,13 @@ function render(s) {
   if (!anyErr) L.push('    (none observed — clean)');
   for (const [label, n] of s.tally) if (n > 0) L.push(`    ${String(n).padStart(4)}  ${label}`);
   if (s.catFail.size) L.push(`  Categories failing repeatedly: ${[...s.catFail.entries()].map(([c, n]) => `${c}×${n}`).join(', ')}`);
+  L.push('');
+  L.push(`  pi-research engine log (${path.basename(PI_LOG)}):`);
+  if (!s.engine.present) L.push('    (engine log not found — set PI_RESEARCH_LOG_PATH to capture it)');
+  else {
+    L.push(`    ${s.engine.error} ERROR · ${s.engine.warn} WARN (this session)`);
+    for (const [k, n] of s.engine.top) L.push(`    ${String(n).padStart(4)}  ${k}`);
+  }
   L.push('');
   L.push(`  Last audit: ${s.auditLine.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '').slice(0, 64)}`);
   if (s.recentErr.length) { L.push('  --- recent error lines ---'); for (const e of s.recentErr.slice(-12)) L.push('  ' + e.slice(0, 100)); }
