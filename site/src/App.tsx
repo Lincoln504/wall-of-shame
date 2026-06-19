@@ -133,12 +133,12 @@ export default function App() {
   let clearedTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(clearedTimer));
 
-  // Debounce: commit the live box text to `search` only after the user has stopped typing for 1s,
+  // Debounce: commit the live box text to `search` only after the user has stopped typing for 0.6s,
   // so nothing searches/recomputes/switches view on every keystroke. Emptying the box commits
-  // immediately (instant return to the feed — no 1s lag when clearing).
+  // immediately (instant return to the feed — no lag when clearing).
   createEffect(on(searchInput, (val) => {
     if (val.trim() === '') { setSearch(''); return; }
-    const t = setTimeout(() => setSearch(val), 1000);
+    const t = setTimeout(() => setSearch(val), 600);
     onCleanup(() => clearTimeout(t));
   }, { defer: true }));
 
