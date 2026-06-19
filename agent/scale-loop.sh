@@ -88,8 +88,11 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
 
   BEFORE=$(count)
   START=$(date +%s)
+  # nice/ionice: the scrapers (camoufox) are CPU-heavy; running the round at low CPU + idle
+  # IO priority keeps the user's interactive Firefox responsive on this shared machine.
+  # Children (node workers, camoufox) inherit the priority.
   PI_RESEARCH_SKIP_HEALTHCHECK=1 PI_RESEARCH_BROWSER_HEADLESS=true \
-    timeout 3600 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
+    nice -n 15 ionice -c3 timeout 3600 npx tsx src/main.ts --all --concurrency "$CONC" --no-commit >> "$LOG" 2>&1
   RC=$?
   AFTER=$(count)
   ADDED=$(( AFTER - BEFORE ))
@@ -101,7 +104,7 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
   if [ "$AUDIT_INTERVAL" -gt 0 ] && [ $((i % AUDIT_INTERVAL)) -eq 0 ]; then
     echo "[loop] ── maintenance audit (round $i / interval $AUDIT_INTERVAL, recent=$ADDED_SINCE_AUDIT) ──" | tee -a "$LOG"
     MSTART=$(date +%s)
-    timeout 1200 npx tsx scripts/sample_audit.ts --recent="$ADDED_SINCE_AUDIT" >> "$LOG" 2>&1
+    nice -n 15 ionice -c3 timeout 1200 npx tsx scripts/sample_audit.ts --recent="$ADDED_SINCE_AUDIT" >> "$LOG" 2>&1
     MRC=$?
     echo "[loop] maintenance audit exit=$MRC dur=$(( $(date +%s) - MSTART ))s findings=$(count)" | tee -a "$LOG"
     [ "$MRC" -eq 124 ] && echo "[loop] WARNING maintenance audit hit 1200s timeout" | tee -a "$LOG"
@@ -114,7 +117,7 @@ for i in $(seq 1 "$MAX_ROUNDS"); do
     if [ "$PENDING" -gt 0 ] || [ "$EXHAUSTED" -gt 0 ]; then
       echo "[loop] ── flagged resolution (pending=$PENDING exhausted=$EXHAUSTED) ──" | tee -a "$LOG"
       RSTART=$(date +%s)
-      timeout 900 npx tsx scripts/resolve_flagged.ts >> "$LOG" 2>&1
+      nice -n 15 ionice -c3 timeout 900 npx tsx scripts/resolve_flagged.ts >> "$LOG" 2>&1
       RRC=$?
       echo "[loop] resolution exit=$RRC dur=$(( $(date +%s) - RSTART ))s findings=$(count)" | tee -a "$LOG"
       [ "$RRC" -eq 124 ] && echo "[loop] WARNING resolution pass hit 900s timeout" | tee -a "$LOG"
