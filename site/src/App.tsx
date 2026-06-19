@@ -317,7 +317,9 @@ export default function App() {
           English language search engine of web content judged harmful.
           <span style={s.subMeta}>
             <br />
-            Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            Search powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            <br />
+            Researched with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
             <br />
             Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
           </span>
@@ -415,7 +417,8 @@ export default function App() {
         <footer style={s.footer}>
           <div style={s.footerText}>
             English language search engine of web content judged harmful.
-            {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            {' '}Search powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            {' '}Researched with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
             {' '}Made with{' '}
             <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
             {' '}· Data updated via GitHub Actions
