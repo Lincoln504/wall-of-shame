@@ -1,21 +1,19 @@
-// Feed.tsx — a one-card-at-a-time carousel (the default browsing experience).
+// Feed.tsx — a full-bleed one-card carousel (the default browsing experience).
 //
-// Adjacent cards (previous + next) are rendered alongside the current one so a swipe/drag/
-// click slides the neighbour CONTINUOUSLY into view — the outgoing card never has to leave
-// before the incoming one appears. At rest the neighbours sit one card-width + GAP off each
-// edge (out of view); dragging translates all three together so the gap between cards reads
-// as a natural margin. Works identically on desktop (mouse drag + gutter arrows + ←/→ keys)
-// and mobile (touch flick); touch-action: pan-y keeps vertical page scroll alive.
+// The current card stays at the content-column width and centred; the previous/next cards are
+// rendered too and rest just past the LEFT/RIGHT screen edges, so a swipe/drag/arrow sweeps the
+// neighbour CONTINUOUSLY across the whole viewport — it enters from the window edge, not from an
+// inset column margin. The inter-card gap is derived from the viewport so the cards sit clearly
+// apart. Works identically on desktop (mouse drag + gutter arrows + ←/→ keys) and mobile (touch
+// flick); touch-action: pan-y keeps vertical page scroll alive.
 //
-// Cards are rendered with a reference-keyed <For>, so each finding keeps its OWN DOM node as
-// it moves between the prev/current/next roles. That is what makes the slide seamless (no
-// remount mid-animation) AND justify-safe: justify.ts imperatively rewrites a card's summary
-// <p>, and because a node never changes which finding it shows, that mutation can never
-// desync from Solid's reactive bindings (the title↔summary bug that one reused card caused).
+// Cards render with a reference-keyed <For>, so each finding keeps its OWN DOM node as it moves
+// between prev/current/next roles. That makes the slide seamless (no remount mid-animation) AND
+// justify-safe: justify.ts imperatively rewrites a card's summary <p>, and because a node never
+// changes which finding it shows, that mutation can never desync from Solid's bindings.
 //
-// Selection is delegated to the pure weighted-random sequencer (sequencer.ts); the dwell time
-// on the card just left feeds the next lookahead so lingering gently nudges toward similar
-// content.
+// Selection is delegated to the pure weighted-random sequencer (sequencer.ts); the dwell time on
+// the card just left feeds the next lookahead so lingering gently nudges toward similar content.
 import { createSignal, createMemo, createEffect, on, onMount, onCleanup, For, Show } from 'solid-js';
 import type { Finding } from './types.js';
 import FindingCard from './FindingCard.js';
@@ -28,11 +26,15 @@ import { s } from './styles.js';
 // session is exact. (Date.now in the browser is fine — the no-Date rule is workflow-only.)
 const SESSION_SEED = (Date.now() & 0xffffffff) >>> 0;
 
-const ENGAGE_PX = 6;     // movement before a press becomes a drag (taps/clicks pass through)
-const COMMIT_PX = 70;    // drag distance that commits a move
-const FLICK_V = 0.45;    // px/ms velocity that commits a move (a quick flick)
-const SLIDE_MS = 220;    // slide animation duration
-const GAP = 32;          // px gap between adjacent cards (the inter-card margin while dragging)
+const ENGAGE_PX = 6;      // movement before a press becomes a drag (taps/clicks pass through)
+const COMMIT_PX = 70;     // drag distance that commits a move
+const FLICK_V = 0.45;     // px/ms velocity that commits a move (a quick flick)
+const SLIDE_MS = 240;     // slide animation duration
+const MAX_CARD = 712;     // card width cap = content column (root max-width 760 − 2×1.5rem padding)
+const SIDE_MIN = 24;      // min breathing room each side of the card on narrow screens
+const GAP_MIN = 32;       // floor for the inter-card gap (narrow screens)
+const EDGE_OVERSHOOT = 28; // neighbours rest this many px PAST each screen edge (fully off, sweep in)
+const FALLBACK_H = 360;   // clip height before the first measure, to avoid a 1-frame collapse
 
 export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void }) {
   const reducedMotion = usePrefersReducedMotion();
@@ -47,26 +49,25 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const canBack = createMemo(() => prevStack().length > 0);
   const canNext = createMemo(() => next() !== null);
 
-  // The rendered window, in left→right order, plus where `current` sits within it.
   const slots = createMemo<Finding[]>(() => [prevCard(), current(), next()].filter(Boolean) as Finding[]);
   const currentIdx = createMemo(() => (prevCard() ? 1 : 0));
 
   const [dragX, setDragX] = createSignal(0);
   const [sliding, setSliding] = createSignal(false); // CSS transform transition on/off
   const [dragActive, setDragActive] = createSignal(false); // suppress text selection only mid-drag
-  const [clipW, setClipW] = createSignal(0);   // measured card width (px) — the slide distance
-  const [clipH, setClipH] = createSignal(0);   // tallest visible card (px) — keeps the clip sized
+  const [cardW, setCardW] = createSignal(MAX_CARD);  // card (column) width, px
+  const [gap, setGap] = createSignal(GAP_MIN);       // inter-card gap, px (viewport-derived)
+  const [clipH, setClipH] = createSignal(0);         // tallest visible card, px
 
   let shownAt = performance.now();
   let busy = false;            // one move at a time (covers arrows, keys, and slide animation)
   let stageRef: HTMLDivElement | undefined;
-  let clipRef: HTMLDivElement | undefined;
 
   // drag bookkeeping
   let armed = false, dragging = false, startX = 0, startT = 0, pid = -1;
 
   const dwellMs = () => performance.now() - shownAt;
-  const step = () => clipW() + GAP; // distance to shift the track by one card
+  const step = () => cardW() + gap(); // distance to shift the track by one card
 
   // Seed / reseed the feed when the pool changes.
   createEffect(on(seq, (sequencer) => {
@@ -102,7 +103,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     if (busy) return;
     if (goNext ? !canNext() : !canBack()) return;
     busy = true;
-    if (reducedMotion() || !clipW()) { reindex(goNext); setDragX(0); setSliding(false); busy = false; return; }
+    if (reducedMotion()) { reindex(goNext); setDragX(0); setSliding(false); busy = false; return; }
     setSliding(true);
     setDragX(goNext ? -step() : step());
     window.setTimeout(() => {
@@ -119,7 +120,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   // Is the press target selectable text or an interactive control (not bare card whitespace)?
   const isTextOrInteractive = (target: EventTarget | null): boolean => {
     let n = target as Element | null;
-    while (n && n !== clipRef) {
+    while (n && n !== stageRef) {
       const tag = n.tagName;
       if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' ||
           tag === 'SELECT' || tag === 'LABEL' ||
@@ -147,7 +148,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       dragging = true;
       setDragActive(true); // now an intentional drag — block selection flicker until release
       setSliding(false);
-      try { clipRef?.setPointerCapture(pid); } catch { /* ignore */ }
+      try { stageRef?.setPointerCapture(pid); } catch { /* ignore */ }
     }
     // Resist at the ends (nothing to reveal that way).
     const resist = (dx > 0 && !canBack()) || (dx < 0 && !canNext());
@@ -157,7 +158,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     if (!armed) return;
     armed = false;
     setDragActive(false);
-    try { clipRef?.releasePointerCapture(pid); } catch { /* ignore */ }
+    try { stageRef?.releasePointerCapture(pid); } catch { /* ignore */ }
     if (!dragging) return; // was a tap/click — let it through (link / Share button)
     dragging = false;
     const dx = dragX();
@@ -181,9 +182,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     onCleanup(() => window.removeEventListener('keydown', onKey));
   });
 
-  // ── Measure the card width (slide distance) + tallest card (clip height) ─────────
+  // ── Measure card width, viewport-derived gap, and tallest card (clip height) ─────
+  // cardW = the content column width (capped); gap is sized so each neighbour rests just past a
+  // screen edge: neighbour-near-edge = centre ± (cardW/2 + gap) = screen edge + EDGE_OVERSHOOT.
   const measure = () => {
-    if (clipRef) setClipW(clipRef.clientWidth);
+    const W = (typeof window !== 'undefined' && window.innerWidth) || 1024;
+    const cw = Math.min(MAX_CARD, Math.max(200, W - SIDE_MIN * 2));
+    setCardW(cw);
+    setGap(Math.max(GAP_MIN, (W - cw) / 2 + EDGE_OVERSHOOT));
     if (stageRef) {
       let h = 0;
       stageRef.querySelectorAll('.wos-feed-slot').forEach(el => { h = Math.max(h, (el as HTMLElement).offsetHeight); });
@@ -192,15 +198,17 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   };
   onMount(() => {
     measure();
+    const onResize = () => measure();
+    window.addEventListener('resize', onResize);
     let ro: ResizeObserver | undefined;
-    if (typeof ResizeObserver !== 'undefined' && clipRef) { ro = new ResizeObserver(() => measure()); ro.observe(clipRef); }
-    onCleanup(() => ro?.disconnect());
+    if (typeof ResizeObserver !== 'undefined' && stageRef) { ro = new ResizeObserver(() => measure()); ro.observe(stageRef); }
+    onCleanup(() => { window.removeEventListener('resize', onResize); ro?.disconnect(); });
   });
 
   // Re-justify the visible cards whenever the window changes, then re-measure height (justify
   // changes line count → height). Each finding owns its node, so justify never desyncs.
   createEffect(() => {
-    prevCard(); current(); next(); clipW();
+    prevCard(); current(); next(); cardW();
     requestAnimationFrame(() => {
       void justifyElements(stageRef ? Array.from(stageRef.querySelectorAll('.wos-justify')) as HTMLElement[] : [])
         .then(measure);
@@ -208,62 +216,61 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
     });
   });
 
-  // Per-card transform: each slot is positioned by its offset from the current card, plus the
-  // shared drag/slide translation. The current card is at offset 0 (centred); neighbours sit
-  // one card-width + GAP to either side (off-screen at rest).
   const slotTransform = (i: number) => `translateX(${(i - currentIdx()) * step() + dragX()}px)`;
 
   return (
-    <div ref={stageRef} style={s.feedStage}>
-      {/* Desktop only: clickable arrows out in the margin gutter (not on the card). */}
+    // Full-bleed stage: breaks out of the centred column to the full viewport so neighbours can
+    // enter from the actual screen edges. overflow:clip contains the horizontal slide.
+    <div
+      ref={stageRef}
+      style={{
+        position: 'relative', width: '100vw', left: '50%', transform: 'translateX(-50%)',
+        padding: '0.4rem 0', overflow: 'clip', 'overflow-clip-margin': '20px',
+        'touch-action': 'pan-y',
+        'min-height': `${clipH() || FALLBACK_H}px`,
+        ...(dragActive() ? { 'user-select': 'none', '-webkit-user-select': 'none' } : {}),
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      {/* Desktop only: clickable arrows just outside the card's left/right edges. */}
       <Show when={inputClass() === 'pointer'}>
         <button
-          style={{ ...s.feedArrowBtn, ...s.feedArrowLeft, ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
+          style={{ ...s.feedArrowBtn, top: '50%', left: `calc(50% - ${cardW() / 2}px - 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
           onClick={goPrev} disabled={!canBack()} aria-label="Previous entry"
         >{'←'}</button>
         <button
-          style={{ ...s.feedArrowBtn, ...s.feedArrowRight, ...(canNext() ? {} : s.feedArrowBtnDisabled) }}
+          style={{ ...s.feedArrowBtn, top: '50%', left: `calc(50% + ${cardW() / 2}px + 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canNext() ? {} : s.feedArrowBtnDisabled) }}
           onClick={goNext} disabled={!canNext()} aria-label="Next entry"
         >{'→'}</button>
       </Show>
 
-      <div
-        ref={clipRef}
-        style={{
-          ...s.feedClip,
-          position: 'relative',
-          ...(clipH() ? { 'min-height': `${clipH()}px` } : {}),
-          ...(dragActive() ? { 'user-select': 'none', '-webkit-user-select': 'none' } : {}),
-        }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        <div aria-live="polite" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
-          {current()?.title ?? ''}
-        </div>
-        {/* Reference-keyed: each finding keeps its node across prev/current/next roles, so the
-            slide is seamless and justify can never desync a reused card. */}
-        <For each={slots()}>
-          {(f, i) => (
-            <div
-              class="wos-feed-slot"
-              style={{
-                position: 'absolute', top: '0', left: '0', width: '100%',
-                transform: slotTransform(i()),
-                transition: sliding() ? `transform ${SLIDE_MS}ms ease` : 'none',
-                'will-change': 'transform',
-              }}
-            >
-              <FindingCard finding={f} onShare={props.onShare} variant="feed" />
-            </div>
-          )}
-        </For>
-        <Show when={slots().length === 0}>
-          <div style={s.empty}>No entries found.</div>
-        </Show>
+      <div aria-live="polite" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+        {current()?.title ?? ''}
       </div>
+
+      {/* Reference-keyed: each finding keeps its node across prev/current/next roles. Each card is
+          column-width and centred; its role offset + drag position it within the full-bleed stage. */}
+      <For each={slots()}>
+        {(f, i) => (
+          <div
+            class="wos-feed-slot"
+            style={{
+              position: 'absolute', top: '0', width: `${cardW()}px`, left: `calc(50% - ${cardW() / 2}px)`,
+              transform: slotTransform(i()),
+              transition: sliding() ? `transform ${SLIDE_MS}ms ease` : 'none',
+              'will-change': 'transform',
+            }}
+          >
+            <FindingCard finding={f} onShare={props.onShare} variant="feed" />
+          </div>
+        )}
+      </For>
+      <Show when={slots().length === 0}>
+        <div style={s.empty}>No entries found.</div>
+      </Show>
     </div>
   );
 }
