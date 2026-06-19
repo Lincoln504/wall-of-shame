@@ -67,14 +67,21 @@ export async function justifyElements(els: HTMLElement[]): Promise<void> {
 export function onResizeRejustify(getEls: () => HTMLElement[], delay = 150): () => void {
   let t: number | undefined;
   const root = document.documentElement;
-  let lastW = root.clientWidth;
+  // Measure window.innerWidth (which INCLUDES the scrollbar), NOT documentElement.clientWidth
+  // (which EXCLUDES it). When a justify pass makes the page tall enough to toggle the vertical
+  // scrollbar, clientWidth jumps by the scrollbar width (~15px); observed as a "width change"
+  // that re-justifies, which can toggle the scrollbar again — a feedback loop that pegs the CPU
+  // and freezes the tab. innerWidth is immune to scrollbar toggling, and a threshold absorbs
+  // any remaining jitter so ONLY a real column-width change re-justifies.
+  const widthNow = () => window.innerWidth;
+  let lastW = widthNow();
   const schedule = () => {
     if (t) clearTimeout(t);
     t = window.setTimeout(() => void justifyElements(getEls()), delay);
   };
   const onMaybeWidthChange = () => {
-    const w = root.clientWidth;
-    if (w === lastW) return;   // width unchanged (e.g. mobile URL-bar scroll) — do nothing
+    const w = widthNow();
+    if (Math.abs(w - lastW) < 24) return;   // scrollbar toggle / sub-threshold jitter — ignore
     lastW = w;
     schedule();
   };
