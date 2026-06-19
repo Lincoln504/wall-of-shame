@@ -77,6 +77,7 @@ SEVERITY — set "severity" for EVERY entry by RE-ASSESSING what the piece ACTUA
 - "medium": rationalizes regressive policy, launders corporate or government wrongdoing as reasonable, or excuses dehumanization as policy necessity.
 - "high": explicitly advocates stripping rights, serves as propaganda for an extremist ideology, or provides cover for atrocities or disinformation.
 When torn between two levels, choose the LOWER. Most measured policy op-eds are "low".
+Mild is still IN SCOPE: severity only rates HOW BAD a KEPT entry is — it NEVER decides validity. A calm, technocratic, or partly-grounded piece whose stance still normalizes, excuses, or advances harm stays valid:true at "low". Only the directional test drops an entry (it argues the OPPOSITE of harm — it exposes/criticizes); never drop one for being mild, measured, or partly grounded.
 
 HOUSE STANDARDS — enforce on EVERY entry:
 - "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, NO bullets, NO line breaks), plain layman language. Include a verbatim quote ONLY if you confirmed the exact wording appears in the ARTICLE TEXT — otherwise describe the claim as a paraphrase without quotation marks. A summary with no quoted text is correct; a fabricated quote is not.

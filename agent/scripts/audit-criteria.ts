@@ -105,6 +105,8 @@ low: one-sided position with some genuine legal/economic/good-faith grounding; f
 
 When an entry could fit two levels, choose the LOWER. A measured policy op-ed with real economic or legal grounding is low, not medium. Downgrade drafts whose severity was over-rated relative to what the piece actually argues.
 
+IMPORTANT — mild is still IN SCOPE: a piece can have legitimate-looking grounding or a calm, technocratic tone and STILL belong on the wall because its stance normalizes, excuses, sanitizes, or advances harm — that is exactly what "low" is for. Severity only rates HOW BAD a KEPT entry is; it NEVER decides removal. Do NOT remove or dis-flag an entry merely because it is mild, measured, or partly grounded. Removal is reserved ONLY for the WRONG DIRECTION (a piece that exposes, criticizes, or documents harm), per the directional test — never for mildness.
+
 ═══ FIELD STANDARDS ═══
 
 summary field must:
