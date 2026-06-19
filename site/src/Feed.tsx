@@ -30,7 +30,7 @@ const SESSION_SEED = (Date.now() & 0xffffffff) >>> 0;
 // categories. Module-level so it fires only on the initial load — returning to the feed from
 // an entry/search within the same session (no reload) re-seeds normally (random). A user-set
 // category filter takes precedence (the first card is then naturally that category).
-const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'media', 'spectacle', 'war'];
+const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'media', 'spectacle', 'war', 'current_affairs', 'technology'];
 let isFirstSeedOfPageLoad = true;
 
 const ENGAGE_PX = 6;      // movement before a press becomes a drag (taps/clicks pass through)
