@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="white"/>
   <rect x="0" y="0" width="32" height="32" fill="none" stroke="#1a1a1a" stroke-width="8"/>
-  <g transform="rotate(135, 16, 16) translate(0, 2)">
+  <g transform="rotate(25, 16, 16) translate(0, 0)">
     <text x="16" y="20" font-size="18" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif">📌</text>
   </g>
 </svg>
