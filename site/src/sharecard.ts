@@ -346,35 +346,45 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.stroke();
 
   const iconS = 152;                              // pin + QR share this size (large, scannable)
-  // Gap below the divider, raised 30 → 40 so the whole footer row (pin, QR, text) sits a little
-  // lower while the divider (footerRule) itself stays put. 40 keeps the icons within the bottom margin.
-  const rowTop = footerRule + 40;
+  // Gap below the divider, raised to 60 so the whole footer row sits well below the line (more
+  // padding); the divider (footerRule) itself stays put, and 60 keeps the row inside the canvas.
+  const rowTop = footerRule + 60;
   const centerY = rowTop + iconS / 2;             // shared centerline for pin, QR, and text
+  const GAP1 = 30;                                // pin → QR
+  const GAP2 = 36;                                // QR → text column
 
-  // Push-pin mark on the far left, sized to the QR.
-  drawMark(ctx, MARGIN, rowTop, iconS);
-
-  // QR in the middle — scans straight to this entry (encodes the permalink shown at right).
-  const qrX = MARGIN + iconS + 30;
-  drawQr(ctx, qrX, rowTop, iconS, pageUrl);
-
-  // Right column: "More" label (muted) over the permalink (full-strength black, bold).
-  const textX = qrX + iconS + 36;
-  const textW = (W - MARGIN) - textX;
-  ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
-  ctx.fillStyle = C.muted;
-  ctx.font = '600 26px Inter, sans-serif';
-  ctx.fillText('Get more details at', textX, centerY - 8);
-
+  // The two text lines: muted label over the bold permalink (the call to action). Measure both so
+  // the whole [pin · QR · text] group can be CENTER-justified in the card while the text lines stay
+  // LEFT-aligned within their column. The link auto-shrinks to fit the column's max width.
+  const label = 'Read the counter-argument at';
   const link = pageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  let linkPx = 32;                                // auto-shrink the bold link to fit its column
+  const maxTextW = (W - MARGIN * 2) - (iconS * 2 + GAP1 + GAP2); // text column cap when the group spans full width
+  ctx.font = '600 26px Inter, sans-serif';
+  const labelW = ctx.measureText(label).width;
+  let linkPx = 32;
   while (linkPx > 22) {
     ctx.font = `700 ${linkPx}px Inter, sans-serif`;
-    if (ctx.measureText(link).width <= textW) break;
+    if (ctx.measureText(link).width <= maxTextW) break;
     linkPx -= 1;
   }
+  const linkW = ctx.measureText(link).width;
+  const textBlockW = Math.min(maxTextW, Math.max(labelW, linkW));
+
+  // Center the whole group; never start left of MARGIN (graceful when the text block is wide).
+  const groupW = iconS * 2 + GAP1 + GAP2 + textBlockW;
+  const startX = Math.max(MARGIN, Math.round((W - groupW) / 2));
+
+  drawMark(ctx, startX, rowTop, iconS);
+  const qrX = startX + iconS + GAP1;
+  drawQr(ctx, qrX, rowTop, iconS, pageUrl);
+
+  const textX = qrX + iconS + GAP2;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = C.muted;
+  ctx.font = '600 26px Inter, sans-serif';
+  ctx.fillText(label, textX, centerY - 8);
   ctx.font = `700 ${linkPx}px Inter, sans-serif`;
   ctx.fillStyle = C.ink;                          // full-strength black — the call to action
   ctx.fillText(link, textX, centerY + 36);
