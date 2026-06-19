@@ -227,13 +227,23 @@ export interface ShareCardOptions {
 
 /** Render the card and resolve to a PNG Blob. */
 export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
-  const { finding: f, pageUrl } = opts;
+  const f = opts.finding;
+  const pageUrl = opts.pageUrl ?? '';
+  // Defensive field reads — a finding missing any field must never throw mid-draw
+  // ("undefined has no properties"); the card degrades to safe defaults instead.
+  const fSeverity = f?.severity || 'low';
+  const fTitle = f?.title || 'Untitled';
+  const fCategory = f?.category || '';
+  const fDomain = f?.domain || '';
+  const fSummary = f?.summary || '';
+  const fFoundAt = f?.foundAt;
   await ensureFonts();
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('2d canvas context unavailable'); // caught by ShareModal → graceful message
   ctx.textBaseline = 'alphabetic';
 
   // Background.
@@ -241,7 +251,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillRect(0, 0, W, H);
 
   // Top severity rule.
-  const sev = SEVERITY[f.severity] ?? C.muted;
+  const sev = SEVERITY[fSeverity] ?? C.muted;
   ctx.fillStyle = sev;
   ctx.fillRect(0, 0, W, 12);
 
@@ -250,7 +260,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   // Badges: severity pill + category. The severity "warning" stays at the top; the old
   // "THE WALL OF SHAME" kicker is gone (the brand now lives only in the footer).
   ctx.font = '700 26px Inter, sans-serif';
-  const sevText = f.severity.toUpperCase();
+  const sevText = fSeverity.toUpperCase();
   const pillPadX = 18;
   const pillW = ctx.measureText(sevText).width + pillPadX * 2;
   const pillH = 44;
@@ -267,7 +277,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillText(sevText, MARGIN + pillPadX, y);
   ctx.fillStyle = C.muted;
   ctx.font = '600 26px Inter, sans-serif';
-  ctx.fillText(categoryLabel(f.category).toUpperCase(), MARGIN + pillW + 22, y);
+  ctx.fillText(categoryLabel(fCategory).toUpperCase(), MARGIN + pillW + 22, y);
   y += 60;
 
   // Title (Inter bold, wrapped, max 4 lines) with a subtle depth shadow.
@@ -275,7 +285,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   const titlePx = 52;
   const titleLineH = Math.round(titlePx * 1.16);
   ctx.font = `700 ${titlePx}px Inter, sans-serif`;
-  let titleLines = wrapGreedy(ctx, f.title, CONTENT_W);
+  let titleLines = wrapGreedy(ctx, fTitle, CONTENT_W);
   if (titleLines.length > 4) {
     titleLines = titleLines.slice(0, 4);
     titleLines[3] = titleLines[3].replace(/\s+\S*$/, '') + '…';
@@ -289,13 +299,13 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   // is the discovery date, not the article's publication date.
   ctx.fillStyle = C.muted;
   ctx.font = 'italic 400 26px Inter, sans-serif';
-  ctx.fillText(f.domain, MARGIN, y);
-  if (f.foundAt) {
+  ctx.fillText(fDomain, MARGIN, y);
+  if (fFoundAt) {
     ctx.save();
     ctx.fillStyle = C.faint;
     ctx.font = '400 22px Inter, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`Found ${new Date(f.foundAt).toLocaleDateString()}`, W - MARGIN, y);
+    ctx.fillText(`Found ${new Date(fFoundAt).toLocaleDateString()}`, W - MARGIN, y);
     ctx.restore();
   }
   y += 40;
@@ -313,7 +323,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   const footerRule = H - MARGIN - 192;   // divider above the footer block (room for the large pin/QR row)
   const bodyTop = y;
   const bodyAvailH = footerRule - 28 - bodyTop;
-  const body = layoutSummary(ctx, f.summary, bodyAvailH);
+  const body = layoutSummary(ctx, fSummary, bodyAvailH);
   body.draw(MARGIN, bodyTop);
 
   // Footer — three elements on a shared centerline, left → right:

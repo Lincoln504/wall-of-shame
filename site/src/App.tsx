@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect, onMount, on } from 'solid-js';
+import { createSignal, createResource, For, Show, createMemo, onCleanup, createEffect, onMount, on, ErrorBoundary } from 'solid-js';
 import type { FindingsStore, Finding } from './types.js';
 import { canonicalOrder, totalPages, clampPage, pageSlice } from './order.js';
 import { justifyElements, onResizeRejustify } from './justify.js';
@@ -390,11 +390,24 @@ export default function App() {
       <Show when={data.loading}><div style={s.loading}>Loading…</div></Show>
       <Show when={data.error}><div style={s.error}>Failed to load findings.</div></Show>
 
+      {/* Backstop: any render error in the content area degrades to a graceful inline
+          message + manual reload — it never blanks the page or auto-refreshes. */}
+      <ErrorBoundary fallback={(_err, reset) => (
+        <div style={s.empty}>
+          Something went wrong displaying this view.
+          <div style={{ 'margin-top': '1rem', display: 'flex', gap: '0.6rem', 'justify-content': 'center' }}>
+            <button style={s.backLink} onClick={() => { clearFocus(); reset(); }}>← Back to feed</button>
+            <button style={s.backLink} onClick={() => location.reload()}>Reload</button>
+          </div>
+        </div>
+      )}>
       <Show when={data()}>
         {/* ── Entry permalink ── */}
         <Show when={viewMode() === 'entry'}>
+          {/* keyed: remount on entry change so justify never desyncs a reused card (see Feed.tsx). */}
           <Show
             when={focusedFinding()}
+            keyed
             fallback={
               <div style={s.empty}>
                 That entry could not be found — it may have been removed.
@@ -402,10 +415,14 @@ export default function App() {
               </div>
             }
           >
-            <div style={s.backRow}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
-            <main style={s.grid}>
-              <FindingCard finding={focusedFinding()!} onShare={handleShare} variant="feed" />
-            </main>
+            {(f) => (
+              <>
+                <div style={s.backRow}><button style={s.backLink} onClick={clearFocus}>← All entries</button></div>
+                <main style={s.grid}>
+                  <FindingCard finding={f} onShare={handleShare} variant="feed" />
+                </main>
+              </>
+            )}
           </Show>
         </Show>
 
@@ -436,6 +453,7 @@ export default function App() {
           </Show>
         </Show>
       </Show>
+      </ErrorBoundary>
 
       {/* The footer (download / QR / "You're reading" / feedback) shows on every view. */}
       <footer style={s.footer}>
@@ -465,12 +483,16 @@ export default function App() {
         </div>
       </footer>
 
-      <ShareModal
-        finding={shareTarget()?.finding ?? null}
-        page={shareTarget()?.page ?? 1}
-        pageUrl={shareTarget()?.pageUrl ?? ''}
-        onClose={() => setShareTarget(null)}
-      />
+      {/* The modal isolates its own errors; this boundary is a final backstop so a share
+          failure can never propagate to (and blank) the rest of the page. */}
+      <ErrorBoundary fallback={null}>
+        <ShareModal
+          finding={shareTarget()?.finding ?? null}
+          page={shareTarget()?.page ?? 1}
+          pageUrl={shareTarget()?.pageUrl ?? ''}
+          onClose={() => setShareTarget(null)}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

@@ -52,7 +52,10 @@ export default function ShareModal(props: Props) {
   // can click Share, so the share handler never awaits work that would drop user activation.
   createEffect(on(() => props.finding, (f) => {
     if (!f) return;
-    if (dialogRef && !dialogRef.open) dialogRef.showModal();
+    // showModal can throw (already-open, not-connected) — guard it so the effect never
+    // throws uncaught (which would tear down the app). A failed open just leaves the modal
+    // closed; the render below still runs.
+    try { if (dialogRef && !dialogRef.open) dialogRef.showModal(); } catch { /* leave closed */ }
     revoke();
     setBlob(null); setImgUrl(''); setStatus(''); setGenerating(true);
     void (async () => {
