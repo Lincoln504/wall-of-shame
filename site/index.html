@@ -37,14 +37,19 @@
     </script>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html { font-size: 16px; }
+      /* Clip horizontal overflow on BOTH html and body so the document can never be wider than the
+         viewport. Without the html-level clip, the full-bleed feed could make the page horizontally
+         pannable on mobile — which showed up as "not starting fully zoomed out" and a slight
+         off-centre/extra right margin once zoomed out. `clip` (not `hidden`) is used so neither axis
+         is coerced into a scroll container — vertical page scroll stays untouched. */
+      html { font-size: 16px; overflow-x: clip; }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         background: #f9f9f7;
         color: #1a1a1a;
         min-height: 100vh;
         line-height: 1.5;
-        overflow-x: hidden; /* the feed's gutter arrows sit just outside the column; never scroll horizontally */
+        overflow-x: clip;
       }
       #root { min-height: 100vh; }
       /* Mobile refinements (inline styles set these per-element, so !important is required to

@@ -276,11 +276,14 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
 
   return (
     // Full-bleed stage: breaks out of the centred column to the full viewport so neighbours can
-    // enter from the actual screen edges. overflow:clip contains the horizontal slide.
+    // enter from the actual screen edges. The negative-margin technique (NOT left:50%+translateX)
+    // is used because a relative `left` offset leaks horizontal scroll width on mobile — making the
+    // page pannable / not-fully-zoomed-out; negative margins centre it symmetrically with no
+    // overflow regardless of the parent column's padding. overflow:clip contains the slide.
     <div
       ref={stageRef}
       style={{
-        position: 'relative', width: '100vw', left: '50%', transform: 'translateX(-50%)',
+        position: 'relative', width: '100vw', 'margin-left': 'calc(50% - 50vw)',
         padding: '0.4rem 0', overflow: 'clip', 'overflow-clip-margin': '20px',
         'touch-action': 'pan-y',
         // Stage hugs the current card; height eases between cards of different sizes (a single
