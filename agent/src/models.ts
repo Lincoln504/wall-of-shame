@@ -32,25 +32,6 @@ import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai';
 export const OPENROUTER_PROVIDER = 'openrouter';
 
 /**
- * GLM coding-plan provider (configured in ~/.pi/agent/models.json). GLM-4.7 is a
- * reasoning-capable 200K-context model on z.ai's Anthropic-messages endpoint. It is the
- * DEEP single-entry investigator for the flagged-resolution layer — NOT a replacement for
- * the big-context DeepSeek batch verify (GLM's 200K window is far smaller than DeepSeek's 1M).
- */
-export const GLM_CODING_PROVIDER = 'glm-coding';
-export const GLM_MODEL_ID = process.env['WOS_RESOLVE_MODEL'] || 'glm-4.7';
-
-/** Per-provider request shape. The Anthropic-messages endpoint rejects OpenAI-only payload
- *  fields (response_format, reasoning:{enabled}, chat_template_kwargs, top_k/min_p/presence),
- *  so completeText skips them for 'anthropic' providers. */
-type ApiStyle = 'openai' | 'anthropic';
-const PROVIDER_API_STYLE: Record<string, ApiStyle> = {
-  openrouter: 'openai',
-  minicpm: 'openai',
-  'glm-coding': 'anthropic',
-};
-
-/**
  * Structured-stage workhorse (EXTRACTION + REVIEW) = Qwen3.6-35B-A3B — a 35B-total /
  * 3B-active MoE on OpenRouter (even leaner active-param count than gemma's 4B). Chosen
  * over gemma after a head-to-head bake-off on a real 35K-char report: gemma reasoning-off
@@ -116,59 +97,39 @@ export interface ResolvedModel {
   model: any;
   apiKey?: string;
   headers?: Record<string, string>;
-  /** Request shape for this model's provider. Drives payload field selection in completeText. */
-  apiStyle?: ApiStyle;
 }
 
-// Resolved models are cached for the lifetime of the process (keyed by provider+id+reasoning)
+// Resolved models are cached for the lifetime of the process (keyed by id+reasoning)
 // so concurrent categories share one registry/auth resolution.
 const cache = new Map<string, ResolvedModel>();
 
 /**
- * Resolve a model from any configured provider via pi's real auth/model storage
- * (~/.pi/agent/auth.json + models.json). `reasoning` is the model CAPABILITY flag; the
- * per-call effort is requested separately in completeText. Cached per (provider, id, reasoning).
+ * Resolve an OpenRouter model from pi's real auth storage (~/.pi/agent/auth.json).
+ * `reasoning` here is the model CAPABILITY flag (whether the provider should be
+ * told this model can think); the per-call effort is requested separately in
+ * completeText. Cached per (modelId, reasoning-capable).
  */
-export async function getModel(
-  provider: string,
-  modelId: string,
-  opts: { reasoning?: boolean } = {},
-): Promise<ResolvedModel> {
-  const reasoning = opts.reasoning ?? false;
-  const key = `${provider}/${modelId}|${reasoning}`;
-  const hit = cache.get(key);
-  if (hit) return hit;
-
-  // Canonical pi SDK resolution: ModelRegistry.create(authStorage, modelsJsonPath) loads the
-  // built-in models PLUS the custom providers defined in ~/.pi/agent/models.json (where the
-  // glm-coding provider lives), then find(provider, id) + getApiKeyAndHeaders(model) resolve
-  // auth. We pass modelsJsonPath EXPLICITLY (not relying on the default) so it's unambiguous.
-  const agentDir = join(homedir(), '.pi', 'agent');
-  const registry = ModelRegistry.create(
-    AuthStorage.create(join(agentDir, 'auth.json')),
-    join(agentDir, 'models.json'),
-  );
-  const model = registry.find(provider, modelId);
-  if (!model) throw new Error(`Model ${provider}/${modelId} not found in registry (check ~/.pi/agent/models.json).`);
-  (model as any).reasoning = reasoning;
-
-  const auth = await registry.getApiKeyAndHeaders(model);
-  if (!auth.ok) throw new Error(`Model auth failed for ${provider}/${modelId}: ${auth.error}`);
-
-  const resolved: ResolvedModel = {
-    model, apiKey: auth.apiKey, headers: auth.headers,
-    apiStyle: PROVIDER_API_STYLE[provider] ?? 'openai',
-  };
-  cache.set(key, resolved);
-  return resolved;
-}
-
-/** Back-compat: resolve an OpenRouter model (the default provider for most stages). */
 export async function getOpenRouterModel(
   modelId: string,
   opts: { reasoning?: boolean } = {},
 ): Promise<ResolvedModel> {
-  return getModel(OPENROUTER_PROVIDER, modelId, opts);
+  const reasoning = opts.reasoning ?? false;
+  const key = `${modelId}|${reasoning}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
+  const agentDir = join(homedir(), '.pi', 'agent');
+  const registry = ModelRegistry.create(AuthStorage.create(join(agentDir, 'auth.json')));
+  const model = registry.find(OPENROUTER_PROVIDER, modelId);
+  if (!model) throw new Error(`Model ${OPENROUTER_PROVIDER}/${modelId} not found in registry.`);
+  (model as any).reasoning = reasoning;
+
+  const auth = await registry.getApiKeyAndHeaders(model);
+  if (!auth.ok) throw new Error(`Model auth failed for ${modelId}: ${auth.error}`);
+
+  const resolved: ResolvedModel = { model, apiKey: auth.apiKey, headers: auth.headers };
+  cache.set(key, resolved);
+  return resolved;
 }
 
 /**
@@ -209,7 +170,6 @@ export async function completeText(
   } = {},
 ): Promise<string> {
   const reasoning = opts.reasoning ?? false;
-  const apiStyle: ApiStyle = resolved.apiStyle ?? 'openai';
   const timeoutMs = opts.timeoutMs ?? Math.max(30000, Number(process.env['WOS_MODEL_TIMEOUT_MS']) || 180000);
   const extract = (res: any) =>
     res.content.find((c: any): c is { type: 'text'; text: string } => c.type === 'text')?.text ?? '';
@@ -234,27 +194,22 @@ export async function completeText(
       ...(reasoning ? { reasoning } : {}),
       onPayload: (payload: any) => {
         delete payload.thinking;
-        // temperature/top_p are accepted by BOTH OpenAI-style and Anthropic-style endpoints.
+        if (!reasoning) {
+          // Non-thinking mode. Qwen3.6 THINKS BY DEFAULT, so omitting `reasoning` is not
+          // enough — we must explicitly disable it. OpenRouter's unified switch is
+          // reasoning:{enabled:false}; we also pass chat_template_kwargs.enable_thinking
+          // for providers (DeepInfra/vLLM/SGLang) that key off the chat template. Both are
+          // ignored harmlessly by models/providers that don't use them.
+          payload.reasoning = { enabled: false };
+          payload.include_reasoning = false;
+          payload.chat_template_kwargs = { ...(payload.chat_template_kwargs ?? {}), enable_thinking: false };
+        }
         if (opts.temperature !== undefined) payload.temperature = opts.temperature;
         if (opts.topP !== undefined) payload.top_p = opts.topP;
-        if (apiStyle === 'openai') {
-          if (!reasoning) {
-            // Non-thinking mode. Qwen3.6 THINKS BY DEFAULT, so omitting `reasoning` is not
-            // enough — we must explicitly disable it. OpenRouter's unified switch is
-            // reasoning:{enabled:false}; we also pass chat_template_kwargs.enable_thinking
-            // for providers (DeepInfra/vLLM/SGLang) that key off the chat template. Both are
-            // ignored harmlessly by models/providers that don't use them.
-            payload.reasoning = { enabled: false };
-            payload.include_reasoning = false;
-            payload.chat_template_kwargs = { ...(payload.chat_template_kwargs ?? {}), enable_thinking: false };
-          }
-          // OpenAI/OpenRouter-only knobs. The Anthropic-messages endpoint (e.g. z.ai/GLM)
-          // rejects unknown body fields, so these are skipped entirely for 'anthropic'.
-          if (opts.topK !== undefined) payload.top_k = opts.topK;
-          if (opts.minP !== undefined) payload.min_p = opts.minP;
-          if (opts.presencePenalty !== undefined) payload.presence_penalty = opts.presencePenalty;
-          if (useJson) payload.response_format = { type: 'json_object' };
-        }
+        if (opts.topK !== undefined) payload.top_k = opts.topK;
+        if (opts.minP !== undefined) payload.min_p = opts.minP;
+        if (opts.presencePenalty !== undefined) payload.presence_penalty = opts.presencePenalty;
+        if (useJson) payload.response_format = { type: 'json_object' };
         return payload;
       },
     },

@@ -1,37 +1,34 @@
 /**
- * resolve_flagged.ts — Deep, single-run resolution of ALL flagged entries.
+ * resolve_flagged.ts — Batched resolution pass for ambiguous flagged entries.
  *
- * This is the investigation layer AFTER the big-context DeepSeek batch verify: when the
- * maintenance audit flags an entry as ambiguous, this pass investigates it deeply and reaches
- * a CONCRETE terminal verdict. Per project direction it is NOT a queue spread over rounds — it
- * treats the flagged set as a cue to clear NOW: every flagged entry is investigated, retried
- * within THIS run if it comes back ambiguous, and given a terminal verdict (KEEP / FIX / REMOVE)
- * before the run ends. The queue should be empty (or only budget-deferred) after each run.
+ * Reads data/flagged-review.json and resolves entries in batches of 5.
+ * Each batch: scrape all 5 articles (via pi-research scrapeUrl), then one
+ * Qwen3.6 call for the batch with full prior-flag context per entry.
  *
- * Model: GLM-4.7 (glm-coding, reasoning-capable, 200K ctx) — the deep single-entry investigator.
- * It is distinct from the big-context DeepSeek V4 Pro batch verify, which stays as-is.
+ * Model: Qwen3.6-35B (WORKHORSE_MODEL_ID) — same as the inline pipeline.
+ * DeepSeek is NOT used here; it is reserved for the large-scale batch layer 3
+ * passes (sample_audit.ts, full_audit.ts).
  *
- * Each batch: scrape all entries' articles (pi-research scrapeUrl), then one GLM call with full
- * prior-flag context per entry. Verdicts:
- *   KEEP / FIX_IN_PLACE → apply, drop from flagged-review.json
- *   REMOVE              → drop from corpus + tombstone
- *   FLAG_FOR_REVIEW     → re-investigated in the next INNER round this run; once an entry has
- *                         been investigated maxResolveAttempts times (across rounds + runs) and
- *                         is still ambiguous, it is REMOVED (unverifiable entries don't linger).
+ * Decision policy:
+ *   KEEP or FIX_IN_PLACE → apply and remove from flagged-review.json
+ *   REMOVE               → remove from corpus + tombstone + clear from store
+ *   FLAG_FOR_REVIEW      → increment resolveAttempts
+ *   Exhausted (>= maxResolveAttempts) → REMOVED from corpus at start of run
  *
- * Entries not reached before the wall-clock budget (WOS_RESOLVE_BUDGET_MS, default 840s — under
- * the loop's 900s timeout) are left for the next cycle with their attempt count unchanged.
+ * "Still ambiguous after max attempts → remove" is strict: unverifiable entries
+ * do not stay in the corpus.
  *
  * Usage:
- *   cd agent && npx tsx scripts/resolve_flagged.ts [--dry-run] [--limit=N]
- *     --dry-run   report only, no writes
- *     --limit=N   cap entries considered this run (default: all)
+ *   cd agent && npx tsx scripts/resolve_flagged.ts [--dry-run] [--limit N]
+ *
+ *   --dry-run   report only, no writes
+ *   --limit N   process at most N flagged entries per run (default: all)
  */
 import { readFileSync, writeFileSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeUrl, initResearchSDK, shutdownResearchSDK } from '@lincoln504/pi-research';
-import { getModel, getOpenRouterModel, completeText, GLM_CODING_PROVIDER, GLM_MODEL_ID, WORKHORSE_MODEL_ID } from '../src/models.js';
+import { getOpenRouterModel, completeText, WORKHORSE_MODEL_ID } from '../src/models.js';
 import { mapWithConcurrency, canonicalizeUrl, isErrorOrBlockedPage, safeParseJson } from '../src/utils.js';
 import { AUDIT_SYSTEM, RESOLVE_ADDENDUM, buildAuditText, VALID_CATEGORIES, VALID_SEVERITIES, type AuditResult, type FlaggedEntry } from './audit-criteria.js';
 
@@ -50,16 +47,7 @@ const BATCH_SIZE = 5;
 const SCRAPE_CONCURRENCY = 5;
 const SCRAPE_TIMEOUT_MS = 90_000;
 const MIN_ARTICLE_CHARS = 400;
-const MAX_ARTICLE_CHARS = 12_000;
-// Investigate a still-ambiguous entry up to this many INNER rounds within ONE run, so the
-// queue is cleared now rather than deferred across audit cycles.
-const MAX_INNER_ROUNDS = Math.max(1, Number(process.env['WOS_RESOLVE_INNER_ROUNDS']) || 3);
-// Stop starting new batches past this wall-clock budget so the run finishes before the loop's
-// 900s timeout SIGKILLs it (which would lose progress). Unreached entries wait for next cycle.
-const BUDGET_MS = Math.max(60_000, Number(process.env['WOS_RESOLVE_BUDGET_MS']) || 840_000);
-
-const startedAt = Date.now();
-const budgetLeft = () => BUDGET_MS - (Date.now() - startedAt);
+const MAX_ARTICLE_CHARS = 12_000; // wider window for retry context
 
 function log(msg: string) { console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`); }
 
@@ -84,12 +72,6 @@ async function scrapeOne(url: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -149,137 +131,127 @@ await initResearchSDK({
   config: { KNOWLEDGE_STORE_MODE: 'none', MAX_SCRAPE_BATCHES: 2, DEBUG: false },
   verbose: false,
 });
-// Deep investigator = GLM-4.7 (coding plan). Fall back to the OpenRouter workhorse if the
-// GLM provider is ever unavailable, so the queue still drains instead of hard-failing.
-let model;
-let modelLabel = `${GLM_CODING_PROVIDER}/${GLM_MODEL_ID}`;
-try {
-  model = await getModel(GLM_CODING_PROVIDER, GLM_MODEL_ID, { reasoning: false });
-} catch (e) {
-  modelLabel = `${WORKHORSE_MODEL_ID} (GLM unavailable: ${String(e).slice(0, 60)})`;
-  model = await getOpenRouterModel(WORKHORSE_MODEL_ID, { reasoning: false });
-}
-log(`SDK initialized — draining ${pending.length} flagged entries this run (${modelLabel}, up to ${MAX_INNER_ROUNDS} inner rounds, budget ${Math.round(BUDGET_MS / 1000)}s)`);
+log(`SDK initialized — resolving ${pending.length} entries in batches of ${BATCH_SIZE} (${WORKHORSE_MODEL_ID})`);
 
-// Terminal decisions accumulated across all inner rounds, applied atomically at the end.
+const model = await getOpenRouterModel(WORKHORSE_MODEL_ID, { reasoning: false });
+
+// Accumulate decisions across all batches, apply atomically at the end
 const toRemove = new Set<string>();
 const toFix: AuditResult[] = [];
 const toKeep: string[] = [];
-// Per-url running attempt count + latest result (for store update on leftover/terminal).
-const attemptOf = new Map<string, number>(pending.map(e => [e.url, e.resolveAttempts]));
-const latestResult = new Map<string, AuditResult>();
+const updatedAttempts = new Map<string, { attempts: number; result: AuditResult | null }>();
 let totalErrors = 0;
-let budgetStopped = false;
 
-// Investigate one batch deeply; returns the parsed results (id-keyed by the model echo).
-async function investigateBatch(batch: FlaggedEntry[], roundLabel: string): Promise<AuditResult[]> {
-  const scrapeResults = await mapWithConcurrency(batch, SCRAPE_CONCURRENCY, async (entry: FlaggedEntry, idx: number) => {
-    const article = await scrapeOne(entry.url);
-    log(`  ${roundLabel} [${idx + 1}/${batch.length}] ${entry.url.replace(/^https?:\/\//, '').slice(0, 55)} — ${article ? article.length + ' chars' : 'unavail'}`);
-    return { entry, article };
-  });
-  const scraped = scrapeResults.map((r, i) => (r.ok ? r.value : { entry: batch[i]!, article: null }));
-
-  const auditItems = scraped.map(({ entry, article }) => {
-    const finding = findingByUrl.get(entry.url);
-    return {
-      url: entry.url,
-      title: entry.title,
-      category: entry.category,
-      severity: entry.severity,
-      summary: finding?.summary ?? '',
-      whyBad: finding?.whyBad ?? '',
-      article,
-      priorFlagNote: `Flagged by ${entry.flaggedBy} (investigation ${(attemptOf.get(entry.url) ?? 0) + 1}/${MAX_ATTEMPTS}): ${entry.auditResult.dim1_note} — ${entry.auditResult.overall_reason}`,
-    };
-  });
-
-  const userText = buildAuditText(auditItems);
-  try {
-    const rawResponse = await completeText(model, RESOLVE_SYSTEM, userText, {
-      reasoning: false, temperature: 0.15, timeoutMs: 240_000,
-    });
-    const parsed = safeParseJson<AuditResult[] | AuditResult>(rawResponse);
-    if (Array.isArray(parsed)) return parsed;
-    if (parsed && typeof parsed === 'object' && (parsed as AuditResult).id) return [parsed as AuditResult];
-    log(`  ${roundLabel} returned non-array JSON — batch deferred to next cycle`);
-    totalErrors += batch.length;
-    return [];
-  } catch (e) {
-    log(`  ${roundLabel} batch error: ${String(e).slice(0, 100)} — deferred to next cycle`);
-    totalErrors += batch.length;
-    return [];
-  }
-}
+const totalBatches = Math.ceil(pending.length / BATCH_SIZE);
 
 try {
-  // Drain: investigate the working set; entries that come back FLAG_FOR_REVIEW are retried in
-  // the next inner round THIS run until resolved, attempts exhausted, or the budget runs out.
-  let carry: FlaggedEntry[] = pending;
-  for (let round = 1; round <= MAX_INNER_ROUNDS && carry.length > 0; round++) {
-    log(`\n── inner round ${round}/${MAX_INNER_ROUNDS} — ${carry.length} entr${carry.length === 1 ? 'y' : 'ies'} ──`);
-    const nextCarry: FlaggedEntry[] = [];
-    const batches = chunk(carry, BATCH_SIZE);
+  for (let b = 0; b < totalBatches; b++) {
+    const batch = pending.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+    log(`\nBatch ${b + 1}/${totalBatches} — ${batch.length} entries`);
 
-    for (let b = 0; b < batches.length; b++) {
-      if (budgetLeft() <= 0) {
-        budgetStopped = true;
-        const remaining = batches.slice(b).flat();
-        log(`  budget exhausted — ${remaining.length} entr${remaining.length === 1 ? 'y' : 'ies'} left for next cycle`);
-        break;
+    // Scrape all entries in the batch concurrently
+    const scrapeResults = await mapWithConcurrency(batch, SCRAPE_CONCURRENCY, async (entry: FlaggedEntry, idx: number) => {
+      const article = await scrapeOne(entry.url);
+      log(`  [${idx + 1}/${batch.length}] ${entry.url.replace(/^https?:\/\//, '').slice(0, 55)} — ${article ? article.length + ' chars' : 'unavail'}`);
+      return { entry, article };
+    });
+
+    const scraped = scrapeResults.map((r, i) =>
+      r.ok ? r.value : { entry: batch[i]!, article: null }
+    );
+    const gotArticle = scraped.filter(s => s.article).length;
+    log(`  scraped ${gotArticle}/${batch.length}`);
+
+    // Build audit items with prior flag context
+    const auditItems = scraped.map(({ entry, article }) => {
+      const finding = findingByUrl.get(entry.url);
+      return {
+        url: entry.url,
+        title: entry.title,
+        category: entry.category,
+        severity: entry.severity,
+        summary: finding?.summary ?? '',
+        whyBad: finding?.whyBad ?? '',
+        article,
+        priorFlagNote: `Flagged by ${entry.flaggedBy} (attempt ${entry.resolveAttempts + 1}/${MAX_ATTEMPTS}): ${entry.auditResult.dim1_note} — ${entry.auditResult.overall_reason}`,
+      };
+    });
+
+    const userText = buildAuditText(auditItems);
+    log(`  prompt ~${Math.round((AUDIT_SYSTEM.length + userText.length) / 4)} tokens — calling Qwen3.6...`);
+
+    let batchResults: AuditResult[] = [];
+    try {
+      const rawResponse = await completeText(model, RESOLVE_SYSTEM, userText, {
+        reasoning: false,
+        temperature: 0.15,
+        timeoutMs: 240_000, // 4 min for 5 entries
+      });
+
+      const parsed = safeParseJson<AuditResult[] | AuditResult>(rawResponse);
+      // safeParseJson can return a non-array (a single {...} object or null) WITHOUT
+      // throwing — e.g. the model emits one result instead of a list. Guard before the
+      // for…of below, otherwise it throws "batchResults is not iterable" OUTSIDE this
+      // try/catch and crashes the whole resolution pass (leaving flagged-pending to grow
+      // unbounded). Wrap a lone valid result; otherwise treat as a failed batch.
+      if (Array.isArray(parsed)) {
+        batchResults = parsed;
+      } else if (parsed && typeof parsed === 'object' && (parsed as AuditResult).id) {
+        batchResults = [parsed as AuditResult];
+      } else {
+        log(`  batch ${b + 1} returned non-array JSON — skipping batch, will retry next run`);
+        totalErrors += batch.length;
+        continue;
       }
-      const batch = batches[b]!;
-      const results = await investigateBatch(batch, `r${round} batch ${b + 1}/${batches.length}`);
-      const byId = new Map(results.filter(r => r && typeof r.id === 'string').map(r => [r.id, r]));
+    } catch (e) {
+      log(`  batch ${b + 1} error: ${String(e).slice(0, 100)} — skipping batch, will retry next run`);
+      totalErrors += batch.length;
+      continue;
+    }
 
-      for (const entry of batch) {
-        const result = byId.get(entry.url);
-        if (!result) { nextCarry.push(entry); continue; } // model omitted it — retry next round
+    for (const result of batchResults) {
+      const entry = batch.find(e => e.url === result.id);
+      if (!entry) continue;
 
-        // Safety net: corrected fields present but verdict says re-review → it has the evidence
-        // to fix; upgrade to FIX_IN_PLACE so the correction is applied.
-        if (result.overall === 'FLAG_FOR_REVIEW' && (result.corrected_summary || result.corrected_whybad)) {
-          result.overall = 'FIX_IN_PLACE';
-          log(`  ↑ upgraded FLAG_FOR_REVIEW→FIX_IN_PLACE: ${result.id.slice(0, 50)}`);
-        }
-        latestResult.set(entry.url, result);
-        const verdict = result.overall;
-        log(`  ${verdict === 'KEEP' ? '✓' : verdict === 'FIX_IN_PLACE' ? '✎' : verdict === 'REMOVE' ? '✗' : '⚑'} ${verdict.padEnd(14)} ${result.id.replace(/^https?:\/\//, '').slice(0, 50)}`);
+      // Safety net: if the model provides corrected fields but still says FLAG_FOR_REVIEW,
+      // it has the evidence to fix — upgrade to FIX_IN_PLACE so corrections are applied.
+      if (result.overall === 'FLAG_FOR_REVIEW' && (result.corrected_summary || result.corrected_whybad)) {
+        result.overall = 'FIX_IN_PLACE';
+        log(`  ↑ upgraded FLAG_FOR_REVIEW→FIX_IN_PLACE (corrected fields present): ${result.id.slice(0, 50)}`);
+      }
 
-        if (verdict === 'KEEP') { toKeep.push(entry.url); }
-        else if (verdict === 'FIX_IN_PLACE') { toFix.push(result); }
-        else if (verdict === 'REMOVE') { toRemove.add(entry.url); }
-        else {
-          // FLAG_FOR_REVIEW — count an investigation; retry this run if rounds + attempts allow,
-          // else give a terminal verdict NOW (remove — unverifiable entries don't linger).
-          const attempts = (attemptOf.get(entry.url) ?? 0) + 1;
-          attemptOf.set(entry.url, attempts);
-          if (attempts >= MAX_ATTEMPTS) {
-            log(`    → ${attempts}/${MAX_ATTEMPTS} investigations, still ambiguous → REMOVE`);
-            toRemove.add(entry.url);
-          } else if (round < MAX_INNER_ROUNDS) {
-            nextCarry.push({ ...entry, resolveAttempts: attempts });
-          } else {
-            // Last inner round and still ambiguous but below max — leave for next cycle.
-            nextCarry.push({ ...entry, resolveAttempts: attempts });
-          }
+      const verdict = result.overall;
+      log(`  ${verdict === 'KEEP' ? '✓' : verdict === 'FIX_IN_PLACE' ? '✎' : verdict === 'REMOVE' ? '✗' : '⚑'} ${verdict.padEnd(14)} ${result.id.replace(/^https?:\/\//, '').slice(0, 50)}`);
+
+      if (verdict === 'KEEP') {
+        toKeep.push(entry.url);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else if (verdict === 'FIX_IN_PLACE') {
+        toFix.push(result);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else if (verdict === 'REMOVE') {
+        toRemove.add(entry.url);
+        updatedAttempts.set(entry.url, { attempts: entry.resolveAttempts, result });
+      } else {
+        // FLAG_FOR_REVIEW — increment; if now at max, schedule removal
+        const newAttempts = entry.resolveAttempts + 1;
+        updatedAttempts.set(entry.url, { attempts: newAttempts, result });
+        if (newAttempts >= MAX_ATTEMPTS) {
+          log(`    → reached max attempts, scheduled for removal`);
+          toRemove.add(entry.url);
         }
       }
     }
-    carry = budgetStopped ? [...nextCarry] : nextCarry;
-    if (budgetStopped) break;
   }
-  // Anything still in carry after the rounds/budget: leave flagged with updated attempts.
-  for (const entry of carry) latestResult.set(entry.url, entry.auditResult);
 } finally {
   await shutdownResearchSDK();
 }
 
 // ── Apply all decisions atomically ────────────────────────────────────────────
 
-const terminalUrls = new Set([...toKeep, ...toFix.map(r => r.id), ...toRemove]);
+const decidedUrls = new Set([...toKeep, ...toFix.map(r => r.id), ...toRemove]);
 
-if (!DRY_RUN && (terminalUrls.size > 0 || attemptOf.size > 0)) {
+if (!DRY_RUN && decidedUrls.size > 0) {
   const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
 
   for (const f of latest.findings) {
@@ -310,32 +282,51 @@ if (!DRY_RUN && (terminalUrls.size > 0 || attemptOf.size > 0)) {
     log(`Removed ${before - latest.findings.length} entries, tombstoned`);
   }
 
-  // Update flagged-review.json — drop terminal verdicts, update attempt counts for leftovers.
+  // Update flagged-review.json — drop resolved, update attempt counts
   const freshFlagStore = JSON.parse(readFileSync(FLAGGED_PATH, 'utf-8'));
   const updatedFlagged: FlaggedEntry[] = [];
   let totalResolved = 0;
 
   for (const entry of freshFlagStore.flagged as FlaggedEntry[]) {
-    if (terminalUrls.has(entry.url)) { totalResolved++; continue; } // resolved this run → clear
-    const attempts = attemptOf.get(entry.url);
-    if (attempts === undefined) { updatedFlagged.push(entry); continue; } // not touched this run
-    // Still ambiguous (budget/round deferred) — persist updated attempt count + latest note.
-    updatedFlagged.push({ ...entry, resolveAttempts: attempts, auditResult: latestResult.get(entry.url) ?? entry.auditResult });
+    const decision = updatedAttempts.get(entry.url);
+    if (!decision) {
+      updatedFlagged.push(entry); // not in this run (limit or error)
+      continue;
+    }
+    if (decidedUrls.has(entry.url)) {
+      // Confidently resolved (keep, fix, or remove) — clear from store
+      totalResolved++;
+      continue;
+    }
+    // Still ambiguous but below max — update with latest result + incremented count
+    updatedFlagged.push({
+      ...entry,
+      resolveAttempts: decision.attempts,
+      auditResult: decision.result ?? entry.auditResult,
+    });
   }
 
   freshFlagStore.flagged = updatedFlagged;
   writeAtomic(FLAGGED_PATH, freshFlagStore);
 
+  const finalFlagCount = freshFlagStore.flagged.length;
+  const finalCorpus = latest.totalFindings;
+
   console.log('\n' + '='.repeat(60));
   console.log('RESOLUTION PASS COMPLETE');
   console.log('='.repeat(60));
-  console.log(`  Investigated:    ${pending.length}`);
+  console.log(`  Attempted:       ${pending.length}`);
   console.log(`  Kept:            ${toKeep.length}`);
   console.log(`  Fixed:           ${toFix.length}`);
   console.log(`  Removed:         ${toRemove.size}`);
-  console.log(`  Resolved total:  ${totalResolved}`);
-  console.log(`  Deferred:        ${updatedFlagged.filter(e => attemptOf.has(e.url)).length}${budgetStopped ? ' (budget)' : ''}`);
+  console.log(`  Still ambiguous: ${updatedFlagged.filter(e => updatedAttempts.has(e.url)).length}`);
   console.log(`  Errors (retry):  ${totalErrors}`);
-  console.log(`  Remaining flags: ${freshFlagStore.flagged.length}`);
-  console.log(`  Corpus:          ${latest.totalFindings}`);
+  console.log(`  Resolved total:  ${totalResolved}`);
+  console.log(`  Remaining flags: ${finalFlagCount}`);
+  console.log(`  Corpus:          ${finalCorpus}`);
+
+  if (finalFlagCount > 0) {
+    const atMax = (freshFlagStore.flagged as FlaggedEntry[]).filter(e => e.resolveAttempts >= MAX_ATTEMPTS).length;
+    if (atMax > 0) log(`${atMax} entries will be removed next run (reached max attempts)`);
+  }
 }

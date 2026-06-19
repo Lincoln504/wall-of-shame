@@ -78,24 +78,13 @@ const rawFindings = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
 const findings: any[] = rawFindings.findings;
 
 let sample: any[];
-const isGrounded = (f: any) => /article-grounded/.test(f.verificationLog || '');
 if (RECENT_ARG !== undefined) {
   const recentN = Math.max(0, parseInt(RECENT_ARG));
   const recentEntries = findings.slice(-recentN);
   const olderEntries = findings.slice(0, findings.length - recentN);
-  // Prioritize re-GROUNDING older entries never verified against their own source page
-  // (desk-audit only, verify gate miss/omitted, legacy/unmarked). Entries already grounded are
-  // skipped here so coverage TRENDS to 100% over successive audits; once an entry is audited
-  // against its live article below it's marked grounded and drops out — so this slice is
-  // self-rotating through the not-grounded backlog. A light sample of grounded entries keeps
-  // them under ongoing QA.
-  const olderNotGrounded = olderEntries.filter(f => !isGrounded(f));
-  const olderGrounded = olderEntries.filter(isGrounded);
-  const REGROUND_CAP = Math.max(0, Number(process.env['WOS_AUDIT_REGROUND_CAP']) || 40);
-  const regroundBatch = olderNotGrounded.slice(0, REGROUND_CAP);
-  const groundedSample = olderGrounded.filter((_, i) => i % 11 === 5);
-  sample = [...recentEntries, ...regroundBatch, ...groundedSample];
-  log(`Total: ${findings.length} — recent ${recentEntries.length} (all) + reground ${regroundBatch.length}/${olderNotGrounded.length} not-grounded + QA ${groundedSample.length} grounded = ${sample.length}`);
+  const olderSample = olderEntries.filter((_, i) => i % 7 === 3);
+  sample = [...recentEntries, ...olderSample];
+  log(`Total: ${findings.length} — recent: ${recentEntries.length} (all) + older: ${olderSample.length} (~15% of ${olderEntries.length}) = ${sample.length} entries`);
 } else {
   const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
   const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
@@ -165,33 +154,23 @@ try {
     fixes.forEach(r => log(`  ✎ FIX    ${r.id}`));
     flags.forEach(r => log(`  ⚑ FLAG   ${r.id} — ${r.overall_reason}`));
 
-    const removeUrls = new Set(removes.map(r => r.id));
-    const flagUrls = new Set(flags.map(r => r.id));
-    const fixMap = new Map(fixes.map(r => [r.id, r]));
-    // Entries audited against their LIVE article this batch (scraped, not removed, not flagged
-    // ambiguous) → mark grounded so corpus coverage trends to 100% and they aren't re-selected
-    // by the re-grounding sampler above. FIX entries with an article count too (fixed FROM it).
-    const day = new Date().toISOString().slice(0, 10);
-    const groundUrls = new Set(
-      (items as any[]).filter(it => it.article && !removeUrls.has(it.url) && !flagUrls.has(it.url)).map(it => it.url),
-    );
+    if (!DRY_RUN && (removes.length > 0 || fixes.length > 0 || flags.length > 0)) {
+      const removeUrls = new Set(removes.map(r => r.id));
+      const fixMap = new Map(fixes.map(r => [r.id, r]));
 
-    if (!DRY_RUN && (removes.length > 0 || fixes.length > 0 || flags.length > 0 || groundUrls.size > 0)) {
       const latest = JSON.parse(readFileSync(FINDINGS_PATH, 'utf-8'));
 
       for (const f of latest.findings) {
         const fix = fixMap.get(f.url);
-        if (fix) {
-          if (fix.corrected_summary) f.summary = fix.corrected_summary;
-          if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
-          if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
-            f.category = fix.corrected_category;
-          }
-          if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
-            f.severity = fix.corrected_severity;
-          }
+        if (!fix) continue;
+        if (fix.corrected_summary) f.summary = fix.corrected_summary;
+        if (fix.corrected_whybad) f.whyBad = fix.corrected_whybad;
+        if (fix.corrected_category && (VALID_CATEGORIES as readonly string[]).includes(fix.corrected_category)) {
+          f.category = fix.corrected_category;
         }
-        if (groundUrls.has(f.url)) f.verificationLog = `audit-grounded ${day}`;
+        if (fix.corrected_severity && (VALID_SEVERITIES as readonly string[]).includes(fix.corrected_severity as any)) {
+          f.severity = fix.corrected_severity;
+        }
       }
 
       if (removes.length > 0) {
@@ -199,9 +178,11 @@ try {
         latest.totalFindings = latest.findings.length;
       }
 
-      latest.lastUpdated = new Date().toISOString();
-      writeAtomic(FINDINGS_PATH, latest);
-      log(`  applied: ${removes.length} removed, ${fixes.length} fixed, ${groundUrls.size} grounded`);
+      if (removes.length > 0 || fixes.length > 0) {
+        latest.lastUpdated = new Date().toISOString();
+        writeAtomic(FINDINGS_PATH, latest);
+        log(`  applied: ${removes.length} removed, ${fixes.length} fixed`);
+      }
 
       if (removes.length > 0) {
         const state = JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
