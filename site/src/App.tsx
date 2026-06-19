@@ -268,6 +268,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Home: from any page or entry, clear filters and return to page 1 (the landing view).
+  const goHome = () => {
+    setSearch(''); setCategory(''); setSeverity(''); setSortOrder('newest');
+    navigate(`${BASE}page/1`);
+    window.scrollTo({ top: 0 });
+  };
+
   // ── Knuth-Plass justification of the analysis text on each rendered page ───────
   const collectJustifyEls = () => Array.from(document.querySelectorAll('.wos-justify')) as HTMLElement[];
   createEffect(() => {
@@ -301,7 +308,9 @@ export default function App() {
   return (
     <div style={s.root}>
       <header style={s.header}>
-        <h1 style={s.title}>Wall of Shame</h1>
+        <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
+          <h1 style={s.title}>Wall of Shame</h1>
+        </a>
         <p style={s.subtitle}>
           English language search engine of web content judged harmful.
           <span style={s.subMeta}>
@@ -400,18 +409,20 @@ export default function App() {
         </Show>
       </div>
 
-      <footer style={s.footer}>
-        <div style={s.footerText}>
-          English language search engine of web content judged harmful.
-          {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-          {' '}Made with{' '}
-          <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
-          {' '}· Data updated via GitHub Actions
-        </div>
-        <a href="https://lincoln504.github.io/wall-of-shame/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-          <img src={`${import.meta.env.BASE_URL}qr.svg`} alt="QR code linking to Wall of Shame" width="80" height="80" style={s.qr} />
-        </a>
-      </footer>
+      <Show when={data()}>
+        <footer style={s.footer}>
+          <div style={s.footerText}>
+            English language search engine of web content judged harmful.
+            {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+            {' '}Made with{' '}
+            <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
+            {' '}· Data updated via GitHub Actions
+          </div>
+          <a href="https://lincoln504.github.io/wall-of-shame/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+            <img src={`${import.meta.env.BASE_URL}qr.svg`} alt="QR code linking to Wall of Shame" width="80" height="80" style={s.qr} />
+          </a>
+        </footer>
+      </Show>
 
       <ShareModal
         finding={shareTarget()?.finding ?? null}
@@ -463,9 +474,10 @@ const UI = `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-s
 const SERIF = UI;
 
 const s: Record<string, any> = {
-  root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI },
+  root: { 'max-width': '760px', margin: '0 auto', padding: '0 1.5rem 5rem', 'font-family': UI, 'min-height': '100vh' },
   header: { padding: '4rem 0 2rem', 'text-align': 'center' },
   title: { 'font-family': SERIF, 'font-size': '3rem', 'font-weight': '700', 'margin-bottom': '0.75rem', 'letter-spacing': '-0.02em' },
+  homeLink: { 'text-decoration': 'none', color: 'inherit', cursor: 'pointer', display: 'inline-block' },
   subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
   subMeta: { 'font-size': '0.8rem', color: '#999' },
   nowrap: { 'white-space': 'nowrap' },

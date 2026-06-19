@@ -18,6 +18,7 @@
 
 import { layoutText, createHyphenator } from 'tex-linebreak';
 import enUsPatterns from 'hyphenation.en-us';
+import QRCode from 'qrcode';
 import type { Finding } from './types.js';
 import { stripMarkdown } from './format.js';
 
@@ -182,6 +183,37 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.restore();
 }
 
+/**
+ * Draw a QR for `text` as crisp black modules on a white tile at (x, y), side `size`.
+ * Module edges are rounded to integer pixels so neighbours share a seam with no gaps or
+ * bleed. A 2-module quiet zone inside the white tile lets scanners lock on. If encoding
+ * ever fails it draws nothing rather than breaking the whole card.
+ */
+function drawQr(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, text: string) {
+  let qr: ReturnType<typeof QRCode.create>;
+  try { qr = QRCode.create(text, { errorCorrectionLevel: 'M' }); }
+  catch { return; }
+  const count = qr.modules.size;
+  const data = qr.modules.data;
+  const quiet = 2;
+  const total = count + quiet * 2;
+  const px = size / total;
+  // White tile — the quiet zone + clean contrast against the warm card background.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, size, size);
+  ctx.fillStyle = C.ink;
+  for (let r = 0; r < count; r++) {
+    for (let c = 0; c < count; c++) {
+      if (!data[r * count + c]) continue;
+      const x0 = Math.round(x + (c + quiet) * px);
+      const x1 = Math.round(x + (c + quiet + 1) * px);
+      const y0 = Math.round(y + (r + quiet) * px);
+      const y1 = Math.round(y + (r + quiet + 1) * px);
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    }
+  }
+}
+
 export interface ShareCardOptions {
   finding: Finding;
   page: number;
@@ -265,7 +297,7 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   y += 48;
 
   // Body: the descriptive summary (the hook + its verbatim quote), justified.
-  const footerRule = H - MARGIN - 100;   // divider above the footer block
+  const footerRule = H - MARGIN - 150;   // divider above the footer block (taller: holds the QR)
   const bodyTop = y;
   const bodyAvailH = footerRule - 28 - bodyTop;
   const body = layoutSummary(ctx, f.summary, bodyAvailH);
@@ -282,15 +314,24 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.stroke();
 
   const markS = 38;
-  const brandY = footerRule + 42;
-  drawMark(ctx, MARGIN, brandY - markS + 4, markS);
-  ctx.fillStyle = C.muted;                       // lighter gray — same family as the link
+  const qrS = markS * 2;                          // QR twice the icon, per spec
+  const qrTop = footerRule + 24;
+  const centerY = qrTop + qrS / 2;                // shared centerline: QR center == icon center
+
+  // QR on the left — scan straight to this entry. It encodes the SAME permalink printed below.
+  drawQr(ctx, MARGIN, qrTop, qrS, pageUrl);
+
+  // Brand mark + wordmark, centered on the QR's horizontal centerline, to its right.
+  const iconX = MARGIN + qrS + 26;
+  drawMark(ctx, iconX, centerY - markS / 2, markS);
+  ctx.fillStyle = C.muted;                        // lighter gray — same family as the link
   ctx.font = '700 26px Inter, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('Wall of Shame', MARGIN + markS + 16, brandY);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('Wall of Shame', iconX + markS + 16, centerY + 9);
 
-  // "Read more at: <link>" — label muted, link the same color but slightly larger.
-  const linkY = brandY + 42;
+  // "Read more at: <link>" below the QR row — label muted, link the same color but larger.
+  const linkY = qrTop + qrS + 36;
   const label = 'Read more at: ';
   ctx.fillStyle = C.muted;
   ctx.font = '400 24px Inter, sans-serif';
