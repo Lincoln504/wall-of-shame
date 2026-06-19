@@ -303,9 +303,11 @@ export default function App() {
       <header style={s.header}>
         <h1 style={s.title}>Wall of Shame</h1>
         <p style={s.subtitle}>
-          A search engine of bad content — web sources judged harmful and why.
+          English language search engine of web content judged harmful.
           <br />
           Made with <a href="https://github.com/Lincoln504/pi-research" style={s.inlineLink} target="_blank" rel="noopener noreferrer">pi-research</a>.
+          <br />
+          Search powered by granite-embedding-small-english-r2.
         </p>
         <Show when={data()}>
           <div style={s.stats}>
@@ -397,8 +399,10 @@ export default function App() {
       </div>
 
       <footer style={s.footer}>
-        Built with{' '}
+        English language search engine of web content judged harmful.
+        {' '}Made with{' '}
         <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
+        {' '}· Search powered by granite-embedding-small-english-r2
         {' '}· Data updated via GitHub Actions
       </footer>
 
