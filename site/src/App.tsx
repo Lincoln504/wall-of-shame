@@ -287,10 +287,12 @@ export default function App() {
   // The shared link is a STABLE per-entry permalink (/entry/<short id>), NOT a page number:
   // page numbers drift as the corpus grows, so an old /page/N would later point at the
   // wrong entry. The id is assigned once and never changes, so a saved image's link keeps
-  // resolving to the same article forever. A short 8-char prefix keeps it clean; the
-  // focused view resolves it by exact-or-prefix match.
+  // resolving to the same article forever. The ids are UUIDv4; a 6-hex-char prefix is the
+  // shortest that stays collision-free past a few thousand entries (measured), so it keeps
+  // links short while the focused view resolves them by exact-or-prefix match. Older 8-char
+  // links still resolve (a longer prefix still uniquely starts-with the full id).
   const handleShare = (f: Finding) => {
-    const shortId = (f.id || '').slice(0, 8) || encodeURIComponent(keyOf(f));
+    const shortId = (f.id || '').slice(0, 6) || encodeURIComponent(keyOf(f));
     const pageUrl = `${location.origin}${BASE}entry/${shortId}`;
     setShareTarget({ finding: f, page: 1, pageUrl });
   };

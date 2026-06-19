@@ -72,7 +72,14 @@ export default function ShareModal(props: Props) {
   const close = () => { revoke(); setImgUrl(''); dialogRef?.close(); props.onClose(); };
 
   const flash = (m: string) => { setStatus(m); window.setTimeout(() => setStatus(s => (s === m ? '' : s)), 2500); };
-  const fileOf = (b: Blob) => new File([b], 'wall-of-shame.png', { type: 'image/png' });
+  // Short, clean download name: wos-<4 hex>.png. The 4-char tag (from the entry id) just
+  // keeps multiple saved cards distinct; filename collisions are harmless (the browser
+  // de-dupes), so 4 is plenty.
+  const fileName = () => {
+    const tag = (props.finding?.id || '').replace(/[^a-f0-9]/gi, '').slice(0, 4);
+    return tag ? `wos-${tag}.png` : 'wos.png';
+  };
+  const fileOf = (b: Blob) => new File([b], fileName(), { type: 'image/png' });
 
   // Capability check for the native file-share path (mobile + Web-Share-capable desktops).
   const canWebShare = () => {
@@ -111,7 +118,7 @@ export default function ShareModal(props: Props) {
     const b = blob(); if (!b) return;
     const u = URL.createObjectURL(b);
     const a = document.createElement('a');
-    a.href = u; a.download = 'wall-of-shame.png';
+    a.href = u; a.download = fileName();
     a.click(); URL.revokeObjectURL(u);
     flash('Downloaded.');
   };

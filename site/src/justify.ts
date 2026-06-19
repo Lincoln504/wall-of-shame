@@ -9,7 +9,10 @@
  * once text is on screen) and applied imperatively as a side effect — it mutates
  * the DOM (inserts <br>, wraps words, sets word-spacing), so it must run AFTER the
  * framework renders and re-run when the content or width changes. Layout is frozen
- * after a pass, so we re-justify on a debounced resize.
+ * after a pass, so we re-justify only when the column WIDTH changes — never on a
+ * height-only change such as a mobile URL bar showing/hiding during scroll (see
+ * onResizeRejustify). Line breaking depends solely on width, so re-running on scroll
+ * would be wasted work that visibly reflows the text.
  */
 
 type JustifyFn = (els: HTMLElement | HTMLElement[], hyphenateFn?: (w: string) => string[]) => void;
@@ -51,16 +54,37 @@ export async function justifyElements(els: HTMLElement[]): Promise<void> {
   }
 }
 
-/** Register a debounced resize handler that re-justifies. Returns a disposer. */
+/**
+ * Re-justify ONLY when the layout WIDTH changes — never on a height-only change.
+ *
+ * Knuth-Plass line breaking depends solely on the column width, but a naive `resize`
+ * listener also fires when a mobile browser's URL bar shows/hides during scroll (that
+ * changes the visual-viewport HEIGHT, not the width). Re-justifying then is wasted work
+ * that visibly reflows the text as you scroll. We watch document.documentElement's width
+ * — which is immune to URL-bar height changes — via ResizeObserver, and skip unless it
+ * actually moved. Returns a disposer.
+ */
 export function onResizeRejustify(getEls: () => HTMLElement[], delay = 150): () => void {
   let t: number | undefined;
-  const handler = () => {
+  const root = document.documentElement;
+  let lastW = root.clientWidth;
+  const schedule = () => {
     if (t) clearTimeout(t);
     t = window.setTimeout(() => void justifyElements(getEls()), delay);
   };
-  window.addEventListener('resize', handler);
-  return () => {
-    if (t) clearTimeout(t);
-    window.removeEventListener('resize', handler);
+  const onMaybeWidthChange = () => {
+    const w = root.clientWidth;
+    if (w === lastW) return;   // width unchanged (e.g. mobile URL-bar scroll) — do nothing
+    lastW = w;
+    schedule();
   };
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(onMaybeWidthChange);
+    ro.observe(root);
+    return () => { if (t) clearTimeout(t); ro.disconnect(); };
+  }
+  // Fallback for browsers without ResizeObserver: width-gated window resize.
+  window.addEventListener('resize', onMaybeWidthChange);
+  return () => { if (t) clearTimeout(t); window.removeEventListener('resize', onMaybeWidthChange); };
 }
