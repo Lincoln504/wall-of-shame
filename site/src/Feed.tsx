@@ -26,6 +26,13 @@ import { s } from './styles.js';
 // session is exact. (Date.now in the browser is fine — the no-Date rule is workflow-only.)
 const SESSION_SEED = (Date.now() & 0xffffffff) >>> 0;
 
+// On a FRESH page load the very first feed card is biased to one of these high-signal
+// categories. Module-level so it fires only on the initial load — returning to the feed from
+// an entry/search within the same session (no reload) re-seeds normally (random). A user-set
+// category filter takes precedence (the first card is then naturally that category).
+const PREFERRED_FIRST = ['climate', 'gender', 'healthcare', 'immigration', 'media', 'spectacle', 'war'];
+let isFirstSeedOfPageLoad = true;
+
 const ENGAGE_PX = 6;      // movement before a press becomes a drag (taps/clicks pass through)
 const COMMIT_PX = 70;     // drag distance that commits a move
 const FLICK_V = 0.45;     // px/ms velocity that commits a move (a quick flick)
@@ -77,7 +84,15 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   // Seed / reseed the feed when the pool changes.
   createEffect(on(seq, (sequencer) => {
     setPrevStack([]);
-    setCurrent(sequencer.next(0));
+    // Fresh page load only: bias the first card to a preferred category (when the pool is the
+    // full corpus — a user filter already narrows it, so respect that).
+    let first: Finding | null = null;
+    if (isFirstSeedOfPageLoad) {
+      const pref = props.findings.filter(f => PREFERRED_FIRST.includes(f.category));
+      if (pref.length) first = pref[SESSION_SEED % pref.length]!;
+    }
+    isFirstSeedOfPageLoad = false;
+    setCurrent(first ?? sequencer.next(0));
     setNext(sequencer.next(0));
     setDragX(0);
     shownAt = performance.now();

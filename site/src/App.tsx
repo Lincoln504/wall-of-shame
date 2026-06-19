@@ -319,7 +319,7 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=13`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=14`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           Search engine of harmful English language web content.
@@ -373,11 +373,14 @@ export default function App() {
           </div>
         </Show>
         <div style={s.filterRow}>
-          <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
+          {/* blur after change so focus leaves the <select> — otherwise the feed's arrow-key
+              navigation is suppressed (it ignores keys while a SELECT is focused) and the feed
+              feels stuck right after picking a filter. */}
+          <select value={category()} onChange={e => { setCategory(e.currentTarget.value); e.currentTarget.blur(); }} style={s.select}>
             <option value="">All categories</option>
             <For each={categories()}>{cat => <option value={cat}>{categoryLabel(cat)}</option>}</For>
           </select>
-          <select value={severity()} onChange={e => setSeverity(e.currentTarget.value)} style={s.select}>
+          <select value={severity()} onChange={e => { setSeverity(e.currentTarget.value); e.currentTarget.blur(); }} style={s.select}>
             <option value="">All severities</option>
             <option value="high">High</option>
             <option value="medium">Medium</option>
@@ -467,7 +470,7 @@ export default function App() {
           </Show>
         </div>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=13`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=14`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>
