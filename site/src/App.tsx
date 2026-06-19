@@ -344,14 +344,22 @@ export default function App() {
   return (
     <div style={s.root}>
       <header style={s.header}>
+        <div style={s.downloadArea} class="download-container">
+          <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download all content ↓</button>
+          <Show when={showDownload()}>
+            <div style={s.dropdown}>
+              <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
+              <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
+            </div>
+          </Show>
+        </div>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=10`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           English language search engine of web content judged harmful.
           <span style={s.subMeta}>
-            <br />
             Semantic search in your browser powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
             <br />
             Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
@@ -373,7 +381,7 @@ export default function App() {
       <Show when={!focusId()}>
       <div style={s.controls}>
         <input type="search"
-          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by keyword or idea'}
+          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by idea or keyword'}
           value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
         <Show when={dlProgress() !== null}>
           <div style={s.modelStatusRow}>
@@ -448,19 +456,9 @@ export default function App() {
         </Show>
       </Show>
 
-      <div style={s.downloadArea} class="download-container">
-        <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download content ↓</button>
-        <Show when={showDownload()}>
-          <div style={s.dropdown}>
-            <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
-            <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
-          </div>
-        </Show>
-      </div>
-
       <footer style={s.footer}>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=10`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>
@@ -532,7 +530,7 @@ const s: Record<string, any> = {
   homeLink: { 'text-decoration': 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.7rem', 'margin-bottom': '1.25rem' },
   titleLogo: { height: '2.1rem', width: '2.1rem', display: 'block', 'flex-shrink': 0 },
   subtitle: { color: '#555', 'font-size': '1.05rem', 'font-weight': '400', 'margin': '0 auto 1.5rem', 'line-height': 1.7, 'max-width': '640px' },
-  subMeta: { 'font-size': '0.8rem', color: '#999' },
+  subMeta: { display: 'block', 'margin-top': '0.95rem', 'font-size': '0.8rem', color: '#999', 'line-height': 1.45 },
   nowrap: { 'white-space': 'nowrap' },
   inlineLink: { color: '#1a1a1a', 'text-decoration': 'underline', 'font-weight': '600' },
   stats: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
@@ -558,7 +556,7 @@ const s: Record<string, any> = {
     padding: '0.5rem 0.75rem', 'border-radius': '6px', border: '1px solid #ddd',
     background: '#fff', color: '#1a1a1a', 'font-size': '0.9rem', cursor: 'pointer', 'font-family': UI,
   },
-  downloadArea: { position: 'relative', 'text-align': 'center', 'margin-top': '3rem', 'margin-bottom': '1rem' },
+  downloadArea: { position: 'relative', 'text-align': 'center', 'margin-top': '0', 'margin-bottom': '1.75rem' },
   downloadAreaBtn: {
     padding: '0.45rem 1rem', 'border-radius': '6px', border: '1px solid #ccc',
     background: '#faf9f6', color: '#888', 'font-size': '0.8rem', cursor: 'pointer', 'font-weight': '500', 'font-family': UI,

@@ -166,10 +166,10 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   // White background fill.
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, s, s);
-  // Dark border matched to the favicon's visible thickness. The favicon strokes a
-  // fully-visible 2.5px band on a 32 box (≈7.8%), edge-aligned. Drawing inset at the same
-  // ~0.08 ratio keeps the card mark's border proportionally identical to the favicon.
-  const lw = Math.max(2, s * 0.08);
+  // Dark border matched to the favicon's visible thickness: the favicon strokes a
+  // fully-visible 4px band on a 32 box (12.5%), inset. Drawing inset here at the same
+  // 0.125 ratio keeps the card mark's border proportionally identical to the favicon.
+  const lw = Math.max(2, s * 0.125);
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = lw;
   ctx.strokeRect(x + lw / 2, y + lw / 2, s - lw, s - lw);
