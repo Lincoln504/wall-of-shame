@@ -462,10 +462,10 @@ export default function App() {
         <div style={s.footerMain}>
           <img src={`${BASE}favicon.svg?v=10`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-            <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="104" height="104" style={s.qr} />
+            <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>
           <div style={s.footerCta}>
-            <span style={s.footerCtaLabel}>Get more details at</span>
+            <span style={s.footerCtaLabel}>You're reading</span>
             <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
           </div>
         </div>
@@ -611,9 +611,9 @@ const s: Record<string, any> = {
   feedbackLine: { display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.65rem', 'flex-wrap': 'wrap', 'font-size': '0.95rem', color: '#555', 'text-align': 'center' },
   feedbackArrow: { 'font-size': '1.7rem', 'line-height': 1, color: '#1a1a1a', 'font-weight': '700' },
   feedbackEmail: { color: '#1a1a1a', 'font-weight': '700', 'text-decoration': 'underline' },
-  footerMark: { width: '104px', height: '104px', display: 'block', 'flex-shrink': 0 },
+  footerMark: { width: '72px', height: '72px', display: 'block', 'flex-shrink': 0 },
   qrLink: { 'flex-shrink': 0, 'line-height': 0 },
-  qr: { display: 'block', width: '104px', height: '104px', 'border-radius': '6px' },
+  qr: { display: 'block', width: '72px', height: '72px', 'border-radius': '6px' },
   footerCta: { display: 'flex', 'flex-direction': 'column', 'align-items': 'flex-start', gap: '0.25rem' },
   footerCtaLabel: { 'font-size': '0.85rem', color: '#999' },
   footerUrl: { 'font-size': '1.15rem', 'font-weight': '700', color: '#1a1a1a', 'text-decoration': 'none' },

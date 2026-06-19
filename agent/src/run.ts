@@ -30,6 +30,7 @@ import {
 } from './findings.js';
 import { getSessionMetrics, extractRunStats } from '@lincoln504/pi-research';
 import { runResearch, initializeResearch } from './researcher.js';
+import { classifyCategories } from './classify.js';
 import { runReview } from './reviewer.js';
 import { groundFindings } from './verify.js';
 import { getLegacySeeds } from './legacy.js';
@@ -226,6 +227,23 @@ async function mergeAndPersist(
     try {
       const addedFindings = await addFindings(store, state, cat.key, reviewed, cat.researchQuery, log, stats);
       t.added = addedFindings.length;
+      // Going-forward category correction: re-derive each NEW finding's category from its
+      // own text, so an off-topic piece this round's researcher surfaced is filed under its
+      // true category instead of the round's bucket. Guarded — any failure keeps the round
+      // category, so it can never block a round.
+      if (addedFindings.length) {
+        try {
+          const fixes = await classifyCategories(addedFindings, { batchSize: 20, concurrency: 2, log });
+          let relabeled = 0;
+          for (const af of addedFindings) {
+            const to = fixes.get(af.id);
+            if (to && to !== af.category) { af.category = to; relabeled++; }
+          }
+          if (relabeled) log(`  [classify] ${cat.key}: filed ${relabeled}/${addedFindings.length} under true category`);
+        } catch (err) {
+          log(`  [classify] ${cat.key}: skipped (${(err as Error).message})`);
+        }
+      }
     } catch (err) {
       errors++;
       t.error = String(err); t.failedStage = 'merge';
