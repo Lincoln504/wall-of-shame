@@ -136,13 +136,11 @@ export const s: Record<string, any> = {
   // Stage does NOT clip — so the desktop arrows can sit out in the margin gutter (negative
   // offsets) without being cut off. The horizontal slide is clipped by feedClip (inner).
   feedStage: { position: 'relative', padding: '0.4rem 0' },
-  // overflow: clip contains the slide; clip-margin lets the card's resting box-shadow bleed.
-  feedClip: { overflow: 'clip', 'overflow-clip-margin': '14px' },
-  // No blanket user-select:none — card text must stay highlightable. Selection is suppressed
-  // by Feed.tsx ONLY while a drag is actively engaged (inline, to avoid mid-swipe flicker).
-  feedMotion: {
-    width: '100%', 'will-change': 'transform', 'touch-action': 'pan-y',
-  },
+  // overflow: clip contains the horizontal slide; clip-margin lets a card's resting box-shadow
+  // bleed. touch-action: pan-y keeps vertical PAGE scroll working while we own horizontal drags.
+  // No blanket user-select:none — card text stays highlightable; Feed.tsx suppresses selection
+  // inline ONLY while a drag is actively engaged (avoids mid-swipe flicker).
+  feedClip: { overflow: 'clip', 'overflow-clip-margin': '14px', 'touch-action': 'pan-y' },
   feedArrowBtn: {
     position: 'absolute', top: '50%', 'z-index': 2,
     'font-family': UI, display: 'flex', 'align-items': 'center', 'justify-content': 'center',
