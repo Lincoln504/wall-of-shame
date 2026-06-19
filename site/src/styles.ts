@@ -132,7 +132,11 @@ export const s: Record<string, any> = {
   // Events) gives mouse-drag on desktop and touch-flick on mobile; clickable carousel
   // arrows overlay the card's left/right edges on both; ←/→ keys also advance. Vertical
   // page scroll is preserved (touch-action: pan-y) so the header stays reachable.
-  feedStage: { position: 'relative', overflow: 'hidden', padding: '0.4rem 0' },
+  // Stage does NOT clip — so the desktop arrows can sit out in the margin gutter (negative
+  // offsets) without being cut off. The horizontal slide is clipped by feedClip (inner).
+  feedStage: { position: 'relative', padding: '0.4rem 0' },
+  // overflow: clip contains the slide; clip-margin lets the card's resting box-shadow bleed.
+  feedClip: { overflow: 'clip', 'overflow-clip-margin': '14px' },
   feedMotion: {
     width: '100%', 'will-change': 'transform', 'touch-action': 'pan-y',
     'user-select': 'none', '-webkit-user-select': 'none', cursor: 'grab',
@@ -146,13 +150,14 @@ export const s: Record<string, any> = {
     padding: 0, 'user-select': 'none',
     transition: 'background 0.15s ease, color 0.15s ease, opacity 0.15s ease',
   },
-  feedArrowLeft: { left: '0.15rem', transform: 'translateY(-50%)' },
-  feedArrowRight: { right: '0.15rem', transform: 'translateY(-50%)' },
+  // Out in the gutter, clear of the card edge (the stage doesn't clip, so negative offsets show).
+  feedArrowLeft: { left: '-3.75rem', transform: 'translateY(-50%)' },
+  feedArrowRight: { right: '-3.75rem', transform: 'translateY(-50%)' },
   feedArrowBtnDisabled: { opacity: 0.32, cursor: 'default', 'box-shadow': 'none' },
-  feedHint: { 'font-size': '0.72rem', color: '#bbb', 'text-align': 'center', 'margin-top': '1.4rem', 'letter-spacing': '0.02em', 'font-family': UI },
-  feedSwipeHint: {
-    display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.55rem',
-    'margin-top': '1.4rem', 'font-size': '0.8rem', color: '#b0ada4', 'letter-spacing': '0.03em', 'font-family': UI,
+
+  // Section label above the content area: "Feed" vs "Results".
+  sectionLabel: {
+    'font-family': UI, 'font-size': '0.7rem', 'font-weight': '700', color: '#b0ada4',
+    'text-transform': 'uppercase', 'letter-spacing': '0.12em', 'margin-bottom': '1rem', 'text-align': 'center',
   },
-  feedSwipeChev: { 'font-size': '1.35rem', 'line-height': 1, color: '#cfccc4', 'font-weight': '400' },
 };

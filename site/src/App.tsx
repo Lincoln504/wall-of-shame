@@ -411,6 +411,7 @@ export default function App() {
 
         {/* ── Search results list (paginated) ── */}
         <Show when={viewMode() === 'search'}>
+          <div style={s.sectionLabel}>Results</div>
           <Show when={filteredList().length === 0}>
             <div style={s.empty}>{modelState() === 'loading' ? 'Loading semantic search…' : 'No entries found.'}</div>
           </Show>
@@ -426,6 +427,7 @@ export default function App() {
 
         {/* ── Feed (default) ── */}
         <Show when={viewMode() === 'feed'}>
+          <div style={s.sectionLabel}>Feed</div>
           <Show
             when={feedPool().length > 0}
             fallback={<div style={s.empty}>No entries found.</div>}
@@ -435,35 +437,33 @@ export default function App() {
         </Show>
       </Show>
 
-      {/* Footer appears only on search pages (the feed is a focused, chrome-light view). */}
-      <Show when={viewMode() === 'search'}>
-        <footer style={s.footer}>
-          <div style={s.downloadArea} class="download-container">
-            <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download all content ↓</button>
-            <Show when={showDownload()}>
-              <div style={s.dropdown}>
-                <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
-                <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
-              </div>
-            </Show>
-          </div>
-          <div style={s.footerMain}>
-            <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
-            <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-              <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
-            </a>
-            <div style={s.footerCta}>
-              <span style={s.footerCtaLabel}>You're reading</span>
-              <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+      {/* The footer (download / QR / "You're reading" / feedback) shows on every view. */}
+      <footer style={s.footer}>
+        <div style={s.downloadArea} class="download-container">
+          <button onClick={() => setShowDownload(!showDownload())} style={s.downloadAreaBtn}>Download all content ↓</button>
+          <Show when={showDownload()}>
+            <div style={s.dropdown}>
+              <button onClick={downloadCSV} style={s.dropdownItem}>CSV</button>
+              <button onClick={downloadJSON} style={s.dropdownItem}>JSON</button>
             </div>
+          </Show>
+        </div>
+        <div style={s.footerMain}>
+          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
+          <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+            <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
+          </a>
+          <div style={s.footerCta}>
+            <span style={s.footerCtaLabel}>You're reading</span>
+            <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
           </div>
-          <div style={s.feedbackLine}>
-            <span>Feedback? Article review suggestions?</span>
-            <span style={s.feedbackArrow} aria-hidden="true">→</span>
-            <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
-          </div>
-        </footer>
-      </Show>
+        </div>
+        <div style={s.feedbackLine}>
+          <span>Feedback? Article review suggestions?</span>
+          <span style={s.feedbackArrow} aria-hidden="true">→</span>
+          <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
+        </div>
+      </footer>
 
       <ShareModal
         finding={shareTarget()?.finding ?? null}

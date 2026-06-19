@@ -1,10 +1,11 @@
 // Feed.tsx — one-card-at-a-time feed (the default browsing experience).
 //
 // Side-to-side on BOTH desktop and mobile, via ONE Pointer Events implementation: a mouse
-// click-drag on desktop and a touch flick on mobile are the same gesture here. Carousel
-// arrows overlay the card edges on both; ←/→ (and ↑/↓) keys also advance. Drag only engages
-// after a few px of movement, so taps/clicks on links and the Share button pass through.
-// touch-action: pan-y keeps vertical page scroll working, so the header stays reachable.
+// click-drag on desktop and a touch flick on mobile are the same gesture here. On desktop,
+// clickable carousel arrows sit OUT in the margin gutter (not on the card); mobile is
+// swipe-only (vertical screens can't spare the width). ←/→ (and ↑/↓) keys also advance.
+// Drag only engages after a few px of movement, so taps/clicks on links and the Share button
+// pass through. touch-action: pan-y keeps vertical page scroll working.
 //
 // Card selection is delegated to the pure weighted-random sequencer (sequencer.ts), fed the
 // dwell time on the entry just left so lingering gently nudges toward similar content.
@@ -143,16 +144,22 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   onMount(() => { const dispose = onResizeRejustify(collect); onCleanup(dispose); });
 
   return (
-    <div ref={stageRef}>
-      <div style={s.feedStage}>
-        {/* Desktop only: clickable carousel arrows. Mobile is swipe-only (no width to spare). */}
-        <Show when={inputClass() === 'pointer'}>
-          <button
-            style={{ ...s.feedArrowBtn, ...s.feedArrowLeft, ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
-            onClick={prev} disabled={!canBack()} aria-label="Previous entry"
-          >←</button>
-        </Show>
+    <div ref={stageRef} style={s.feedStage}>
+      {/* Desktop only: clickable carousel arrows out in the margin gutter (not on the card). */}
+      <Show when={inputClass() === 'pointer'}>
+        <button
+          style={{ ...s.feedArrowBtn, ...s.feedArrowLeft, ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
+          onClick={prev} disabled={!canBack()} aria-label="Previous entry"
+        >{'←'}</button>
+        <button
+          style={{ ...s.feedArrowBtn, ...s.feedArrowRight }}
+          onClick={next} aria-label="Next entry"
+        >{'→'}</button>
+      </Show>
 
+      {/* Inner clip contains the horizontal slide so the outgoing card never spills over the
+          arrows/gutter. The arrows are siblings (outside this clip), so they're never clipped. */}
+      <div style={s.feedClip}>
         <div
           ref={motionEl}
           style={{ ...s.feedMotion, transform: `translateX(${dragX()}px)`, transition: sliding() ? `transform ${SLIDE_MS}ms ease` : 'none' }}
@@ -167,26 +174,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
             </Show>
           </div>
         </div>
-
-        <Show when={inputClass() === 'pointer'}>
-          <button
-            style={{ ...s.feedArrowBtn, ...s.feedArrowRight }}
-            onClick={next} aria-label="Next entry"
-          >→</button>
-        </Show>
       </div>
-
-      {/* Affordance: on touch, make the side-to-side swipe explicit (no buttons to imply it). */}
-      <Show
-        when={inputClass() === 'touch'}
-        fallback={<div style={s.feedHint}>Drag, use the side arrows, or ← → keys</div>}
-      >
-        <div class="wos-swipe-hint" style={s.feedSwipeHint}>
-          <span style={s.feedSwipeChev} aria-hidden="true">‹</span>
-          <span>swipe sideways to browse</span>
-          <span style={s.feedSwipeChev} aria-hidden="true">›</span>
-        </div>
-      </Show>
     </div>
   );
 }

@@ -1,6 +1,11 @@
 // FindingCard.tsx — the single result card, shared by the list view, the feed, and the
 // permalink view. Pure presentation: takes a finding (+ optional search score) and a
-// share handler. Extracted from App.tsx so Feed.tsx can render an identical card.
+// share handler.
+//
+// IMPORTANT: read props reactively (via the `f()` accessor below), NOT `const f =
+// props.finding`. The feed reuses ONE FindingCard instance and swaps its `finding` prop on
+// every advance; a captured const would go stale (card changes visually but shows the same
+// article). Accessing props.finding through a function keeps every field live.
 import { For, Show } from 'solid-js';
 import type { Finding } from './types.js';
 import { splitAnalysisPoints } from './format.js';
@@ -10,33 +15,33 @@ export default function FindingCard(props: {
   finding: Finding; score?: number; onShare: (f: Finding) => void;
   variant?: 'list' | 'feed';
 }) {
-  const f = props.finding;
-  const color = SEVERITY_COLOR[f.severity] ?? '#757575';
-  const date = f.foundAt ? `Found ${new Date(f.foundAt).toLocaleDateString()}` : '';
+  const f = () => props.finding;
+  const color = () => SEVERITY_COLOR[f().severity] ?? '#757575';
+  const date = () => (f().foundAt ? `Found ${new Date(f().foundAt).toLocaleDateString()}` : '');
 
   return (
     <article style={props.variant === 'feed' ? s.cardFeed : s.card}>
       <div style={s.cardHeader}>
-        <span style={{ ...s.badge, background: color }}>{f.severity}</span>
-        <span style={s.categoryBadge}>{categoryLabel(f.category)}</span>
+        <span style={{ ...s.badge, background: color() }}>{f().severity}</span>
+        <span style={s.categoryBadge}>{categoryLabel(f().category)}</span>
         <Show when={props.score !== undefined}>
           <span style={s.scoreBadge}>Match {Math.round(props.score! * 100)}%</span>
         </Show>
-        <span style={s.date}>{date}</span>
+        <span style={s.date}>{date()}</span>
       </div>
       <h3 style={s.cardTitle}>
-        <a href={f.url} target="_blank" rel="noopener noreferrer" style={s.titleLink}>{f.title}</a>
+        <a href={f().url} target="_blank" rel="noopener noreferrer" style={s.titleLink}>{f().title}</a>
       </h3>
-      <div style={s.domain}>{f.domain}</div>
-      <p class="wos-justify" style={s.summaryText}>{f.summary}</p>
+      <div style={s.domain}>{f().domain}</div>
+      <p class="wos-justify" style={s.summaryText}>{f().summary}</p>
       <div style={s.whyBadBox}>
         <div style={s.whyBadLabel}>Analysis</div>
-        <For each={splitAnalysisPoints(f.whyBad)}>
+        <For each={splitAnalysisPoints(f().whyBad)}>
           {pt => <p style={s.whyBadText}>{pt}</p>}
         </For>
       </div>
       <div style={s.actions}>
-        <button style={s.shareBtn} onClick={() => props.onShare(f)} title="Share this entry as an image">
+        <button style={s.shareBtn} onClick={() => props.onShare(f())} title="Share this entry as an image">
           Share ↗
         </button>
       </div>

@@ -35,18 +35,15 @@
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html { font-size: 16px; }
-      body { 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        background: #f9f9f7; 
-        color: #1a1a1a; 
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: #f9f9f7;
+        color: #1a1a1a;
         min-height: 100vh;
         line-height: 1.5;
+        overflow-x: hidden; /* the feed's gutter arrows sit just outside the column; never scroll horizontally */
       }
       #root { min-height: 100vh; }
-      /* Gentle horizontal nudge to signal the feed is swipe-side-to-side on touch. */
-      @keyframes wos-swipe-nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
-      .wos-swipe-hint { animation: wos-swipe-nudge 2.2s ease-in-out infinite; }
-      @media (prefers-reduced-motion: reduce) { .wos-swipe-hint { animation: none; } }
     </style>
   </head>
   <body>
