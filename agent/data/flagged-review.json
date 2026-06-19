@@ -436,6 +436,65 @@
       "flaggedBy": "sample_audit",
       "resolveAttempts": 0,
       "resolved": false
+    },
+    {
+      "url": "https://www.nutraceuticalsworld.com/npa-defending-access-and-confronting-state-level-threats/",
+      "title": "NPA Defending Access and Confronting State-Level Threats",
+      "category": "health",
+      "severity": "medium",
+      "auditResult": {
+        "id": "https://www.nutraceuticalsworld.com/npa-defending-access-and-confronting-state-level-threats/",
+        "dim1_directional": "BORDERLINE",
+        "dim1_note": "Article text is unavailable; the summary describes industry advocacy against safety regulations, which could be defensive of harm, but without the full text the article's actual framing and conclusion cannot be verified.",
+        "dim2_summary": "FAIL",
+        "dim2_note": "Article text is unavailable, so summary accuracy cannot be verified against the original content.",
+        "dim3_whybad": "FAIL",
+        "dim3_note": "Article text is unavailable, so the specific claims in whyBad cannot be verified against the original content.",
+        "dim4_quotes": "N/A",
+        "dim4_note": "Article text is unavailable, so quote fidelity cannot be checked.",
+        "dim5_format": "PASS",
+        "dim5_note": "The summary is a single paragraph, whyBad has numbered points 1-4, no markdown, no banned phrases, and point 4 is a valid Conflict of interest point.",
+        "dim6_category": "PASS",
+        "dim6_note": "The article concerns supplement industry resistance to safety regulations, fitting the health category as it involves health product oversight.",
+        "dim7_severity": "PASS",
+        "dim7_note": "Based on the summary, the article frames regulation as a threat to consumer freedom, which fits medium severity as it rationalizes resistance to safety standards without dehumanization.",
+        "overall": "FLAG_FOR_REVIEW",
+        "overall_reason": "Article text is unavailable, making it impossible to verify the directional stance, summary accuracy, or whyBad claims; the entry is ambiguous and requires human review."
+      },
+      "flaggedAt": "2026-06-19T19:43:09.857Z",
+      "flaggedBy": "sample_audit",
+      "resolveAttempts": 0,
+      "resolved": false
+    },
+    {
+      "url": "https://www.nytimes.com/2025/05/14/opinion/trump-welfare-medicaid-requirements.html",
+      "title": "Opinion: Trump Administration Officials Argue for Stricter Welfare Work Requirements",
+      "category": "current_affairs",
+      "severity": "high",
+      "auditResult": {
+        "id": "https://www.nytimes.com/2025/05/14/opinion/trump-welfare-medicaid-requirements.html",
+        "dim1_directional": "BORDERLINE",
+        "dim1_note": "Article text is unavailable; the summary describes an op-ed arguing for stricter work requirements, which could be either a defense of welfare reform or a critique depending on framing, but the summary indicates it advocates for the policy.",
+        "dim2_summary": "PASS",
+        "dim2_note": "The summary appears to accurately represent the op-ed's argument based on the available metadata, but cannot be fully verified without article text.",
+        "dim3_whybad": "PASS",
+        "dim3_note": "The whyBad points are consistent with the summary's description of the article's framing of welfare as a 'trap of dependency,' but cannot be fully verified without article text.",
+        "dim4_quotes": "N/A",
+        "dim4_note": "Article text is unavailable; quotes cannot be verified.",
+        "dim5_format": "PASS",
+        "dim5_note": "The whyBad field meets all format standards: numbered points 1-4, no markdown, no banned phrases, and the optional point carries real substance.",
+        "dim6_category": "PASS",
+        "dim6_note": "The article is a reactive op-ed about welfare policy, fitting the current_affairs category.",
+        "dim7_severity": "FAIL",
+        "dim7_note": "Based on the summary, the piece advocates for work requirements using dependency rhetoric but stops short of dehumanization, fitting the medium severity rubric rather than high.",
+        "overall": "FLAG_FOR_REVIEW",
+        "overall_reason": "Article text is unavailable, making directional assessment ambiguous, and the severity appears over-rated.",
+        "corrected_severity": "medium"
+      },
+      "flaggedAt": "2026-06-19T19:48:20.240Z",
+      "flaggedBy": "sample_audit",
+      "resolveAttempts": 0,
+      "resolved": false
     }
   ]
 }
