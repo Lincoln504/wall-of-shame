@@ -132,13 +132,19 @@ export default function App() {
   let clearedTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(clearedTimer));
 
-  // Embed the live query (debounced) whenever it or model readiness changes. Keyword
-  // results render instantly and un-debounced via hybridScores; only the semantic
-  // embedding is debounced so fast typing doesn't queue many embeddings.
+  // Load the query model ONLY when the QUERY itself changes — never as a reaction to model state.
+  // So clicking "Clear" while a query sits in the box does NOT immediately re-download/re-embed;
+  // the model only reloads on the next query change (including deleting it — an accepted minor hiccup).
+  createEffect(on(search, (sVal) => {
+    if (sVal.trim().length > 2) ensureModel();
+  }));
+
+  // Embed the live query (debounced) whenever it or model readiness changes. Keyword results render
+  // instantly and un-debounced via hybridScores; only the semantic embedding is debounced. This
+  // effect does NOT trigger a load (see above), so a clear can't bounce the model back on by itself.
   createEffect(() => {
     const q = search().trim();
     const ready = modelState() === 'ready';
-    if (q.length > 2) ensureModel();
     if (q.length <= 2) { setQueryVector(null); return; }
     if (!ready || !embedder) return;
     const handle = setTimeout(async () => {

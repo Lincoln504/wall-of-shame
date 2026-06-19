@@ -1,5 +1,5 @@
 /**
- * sample_audit.ts — Maintenance audit: review recent entries + 10% of older corpus.
+ * sample_audit.ts — Maintenance audit: review recent entries + a FIXED-SIZE older-corpus sample.
  *
  * Runs automatically from scale-loop.sh every AUDIT_INTERVAL rounds.
  * Also runnable standalone for manual spot-checks.
@@ -49,6 +49,16 @@ const MAX_ARTICLE_CHARS = 9_000;
 
 function log(msg: string) { console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`); }
 
+// Fisher-Yates shuffle (copy) — used to pick a RANDOM grounded-QA sample each audit.
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function writeAtomic(path: string, data: unknown) {
   const tmp = `${path}.${Math.random().toString(36).slice(2)}.tmp`;
   writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
@@ -91,11 +101,18 @@ if (RECENT_ARG !== undefined) {
   // them under ongoing QA.
   const olderNotGrounded = olderEntries.filter(f => !isGrounded(f));
   const olderGrounded = olderEntries.filter(isGrounded);
-  const REGROUND_CAP = Math.max(0, Number(process.env['WOS_AUDIT_REGROUND_CAP']) || 40);
-  const regroundBatch = olderNotGrounded.slice(0, REGROUND_CAP);
-  const groundedSample = olderGrounded.filter((_, i) => i % 11 === 5);
+  // FIXED-SIZE older-corpus review budget — NOT a percentage of the corpus — so audit cost/time
+  // stay constant as the corpus grows (was a corpus-proportional ~1/11 grounded sample, which
+  // scaled without bound). 150 ≈ a bit under 15% of the ~1.2k corpus at the time of this change;
+  // env-tunable. Priority: re-ground not-yet-grounded older entries (coverage trends to 100%);
+  // fill any leftover budget with a RANDOM sample of grounded entries for ongoing QA (random each
+  // audit, so QA rotates across the grounded corpus over successive runs).
+  const OLDER_SAMPLE = Math.max(0, Number(process.env['WOS_AUDIT_OLDER_SAMPLE']) || 150);
+  const regroundBatch = olderNotGrounded.slice(0, OLDER_SAMPLE);
+  const remaining = Math.max(0, OLDER_SAMPLE - regroundBatch.length);
+  const groundedSample = shuffle(olderGrounded).slice(0, remaining);
   sample = [...recentEntries, ...regroundBatch, ...groundedSample];
-  log(`Total: ${findings.length} — recent ${recentEntries.length} (all) + reground ${regroundBatch.length}/${olderNotGrounded.length} not-grounded + QA ${groundedSample.length} grounded = ${sample.length}`);
+  log(`Total: ${findings.length} — recent ${recentEntries.length} (all) + reground ${regroundBatch.length}/${olderNotGrounded.length} not-grounded + QA ${groundedSample.length} grounded (fixed older budget ${OLDER_SAMPLE}) = ${sample.length}`);
 } else {
   const STEP = STEP_ARG ? parseInt(STEP_ARG) : Math.max(1, Math.floor(findings.length / 50));
   const OFFSET = OFFSET_ARG ? parseInt(OFFSET_ARG) : 4;
