@@ -38,8 +38,8 @@ export const TUNING = {
   DWELL_MIN_AVG_MS: 1500,  // floor on the comparison baseline (avoids a tiny avg flagging everything)
   AFFINITY_DECAY: 0.55,    // per-pick decay of a category's affinity → a boost lasts ≈3 picks
   AFFINITY_CAP: 3,         // cap accumulated affinity per category (no runaway)
-  AFFINITY_GAIN: 2.2,      // weight multiplier per unit of affinity
-  AFFINITY_BOOST_MAX: 6,   // cap a candidate's affinity weight multiplier
+  AFFINITY_GAIN: 5,        // weight multiplier per unit of affinity
+  AFFINITY_BOOST_MAX: 14,  // cap a candidate's affinity weight multiplier
 };
 
 type Rng = () => number;
@@ -132,9 +132,11 @@ export function createSequencer(pool: Finding[], seed?: number): Sequencer {
       // Recently-seen suppression (soft).
       if (useRecent && recentSet.has(idOf(c))) w *= TUNING.RECENT_PENALTY;
 
-      // Independent variety-vs-consistency biases.
+      // Independent variety-vs-consistency biases. The category repeat-penalty is suspended for
+      // a category the reader is actively engaged with (has affinity) — there we WANT recurrence,
+      // so the penalty shouldn't fight the read-time boost.
       if (last) {
-        if (c.category === last.category) w *= TUNING.P_REPEAT_CAT;
+        if (c.category === last.category && !((catAff[c.category] ?? 0) > 0)) w *= TUNING.P_REPEAT_CAT;
         if (c.severity === last.severity) w *= TUNING.P_REPEAT_SEV;
       }
 

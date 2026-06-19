@@ -317,8 +317,8 @@ export default function App() {
   return (
     <div style={s.root}>
       <header style={s.header}>
-        <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
-          <h1 style={s.title}>Wall of Shame</h1>
+        <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} class="wos-home" style={s.homeLink} aria-label="Wall of Shame — home">
+          <h1 class="wos-title" style={s.title}>Wall of Shame</h1>
           <img src={`${BASE}favicon.svg?v=15`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>

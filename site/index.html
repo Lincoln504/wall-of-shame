@@ -47,6 +47,16 @@
         overflow-x: hidden; /* the feed's gutter arrows sit just outside the column; never scroll horizontally */
       }
       #root { min-height: 100vh; }
+      /* Mobile refinements (inline styles set these per-element, so !important is required to
+         override on small screens): tighter body line-spacing, and a title small enough that
+         "Wall of Shame" + the icon read as one balanced, centered unit instead of wrapping with
+         the icon stranded to the right. */
+      @media (max-width: 600px) {
+        .wos-justify { line-height: 1.5 !important; }
+        .wos-analysis { line-height: 1.55 !important; }
+        .wos-title { font-size: 2rem !important; }
+        .wos-home { gap: 0.5rem !important; }
+      }
     </style>
   </head>
   <body>
