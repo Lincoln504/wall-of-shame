@@ -261,11 +261,20 @@ export default function App() {
     onCleanup(() => window.removeEventListener('popstate', onPop));
   });
 
-  // Resolve the focused permalink to a finding (exact id, else short-prefix match).
+  // Resolve the focused permalink to a finding: exact id, else short-prefix match. The prefix
+  // resolution is ORDER-INDEPENDENT and stable as the corpus grows: if several ids ever share the
+  // prefix (vanishingly rare at 8 hex, but guaranteed eventually for an unbounded corpus, and more
+  // likely for legacy 6-hex links), resolve deterministically to the OLDEST match — the entry the
+  // link was minted for existed before any later collider — so a shared link keeps pointing at the
+  // same article forever, regardless of array order or future additions.
   const focusedFinding = createMemo<Finding | null>(() => {
     const id = focusId(); const d = data();
     if (!id || !d) return null;
-    return d.findings.find(f => f.id === id) ?? d.findings.find(f => (f.id || '').startsWith(id)) ?? null;
+    const exact = d.findings.find(f => f.id === id);
+    if (exact) return exact;
+    const matches = d.findings.filter(f => (f.id || '').startsWith(id));
+    if (matches.length === 0) return null;
+    return matches.reduce((a, b) => ((a.foundAt || '') <= (b.foundAt || '') ? a : b));
   });
   // Jump to the top whenever a permalink is opened.
   createEffect(on(focusId, (id) => { if (id) window.scrollTo({ top: 0 }); }, { defer: true }));
@@ -284,12 +293,13 @@ export default function App() {
 
   // ── Share ─────────────────────────────────────────────────────────────────────
   // The shared link is a STABLE per-entry permalink at the TOP LEVEL — /<short id> — short and
-  // clean (no /entry/ prefix). The id is assigned once and never changes, so a saved image's link
-  // resolves to the same article forever. The ids are UUIDv4; a 6-hex-char prefix is the shortest
-  // that stays collision-free past a few thousand entries (measured), and the focused view resolves
-  // it by exact-or-prefix match. Older /entry/<id> links still resolve (parseFocus handles them).
+  // clean (no /entry/ prefix). The id is assigned ONCE and never changes, and the link resolves by
+  // id (NOT position/page), so adding any number of new entries never shifts where a saved link
+  // points — no reshuffle, ever. The ids are UUIDv4; an 8-hex prefix keeps the URL short while
+  // staying collision-free for an unbounded corpus (6 hex would start colliding past a few thousand
+  // entries). Older 6-hex and /entry/<id> links still resolve (parseFocus + the oldest-match resolver).
   const handleShare = (f: Finding) => {
-    const shortId = (f.id || '').slice(0, 6) || encodeURIComponent(keyOf(f));
+    const shortId = (f.id || '').slice(0, 8) || encodeURIComponent(keyOf(f));
     const pageUrl = `${location.origin}${BASE}${shortId}`;
     setShareTarget({ finding: f, page: 1, pageUrl });
   };
