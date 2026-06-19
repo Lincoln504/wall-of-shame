@@ -5,7 +5,7 @@ import { justifyElements, onResizeRejustify } from './justify.js';
 import { splitAnalysisPoints } from './format.js';
 import ShareModal from './ShareModal.js';
 import { useVisitCounts, counterEnabled, formatCount } from './counter.js';
-import { loadDocVectors, computeHybridScores } from './semantic.js';
+import { loadDocVectors, computeHybridScores, isModelCached, clearModelCache } from './semantic.js';
 import type { QueryEmbedder } from './query-embedder.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -109,6 +109,8 @@ export default function App() {
   const [sortOrder, setSortOrder] = createSignal<'newest' | 'oldest' | 'severity'>('newest');
   const [showDownload, setShowDownload] = createSignal(false);
   const [modelState, setModelState] = createSignal<'idle' | 'loading' | 'ready'>('idle');
+  const [dlProgress, setDlProgress] = createSignal<number | null>(null); // 0–100 while downloading, else null
+  const [modelCached, setModelCached] = createSignal(false);             // weights present in Cache Storage
   const [queryVector, setQueryVector] = createSignal<Float32Array | null>(null);
   const [shareTarget, setShareTarget] = createSignal<{ finding: Finding; page: number; pageUrl: string } | null>(null);
 
@@ -125,18 +127,34 @@ export default function App() {
     loadDocVectors(BASE)
       .then(setDocVectors)
       .catch(err => console.error('Failed to load precomputed embeddings:', err));
+    // Cheap cache probe (no ML bundle) so the "cached" tick shows immediately on load.
+    isModelCached().then(setModelCached).catch(() => {});
   });
 
   // Load the (small, q8, CPU/WASM) query model on first intent to search. The whole ML
   // bundle is dynamically imported here, so visitors who never search never download it —
-  // keeping the footprint minimal and the placeholder honest.
+  // keeping the footprint minimal and the placeholder honest. A progress callback drives
+  // the download bar; a fully-cached load jumps straight to 100 and shows no bar.
   const ensureModel = () => {
     if (modelState() !== 'idle') return;
     setModelState('loading');
+    setDlProgress(modelCached() ? null : 0);
     import('./query-embedder.js')
-      .then(async m => { embedder = new m.QueryEmbedder(); await embedder.load(); })
-      .then(() => setModelState('ready'))
-      .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); });
+      .then(async m => {
+        embedder = new m.QueryEmbedder();
+        await embedder.load(p => { if (p < 100) setDlProgress(p); });
+      })
+      .then(() => { setModelState('ready'); setDlProgress(null); setModelCached(true); })
+      .catch(err => { console.error('Query model load failed:', err); setModelState('idle'); setDlProgress(null); });
+  };
+
+  // Delete the cached model weights. The in-memory model (if loaded this session) keeps
+  // working — the placeholder stays "Search…" — so search is uninterrupted; only the
+  // on-disk copy is dropped, so a future cold load re-downloads it (and typing then
+  // re-triggers ensureModel -> a fresh download from idle).
+  const clearModel = async () => {
+    await clearModelCache();
+    setModelCached(false);
   };
 
   // Embed the live query (debounced) whenever it or model readiness changes. Keyword
@@ -344,6 +362,21 @@ export default function App() {
         <input type="search"
           placeholder={modelState() === 'loading' ? 'Loading…' : 'Search by keyword or idea'}
           value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
+        <Show when={dlProgress() !== null}>
+          <div style={s.modelStatusRow}>
+            <div style={s.progressTrack}><div style={{ ...s.progressFill, width: `${dlProgress()}%` }} /></div>
+            <span style={s.progressPct}>Downloading search model… {dlProgress()}%</span>
+          </div>
+        </Show>
+        <Show when={dlProgress() === null && (modelCached() || modelState() === 'ready')}>
+          <div style={s.modelStatusRow}>
+            <span style={s.cacheTick}>✓ Search model {modelCached() ? 'cached' : 'ready'}</span>
+            <Show when={modelCached()}>
+              <button type="button" style={s.clearModelBtn} onClick={clearModel}
+                title="Delete the cached model from this browser">Clear</button>
+            </Show>
+          </div>
+        </Show>
         <div style={s.filterRow}>
           <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
             <option value="">All categories</option>
@@ -494,6 +527,12 @@ const s: Record<string, any> = {
     padding: '1.5rem 0', 'border-top': '1px solid #eee', 'border-bottom': '1px solid #eee',
   },
   filterRow: { display: 'flex', gap: '0.5rem', 'flex-wrap': 'wrap' },
+  modelStatusRow: { display: 'flex', 'align-items': 'center', gap: '0.6rem', 'min-height': '1.1rem' },
+  progressTrack: { flex: '1 1 auto', height: '4px', background: '#eceae4', 'border-radius': '999px', overflow: 'hidden' },
+  progressFill: { height: '100%', background: '#1a1a1a', 'border-radius': '999px', transition: 'width 0.2s ease' },
+  progressPct: { 'font-size': '0.72rem', color: '#888', 'white-space': 'nowrap', 'flex-shrink': 0 },
+  cacheTick: { 'font-size': '0.72rem', color: '#1a7f37', 'font-weight': '600' },
+  clearModelBtn: { 'font-family': UI, 'font-size': '0.7rem', color: '#999', background: 'none', border: 'none', padding: '0', cursor: 'pointer', 'text-decoration': 'underline' },
   searchInput: {
     width: '100%', 'box-sizing': 'border-box', padding: '0.75rem 1.1rem', 'border-radius': '8px',
     border: '1.5px solid #ccc', background: '#fff', color: '#1a1a1a', 'font-size': '1.05rem',

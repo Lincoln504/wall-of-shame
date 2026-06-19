@@ -33,11 +33,32 @@ export class QueryEmbedder {
   private model: any = null;
   private loadPromise: Promise<void> | null = null;
 
-  load(): Promise<void> {
+  /**
+   * Load the tokenizer + model. `onProgress` (0–100) reports overall download progress,
+   * aggregated across all weight files; it fires only while bytes are being fetched from
+   * the network (a fully-cached load jumps straight to 100). Safe to call repeatedly —
+   * the underlying promise is memoised.
+   */
+  load(onProgress?: (pct: number) => void): Promise<void> {
     if (!this.loadPromise) {
+      const files: Record<string, { loaded: number; total: number }> = {};
+      const progress_callback = onProgress
+        ? (data: any) => {
+            if (data?.status === 'progress' && data.file && data.total) {
+              files[data.file] = { loaded: data.loaded ?? 0, total: data.total };
+              let loaded = 0, total = 0;
+              for (const k in files) { loaded += files[k].loaded; total += files[k].total; }
+              if (total > 0) onProgress(Math.min(99, Math.round((loaded / total) * 100)));
+            }
+          }
+        : undefined;
+      const opts = progress_callback ? { progress_callback } : {};
       this.loadPromise = (async () => {
-        this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-        this.model = await AutoModel.from_pretrained(MODEL_ID, { dtype: DTYPE, device: 'wasm' } as any);
+        this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, opts as any);
+        this.model = await AutoModel.from_pretrained(
+          MODEL_ID, { dtype: DTYPE, device: 'wasm', ...opts } as any,
+        );
+        onProgress?.(100);
       })();
     }
     return this.loadPromise;

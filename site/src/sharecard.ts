@@ -358,7 +358,10 @@ export async function renderShareCard(opts: ShareCardOptions): Promise<Blob> {
   ctx.fillStyle = C.ink;                          // full-strength black — the call to action
   ctx.fillText(link, textX, centerY + 36);
 
+  // Export as lossy WebP (quality 0.7). For this flat-color + text + thumbnail card it keeps
+  // text/edges crisp while aggressively crushing color, at a fraction of the PNG byte size.
+  // Native canvas WebP encoding — zero dependencies, no COOP/COEP headers required.
   return await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/webp', 0.7),
   );
 }

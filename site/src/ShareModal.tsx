@@ -77,9 +77,9 @@ export default function ShareModal(props: Props) {
   // de-dupes), so 4 is plenty.
   const fileName = () => {
     const tag = (props.finding?.id || '').replace(/[^a-f0-9]/gi, '').slice(0, 4);
-    return tag ? `wos-${tag}.png` : 'wos.png';
+    return tag ? `wos-${tag}.webp` : 'wos.webp';
   };
-  const fileOf = (b: Blob) => new File([b], fileName(), { type: 'image/png' });
+  const fileOf = (b: Blob) => new File([b], fileName(), { type: 'image/webp' });
 
   // Capability check for the native file-share path (mobile + Web-Share-capable desktops).
   const canWebShare = () => {

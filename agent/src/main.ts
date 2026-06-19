@@ -39,6 +39,41 @@ const concurrency = Math.min(numArg('--concurrency', 4), CATEGORY_COUNT);
 const dryRun = args.includes('--dry-run');
 const commit = !args.includes('--no-commit');
 
+// ── Soft category balancing ─────────────────────────────────────────────────────
+// The corpus fills faster in content-rich categories (economics, healthcare, labor)
+// than in thin ones. We do NOT enforce a strict ratio — natural over-representation is
+// valid — but the most-populated categories are researched LESS often: each --all round
+// drops the current top-N categories with probability THROTTLE. Over many rounds this
+// gently down-weights the leaders without ever starving anything. Disable with
+// PI_RESEARCH_TOP_THROTTLE=0; tune the count with --throttle-top N (default 4).
+const TOP_N = numArg('--throttle-top', 4);
+const THROTTLE = (() => {
+  const v = parseFloat(process.env['PI_RESEARCH_TOP_THROTTLE'] ?? '0.5');
+  return Number.isFinite(v) ? Math.min(Math.max(v, 0), 1) : 0.5;
+})();
+
+function throttleSaturated<T extends { key: string }>(
+  cats: T[],
+  findings: { category: string }[],
+  log: (m: string) => void,
+): T[] {
+  if (THROTTLE <= 0 || cats.length <= TOP_N) return cats;
+  const counts: Record<string, number> = {};
+  for (const f of findings) counts[f.category] = (counts[f.category] || 0) + 1;
+  const saturated = new Set(
+    cats.map(c => c.key)
+      .sort((a, b) => (counts[b] || 0) - (counts[a] || 0))
+      .slice(0, TOP_N),
+  );
+  // Each saturated category is independently kept with probability (1 - THROTTLE).
+  const kept = cats.filter(c => !saturated.has(c.key) || Math.random() >= THROTTLE);
+  const dropped = cats.filter(c => !kept.includes(c));
+  if (dropped.length) {
+    log(`category throttle: down-weighting top-${TOP_N} saturated — skipping [${dropped.map(c => c.key).join(', ')}] this round (p=${THROTTLE})`);
+  }
+  return kept.length ? kept : cats; // never return an empty round
+}
+
 // ── Logging ───────────────────────────────────────────────────────────────────
 
 const ts = () => new Date().toISOString().slice(11, 19);
@@ -62,7 +97,10 @@ async function main() {
     // Seed mode always covers all categories with curated links; discovery
     // rotates through the cursor unless --all is given.
     const startIndex = (all || seed) ? 0 : state.categoryIndex;
-    const categories = (all || seed) ? CATEGORIES : getBatch(startIndex, batchSize);
+    let categories = (all || seed) ? CATEGORIES : getBatch(startIndex, batchSize);
+    // Apply the soft top-N throttle to discovery --all rounds only (seed re-evaluation
+    // must cover every category; partial cursor rounds already rotate coverage).
+    if (all && !seed) categories = throttleSaturated(categories, store.findings, log);
 
     if (dryRun) {
       log('DRY-RUN: skipping research — no API calls will be made');

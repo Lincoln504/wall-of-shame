@@ -12,6 +12,37 @@
  */
 export const MODEL_ID = 'onnx-community/granite-embedding-small-english-r2-ONNX';
 
+// ── Query-model cache management (Cache Storage) ─────────────────────────────────
+// transformers.js stores model weights in the 'transformers-cache' Cache Storage bucket
+// (env.useBrowserCache). These helpers inspect/clear ONLY this model's entries WITHOUT
+// importing the heavy ML bundle, so the search-bar "cached" indicator and the
+// "clear model" button stay cheap (no 900 KB download just to check a checkbox).
+const TRANSFORMERS_CACHE = 'transformers-cache';
+
+/** True if the query model's weights are already in the browser cache (instant load). */
+export async function isModelCached(): Promise<boolean> {
+  if (typeof caches === 'undefined') return false;
+  try {
+    const cache = await caches.open(TRANSFORMERS_CACHE);
+    const keys = await cache.keys();
+    return keys.some(req => req.url.includes(MODEL_ID));
+  } catch { return false; }
+}
+
+/** Delete this model's cached weights. Returns how many cache entries were removed.
+ *  The in-memory model (if already loaded this session) keeps working; only the on-disk
+ *  copy is removed, so a future cold load re-downloads it. */
+export async function clearModelCache(): Promise<number> {
+  if (typeof caches === 'undefined') return 0;
+  try {
+    const cache = await caches.open(TRANSFORMERS_CACHE);
+    const keys = await cache.keys();
+    const mine = keys.filter(req => req.url.includes(MODEL_ID));
+    await Promise.all(mine.map(req => cache.delete(req)));
+    return mine.length;
+  } catch { return 0; }
+}
+
 // ── Hybrid scoring (keyword + semantic), mirroring pi-research's retrieval ────────
 // pi-research fuses a BM25 lexical list and a cosine vector list with Reciprocal Rank
 // Fusion (k=60), ranks-not-scores. We do the same client-side over precomputed vectors,
