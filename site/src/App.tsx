@@ -457,13 +457,20 @@ export default function App() {
       </div>
 
       <footer style={s.footer}>
-        <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.footerMark} />
-        <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
-          <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="104" height="104" style={s.qr} />
-        </a>
-        <div style={s.footerCta}>
-          <span style={s.footerCtaLabel}>Get more details at</span>
-          <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+        <div style={s.footerMain}>
+          <img src={`${BASE}favicon.svg?v=9`} alt="" aria-hidden="true" style={s.footerMark} />
+          <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+            <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="104" height="104" style={s.qr} />
+          </a>
+          <div style={s.footerCta}>
+            <span style={s.footerCtaLabel}>Get more details at</span>
+            <a href="https://wallofshame.io/" style={s.footerUrl}>wallofshame.io</a>
+          </div>
+        </div>
+        <div style={s.feedbackLine}>
+          <span>Feedback? Article review suggestions?</span>
+          <span style={s.feedbackArrow} aria-hidden="true">→</span>
+          <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
         </div>
       </footer>
 
@@ -597,7 +604,11 @@ const s: Record<string, any> = {
   pageEllipsis: { color: '#bbb', padding: '0 0.2rem' },
   backRow: { 'margin-bottom': '1.5rem' },
   backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
-  footer: { padding: '8rem 0 4rem', display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footer: { padding: '8rem 0 4rem', display: 'flex', 'flex-direction': 'column', 'align-items': 'center', gap: '2.75rem', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footerMain: { display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap' },
+  feedbackLine: { display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '0.65rem', 'flex-wrap': 'wrap', 'font-size': '0.95rem', color: '#555', 'text-align': 'center' },
+  feedbackArrow: { 'font-size': '1.7rem', 'line-height': 1, color: '#1a1a1a', 'font-weight': '700' },
+  feedbackEmail: { color: '#1a1a1a', 'font-weight': '700', 'text-decoration': 'underline' },
   footerMark: { width: '104px', height: '104px', display: 'block', 'flex-shrink': 0 },
   qrLink: { 'flex-shrink': 0, 'line-height': 0 },
   qr: { display: 'block', width: '104px', height: '104px', 'border-radius': '6px' },
