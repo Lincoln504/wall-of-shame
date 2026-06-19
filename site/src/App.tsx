@@ -340,7 +340,7 @@ export default function App() {
       <Show when={!focusId()}>
       <div style={s.controls}>
         <input type="search"
-          placeholder={modelState() === 'loading' ? 'Loading search model…' : 'Search entries…'}
+          placeholder={modelState() === 'loading' ? 'Loading…' : 'Search library by keyword or idea'}
           value={search()} onFocus={ensureModel} onInput={e => setSearch(e.currentTarget.value)} style={s.searchInput} />
         <div style={s.filterRow}>
           <select value={category()} onChange={e => setCategory(e.currentTarget.value)} style={s.select}>
@@ -423,7 +423,7 @@ export default function App() {
             <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
             {' '}· Data updated via GitHub Actions
           </div>
-          <a href="https://lincoln504.github.io/wall-of-shame/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+          <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${import.meta.env.BASE_URL}qr.svg`} alt="QR code linking to Wall of Shame" width="80" height="80" style={s.qr} />
           </a>
         </footer>
