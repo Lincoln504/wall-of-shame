@@ -322,7 +322,7 @@ export default function App() {
           <img src={`${BASE}favicon.svg?v=12`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
-          English language search engine of web content judged harmful.
+          Search engine of harmful English language web content.
           <span style={s.subMeta}>
             Information gathered with <span style={s.nowrap}>gemma-4-26b-a4b-it</span> and <span style={s.nowrap}>deepseek-v4-pro</span>.
             <br />
