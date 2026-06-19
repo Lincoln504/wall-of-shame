@@ -9,35 +9,47 @@ interface Props {
 }
 
 /**
- * Share modal. Two device-appropriate paths, chosen by FEATURE DETECTION (never
- * user-agent sniffing), using only W3C-standard browser APIs — no third-party
- * libraries, so no licensing concerns:
+ * Share modal — image + buttons only (no header, no captions).
  *
- *  - MOBILE / anything that can share files (navigator.canShare({files})) → the
- *    native OS share sheet with the generated PNG (Messages/SMS, Instagram, X…).
- *  - DESKTOP / no file sharing → share the LINK by EMAIL via a prefilled mailto:
- *    (the web-native "email API"), opened in the user's mail client, plus Copy link.
+ * The SHARE button picks its path by CAPABILITY, not by guessing the device:
+ *  - If the browser supports the Web Share API for files (navigator.canShare({files})),
+ *    the button opens the native OS share sheet with the generated PNG. This works on
+ *    mobile AND on Web-Share-capable desktops (Chrome/Edge) — wherever it works, we use it.
+ *  - Otherwise (e.g. desktop Firefox) it falls back to sharing the LINK by EMAIL via a
+ *    prefilled mailto:. A runtime try/catch ALSO falls back if share() throws/blocks, so
+ *    an unsupported or denied share never dead-ends.
  *
- * The entry's deep link rides in the share text / email body and is printed in the
- * image footer. Built on the native <dialog> for a free focus-trap, Esc-to-close,
- * and backdrop; centered explicitly so it can't drift to a corner.
+ * Copy link shows everywhere. Download shows on DESKTOP only (mobile users save straight
+ * from the share sheet). The entry's stable permalink rides in the share text / email body
+ * and is printed in the image footer. Built on the native <dialog> for a free focus-trap,
+ * Esc-to-close and backdrop; centered explicitly so it can't drift to a corner.
  */
+
+/** Coarse mobile/tablet detection — only used to decide whether to show Download. */
+function isMobileDevice(): boolean {
+  const uaData = (navigator as any).userAgentData;
+  if (uaData && typeof uaData.mobile === 'boolean') return uaData.mobile;
+  const ua = navigator.userAgent || '';
+  const iPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  return /Android|iPhone|iPod|iPad|Mobile/i.test(ua) || iPadOS;
+}
+
 export default function ShareModal(props: Props) {
   let dialogRef: HTMLDialogElement | undefined;
   const [blob, setBlob] = createSignal<Blob | null>(null);
   const [imgUrl, setImgUrl] = createSignal('');
   const [status, setStatus] = createSignal('');
   const [generating, setGenerating] = createSignal(false);
+  const mobile = isMobileDevice();
 
   // The live object URL is held in a PLAIN variable — never read it reactively, or the
-  // generating effect would depend on imgUrl and re-run, revoking each fresh blob (the
-  // bug that left the preview stuck on "…").
+  // generating effect would depend on imgUrl and re-run, revoking each fresh blob.
   let objUrl = '';
   const revoke = () => { if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = ''; } };
   onCleanup(revoke);
 
-  // Open + (re)generate ONLY when the finding changes (on() scopes the dependency so the
-  // effect never re-fires on its own imgUrl/status writes).
+  // Open + (re)generate ONLY when the finding changes. The blob is ready before the user
+  // can click Share, so the share handler never awaits work that would drop user activation.
   createEffect(on(() => props.finding, (f) => {
     if (!f) return;
     if (dialogRef && !dialogRef.open) dialogRef.showModal();
@@ -62,8 +74,8 @@ export default function ShareModal(props: Props) {
   const flash = (m: string) => { setStatus(m); window.setTimeout(() => setStatus(s => (s === m ? '' : s)), 2500); };
   const fileOf = (b: Blob) => new File([b], 'wall-of-shame.png', { type: 'image/png' });
 
-  // Feature-detect the file-sharing path (mobile). Drives which buttons show.
-  const canShareImage = () => {
+  // Capability check for the native file-share path (mobile + Web-Share-capable desktops).
+  const canWebShare = () => {
     const b = blob(); if (!b) return false;
     try { return !!(navigator as any).canShare?.({ files: [fileOf(b)] }); }
     catch { return false; }
@@ -76,20 +88,25 @@ export default function ShareModal(props: Props) {
     return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  // Mobile: native share sheet with the image. Must run inside this click (user activation).
-  const shareImage = async () => {
-    const b = blob(); if (!b) return;
-    const file = fileOf(b);
-    try { await (navigator as any).share({ files: [file], title: props.finding?.title, text: shareText() }); }
-    catch (e: any) { if (e?.name !== 'AbortError') flash('Share failed — try Copy link.'); }
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(props.pageUrl); flash('Link copied.'); }
+    catch { flash('Copy failed.'); }
   };
-  const copyImage = async () => {
-    const b = blob(); if (!b) return;
+
+  // Native share sheet with the image. try/catch detects an unsupported/blocked share at
+  // runtime (the user's "use a try/catch for whether it's supported") and falls back to
+  // copying the link, so the button never silently fails.
+  const shareNative = async () => {
+    const b = blob(); if (!b) { flash('Still generating…'); return; }
     try {
-      await (navigator as any).clipboard.write([new ClipboardItem({ 'image/png': b })]);
-      flash('Image copied — paste into a post or message.');
-    } catch { flash('Copy image unsupported — use Download.'); }
+      await (navigator as any).share({ files: [fileOf(b)], title: props.finding?.title, text: shareText() });
+    } catch (e: any) {
+      if (e?.name === 'AbortError') return;              // user dismissed the sheet — fine
+      flash('Share unavailable — link copied instead.');
+      try { await navigator.clipboard.writeText(props.pageUrl); } catch { /* best effort */ }
+    }
   };
+
   const downloadImage = () => {
     const b = blob(); if (!b) return;
     const u = URL.createObjectURL(b);
@@ -97,10 +114,6 @@ export default function ShareModal(props: Props) {
     a.href = u; a.download = 'wall-of-shame.png';
     a.click(); URL.revokeObjectURL(u);
     flash('Downloaded.');
-  };
-  const copyLink = async () => {
-    try { await navigator.clipboard.writeText(props.pageUrl); flash('Link copied.'); }
-    catch { flash('Copy failed.'); }
   };
 
   return (
@@ -110,10 +123,7 @@ export default function ShareModal(props: Props) {
       onClose={() => props.onClose()}
       onClick={e => { if (e.target === dialogRef) close(); }}
     >
-      <div style={st.head}>
-        <span style={st.title}>Share entry</span>
-        <button style={st.x} onClick={close} aria-label="Close">✕</button>
-      </div>
+      <button style={st.x} onClick={close} aria-label="Close">✕</button>
 
       <div style={st.preview}>
         <Show when={imgUrl()} fallback={<div style={st.skeleton}>{generating() ? 'Generating image…' : (status() || '…')}</div>}>
@@ -121,25 +131,18 @@ export default function ShareModal(props: Props) {
         </Show>
       </div>
 
-      <Show
-        when={canShareImage()}
-        fallback={
-          <>
-            <div style={st.row}>
-              <a style={{ ...st.btn, ...st.primary }} href={mailtoHref()} target="_blank" rel="noopener noreferrer" onClick={() => flash('Opening your email…')}>Email link</a>
-              <button style={st.btn} disabled={!props.pageUrl} onClick={copyLink}>Copy link</button>
-              <button style={st.btn} disabled={!blob()} onClick={downloadImage}>Download image</button>
-            </div>
-            <p style={st.note}>On desktop we share the link by email; the image is yours to download.</p>
-          </>
-        }
-      >
-        <div style={st.row}>
-          <button style={{ ...st.btn, ...st.primary }} disabled={!blob()} onClick={shareImage}>Share Link</button>
-          <button style={st.btn} disabled={!props.pageUrl} onClick={copyLink}>Copy link</button>
-        </div>
-        <p style={st.note}>Opens your phone's share sheet to Messages, Instagram, X, and others. The link to this entry is in the image.</p>
-      </Show>
+      <div style={st.row}>
+        <Show
+          when={canWebShare()}
+          fallback={<a style={{ ...st.btn, ...st.primary }} href={mailtoHref()} target="_blank" rel="noopener noreferrer" onClick={() => flash('Opening your email…')}>Email link</a>}
+        >
+          <button style={{ ...st.btn, ...st.primary }} disabled={!blob()} onClick={shareNative}>Share</button>
+        </Show>
+        <button style={st.btn} disabled={!props.pageUrl} onClick={copyLink}>Copy link</button>
+        <Show when={!mobile}>
+          <button style={st.btn} disabled={!blob()} onClick={downloadImage}>Download</button>
+        </Show>
+      </div>
 
       <Show when={status()}><div style={st.status}>{status()}</div></Show>
     </dialog>
@@ -154,15 +157,12 @@ const st: Record<string, any> = {
     'box-shadow': '0 20px 60px rgba(0,0,0,0.3)', color: '#1a1a1a',
     'font-family': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
   },
-  head: { display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '0.9rem' },
-  title: { 'font-weight': '700', 'font-size': '1.05rem' },
-  x: { border: 'none', background: 'none', 'font-size': '1.1rem', cursor: 'pointer', color: '#888', padding: '0.2rem 0.4rem' },
+  x: { position: 'absolute', top: '0.5rem', right: '0.6rem', border: 'none', background: 'none', 'font-size': '1.05rem', cursor: 'pointer', color: '#bbb', 'line-height': 1, padding: '0.2rem 0.35rem', 'z-index': 1 },
   preview: { display: 'flex', 'justify-content': 'center', 'margin-bottom': '1rem' },
   img: { width: '240px', 'max-width': '100%', height: 'auto', 'border-radius': '8px', border: '1px solid #eee', 'box-shadow': '0 4px 16px rgba(0,0,0,0.12)' },
   skeleton: { width: '240px', height: '300px', display: 'flex', 'align-items': 'center', 'justify-content': 'center', background: '#f4f3ef', 'border-radius': '8px', color: '#999', 'font-size': '0.85rem' },
   row: { display: 'flex', gap: '0.5rem', 'justify-content': 'center', 'flex-wrap': 'wrap' },
   btn: { 'font-family': 'Inter, sans-serif', 'font-size': '0.85rem', 'font-weight': '600', padding: '0.55rem 1rem', 'border-radius': '8px', border: '1px solid #ddd', background: '#fff', color: '#1a1a1a', cursor: 'pointer', 'text-decoration': 'none', display: 'inline-block' },
   primary: { background: '#1a1a1a', color: '#fff', 'border-color': '#1a1a1a' },
-  note: { 'font-size': '0.72rem', color: '#999', 'line-height': 1.5, 'margin-top': '0.9rem', 'text-align': 'center' },
-  status: { 'font-size': '0.78rem', color: '#1a7f37', 'text-align': 'center', 'margin-top': '0.5rem', 'font-weight': '600' },
+  status: { 'font-size': '0.78rem', color: '#1a7f37', 'text-align': 'center', 'margin-top': '0.7rem', 'font-weight': '600' },
 };

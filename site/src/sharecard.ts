@@ -156,40 +156,29 @@ function layoutSummary(ctx: CanvasRenderingContext2D, text: string, availH: numb
   return { height: 0, draw: () => {} };
 }
 
-// Draw the Wall of Shame mark — a hollow-bordered square with a canvas-drawn pin
-// (matches the favicon: white background, dark outlined square, dark pin tilted 40°
-// with tip at center) — at (x, y) with side `s`.
+// Draw the Wall of Shame mark — matches the favicon exactly: a white square with a thick
+// dark border and the 📌 push-pin emoji tilted 25°. At (x, y) with side `s`. The emoji is
+// rendered with fillText (color emoji from the system font) so the card icon is identical
+// to the browser-tab favicon. Wrapped in save/restore so the temporary center alignment
+// and middle baseline don't leak into the footer text drawn afterwards.
 function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
-  // White background fill inside the box area.
+  // White background fill.
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, s, s);
-  // Dark square border (hollow box).
+  // Thick dark border (the favicon uses stroke-width 8 on a 32 box; drawn fully inset here
+  // so it stays crisp instead of clipping at the canvas edge).
+  const lw = Math.max(2, s * 0.16);
   ctx.strokeStyle = C.ink;
-  ctx.lineWidth = Math.max(1, s * 0.08);
-  ctx.strokeRect(x + ctx.lineWidth / 2, y + ctx.lineWidth / 2, s - ctx.lineWidth, s - ctx.lineWidth);
-  // Push-pin: tip fixed at box center, tilted 40°.
-  const cx = x + s / 2;
-  const cy = y + s / 2;
-  const angle = 40 * Math.PI / 180;
-  // Head circle: center offset = s*(11/32) above pivot in unrotated space.
-  const headOffset = s * (11 / 32);
-  const headR = s * (7 / 32);
-  // Shaft: base half-width s*(4/32), base Y offset s*(5/32) above pivot.
-  const shaftHW = s * (4 / 32);
-  const shaftBaseY = s * (5 / 32);
+  ctx.lineWidth = lw;
+  ctx.strokeRect(x + lw / 2, y + lw / 2, s - lw, s - lw);
+  // 📌 emoji, tilted 25° about the box center (matches the favicon's rotate(25)).
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.fillStyle = C.ink;
-  ctx.beginPath();
-  ctx.arc(0, -headOffset, headR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-shaftHW, -shaftBaseY);
-  ctx.lineTo(shaftHW, -shaftBaseY);
-  ctx.lineTo(0, 0);
-  ctx.closePath();
-  ctx.fill();
+  ctx.translate(x + s / 2, y + s / 2);
+  ctx.rotate(25 * Math.PI / 180);
+  ctx.font = `${Math.round(s * 0.58)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('📌', 0, Math.round(s * 0.06));
   ctx.restore();
 }
 

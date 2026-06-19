@@ -401,11 +401,16 @@ export default function App() {
       </div>
 
       <footer style={s.footer}>
-        English language search engine of web content judged harmful.
-        {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
-        {' '}Made with{' '}
-        <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
-        {' '}· Data updated via GitHub Actions
+        <div style={s.footerText}>
+          English language search engine of web content judged harmful.
+          {' '}Powered by IBM <span style={s.nowrap}>granite-embedding-small-english-r2</span>.
+          {' '}Made with{' '}
+          <a href="https://github.com/Lincoln504/pi-research" style={s.footerLink} target="_blank" rel="noopener noreferrer">pi-research</a>
+          {' '}· Data updated via GitHub Actions
+        </div>
+        <a href="https://lincoln504.github.io/wall-of-shame/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
+          <img src={`${import.meta.env.BASE_URL}qr.svg`} alt="QR code linking to Wall of Shame" width="80" height="80" style={s.qr} />
+        </a>
       </footer>
 
       <ShareModal
@@ -530,6 +535,9 @@ const s: Record<string, any> = {
   pageEllipsis: { color: '#bbb', padding: '0 0.2rem' },
   backRow: { 'margin-bottom': '1.5rem' },
   backLink: { 'font-family': UI, 'font-size': '0.85rem', 'font-weight': '600', color: '#666', background: 'none', border: 'none', padding: '0', cursor: 'pointer' },
-  footer: { padding: '8rem 0 4rem', 'text-align': 'center', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footer: { padding: '8rem 0 4rem', display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '1.5rem', 'flex-wrap': 'wrap', 'font-size': '0.8rem', color: '#ccc', 'border-top': '1px solid #eee', 'margin-top': '4rem' },
+  footerText: { 'max-width': '420px', 'text-align': 'left', 'line-height': 1.6 },
   footerLink: { color: '#bbb', 'text-decoration': 'underline' },
+  qrLink: { 'flex-shrink': 0, 'line-height': 0 },
+  qr: { display: 'block', width: '80px', height: '80px', 'border-radius': '6px' },
 };
