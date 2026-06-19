@@ -319,7 +319,7 @@ export default function App() {
       <header style={s.header}>
         <a href={`${BASE}page/1`} onClick={e => { e.preventDefault(); goHome(); }} style={s.homeLink} aria-label="Wall of Shame — home">
           <h1 style={s.title}>Wall of Shame</h1>
-          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.titleLogo} />
+          <img src={`${BASE}favicon.svg?v=12`} alt="" aria-hidden="true" style={s.titleLogo} />
         </a>
         <p style={s.subtitle}>
           English language search engine of web content judged harmful.
@@ -467,7 +467,7 @@ export default function App() {
           </Show>
         </div>
         <div style={s.footerMain}>
-          <img src={`${BASE}favicon.svg?v=11`} alt="" aria-hidden="true" style={s.footerMark} />
+          <img src={`${BASE}favicon.svg?v=12`} alt="" aria-hidden="true" style={s.footerMark} />
           <a href="https://wallofshame.io/" target="_blank" rel="noopener noreferrer" style={s.qrLink} aria-label="Scan to open Wall of Shame">
             <img src={`${BASE}qr.svg`} alt="QR code linking to Wall of Shame" width="72" height="72" style={s.qr} />
           </a>
@@ -477,7 +477,7 @@ export default function App() {
           </div>
         </div>
         <div style={s.feedbackLine}>
-          <span>Feedback? Article review suggestions?</span>
+          <span>Thoughts? Article review suggestions?</span>
           <span style={s.feedbackArrow} aria-hidden="true">→</span>
           <a href="mailto:feedback@wallofshame.io" style={s.feedbackEmail}>feedback@wallofshame.io</a>
         </div>
