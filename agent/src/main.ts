@@ -61,6 +61,17 @@ const THROTTLE = (() => {
   return Number.isFinite(v) ? Math.min(Math.max(v, 0), 1) : 0.5;
 })();
 
+// ── Underpopulated follow-up pass ─────────────────────────────────────────────────
+// After the main round, give the K thinnest categories a SECOND research pass IN THE SAME ROUND,
+// run SEQUENTIALLY (never simultaneously — global dedup/findings.json must not be written by two
+// passes at once), so the laggards keep pace toward a healthy count instead of trailing the
+// high-yield leaders. "Healthy" is absolute, not proportional: as the corpus grows we don't care
+// whether a category holds an even share, only that it keeps gaining a good amount. BOOST_MIN_VIABLE
+// skips structurally-residual categories (a handful of entries the classifier rarely assigns) —
+// a second pass can't grow those, so it would just waste the slot.
+const BOOST_BOTTOM = Math.max(0, Number(process.env['WOS_BOOST_BOTTOM'] ?? 4));      // how many thinnest categories get a follow-up pass
+const BOOST_MIN_VIABLE = Math.max(0, Number(process.env['WOS_BOOST_MIN_VIABLE'] ?? 12)); // skip categories below this (residual, can't grow)
+
 function throttleSaturated<T extends { key: string }>(
   cats: T[],
   findings: { category: string }[],
@@ -129,6 +140,28 @@ async function main() {
       log(`  ${c.key.padEnd(12)} +${c.added}${c.error ? `  [ERROR] ${c.error.slice(0, 80)}` : ''}`);
     }
     hr();
+
+    // ── Underpopulated follow-up pass (discovery --all only) ──
+    // Sequentially (never in parallel with the main round — global dedup must stay correct) give the
+    // thinnest VIABLE categories a second research pass this round, so they keep pace.
+    if (all && !seed && BOOST_BOTTOM > 0) {
+      const fresh = loadFindings(); // reflect what the main round just added
+      const counts: Record<string, number> = {};
+      for (const fnd of fresh.findings) counts[fnd.category] = (counts[fnd.category] || 0) + 1;
+      const boost = [...CATEGORIES]
+        .filter(c => (counts[c.key] || 0) >= BOOST_MIN_VIABLE) // skip residual cats a 2nd pass can't grow
+        .sort((a, b) => (counts[a.key] || 0) - (counts[b.key] || 0))
+        .slice(0, BOOST_BOTTOM);
+      if (boost.length) {
+        log(`underpopulated follow-up: second pass for ${boost.map(c => `${c.key}(${counts[c.key] || 0})`).join(', ')}`);
+        const r2 = await runRound({ categories: boost, concurrency, log, commit, startIndex });
+        log(`follow-up complete. +${r2.totalAdded} new findings.`);
+        for (const c of r2.perCategory) {
+          log(`  ${c.key.padEnd(12)} +${c.added}${c.error ? `  [ERROR] ${c.error.slice(0, 80)}` : ''}`);
+        }
+        hr();
+      }
+    }
   } catch (err) {
     console.error('Fatal agent error:', err);
     process.exitCode = 1;
