@@ -70,6 +70,14 @@ A) IF ARTICLE TEXT is provided (not UNAVAILABLE):
    5. VALIDITY: if the ARTICLE TEXT does NOT support this entry belonging on a Wall of Shame — it argues the opposite of harmful framing — set "valid": false.
 B) IF ARTICLE TEXT is UNAVAILABLE: apply the directional test to the DRAFT SUMMARY and DRAFT ANALYSIS. Default to "valid": false — set valid:true and proceed to standards enforcement ONLY IF the draft clearly and unambiguously describes a piece that DEFENDS or NORMALIZES harm (i.e., it argues the harmful thing is justified, natural, or good). If there is any doubt — if the draft reads like journalism, research, or criticism — set valid:false.
 
+CHARACTERIZATION FIDELITY — apply to EVERY entry. The analysis must describe the article's ACTUAL argument and ONLY the stance it really takes. Do NOT inflate a narrow or technocratic point into a sweeping ideological one: if the draft claims the piece treats something as "natural", "necessary", "inevitable", or "good for everyone", or says it defends a position the article never actually states, rewrite it to match what the piece truly argues. (Example: an op-ed arguing a specific tax is INEFFECTIVE and proposing other taxes instead is NOT the same as arguing "wealth is sacred" or "billionaires are good for the economy" — describe the real, narrower argument.) State honestly what the piece genuinely does that is harmful, and do NOT import harm it does not commit. A milder, accurate description always beats an exaggerated one.
+
+SEVERITY — set "severity" for EVERY entry by RE-ASSESSING what the piece ACTUALLY does (do not inherit the draft's level):
+- "low" (mild): softens, sugarcoats, or minimizes harm; treats injustice as inevitable; or makes a narrow/technocratic case against a protection without sweeping ideological claims.
+- "medium": rationalizes regressive policy, launders corporate or government wrongdoing as reasonable, or excuses dehumanization as policy necessity.
+- "high": explicitly advocates stripping rights, serves as propaganda for an extremist ideology, or provides cover for atrocities or disinformation.
+When torn between two levels, choose the LOWER. Most measured policy op-eds are "low".
+
 HOUSE STANDARDS — enforce on EVERY entry:
 - "summary": a single flowing descriptive PARAGRAPH (3–5 sentences, NO bullets, NO line breaks), plain layman language. Include a verbatim quote ONLY if you confirmed the exact wording appears in the ARTICLE TEXT — otherwise describe the claim as a paraphrase without quotation marks. A summary with no quoted text is correct; a fabricated quote is not.
 - "whyBad": a NUMBERED analysis beginning directly with "1." (no "Analysis:" label, no brackets), of ONLY as many points as carry real substance — normally 3 to 5. REQUIRED: 1. the quote + the claim it advances; 2. the manipulation tactic in EVERYDAY words, explained in the same sentence (never a bare academic label); 3. the concrete real-world harm it normalizes/justifies/hides. OPTIONAL but ENCOURAGED: 4. a sentence beginning "External Context:" giving a broad, common-sense real-world fact stated generally (never a fabricated statistic, study, or citation) — add it whenever it helps a general reader grasp why the harm matters, skip it only when you have nothing genuine; 5. "Conflict of interest:" and/or "Timeliness note:" where they genuinely apply. NEVER pad to a fixed count and NEVER write a filler placeholder point such as "5. No additional context", "None", "N/A", or "Not applicable" — end at the last real point.
@@ -79,7 +87,7 @@ HOUSE STANDARDS — enforce on EVERY entry:
 - NO ALL-CAPS words or labels in the output: write labels in sentence case ("External Context:", "Conflict of interest:", "Timeliness note:"), never shouting capitals, and rewrite any all-caps emphasis in the draft into normal case (ordinary acronyms like the ADA, OSHA, the EPA are fine).
 
 OUTPUT: return ONLY a raw JSON object, no markdown, no preamble:
-{"results": [{"id": "<echo the entry id>", "valid": true, "summary": "<cleaned paragraph>", "whyBad": "1. ... 2. ... 3. ... (optional 4. External Context: ...; 5. Conflict of interest: / Timeliness note: ...) — end at the last real point, never pad"}, ...]}
+{"results": [{"id": "<echo the entry id>", "valid": true, "severity": "low|medium|high", "summary": "<cleaned paragraph>", "whyBad": "1. ... 2. ... 3. ... (optional 4. External Context: ...; 5. Conflict of interest: / Timeliness note: ...) — end at the last real point, never pad"}, ...]}
 Return one object per input entry, in any order, each with the matching id.`;
 
 function buildBatchUserText(items: { f: RawFinding; article: string | null }[]): string {
@@ -126,7 +134,7 @@ function whyBadOk(w: string): boolean {
   );
 }
 
-interface BatchResult { id?: string; valid?: boolean; summary?: string; whyBad?: string }
+interface BatchResult { id?: string; valid?: boolean; severity?: string; summary?: string; whyBad?: string }
 
 /**
  * Verify one batch in a single DeepSeek V4 Pro call. Returns, aligned to `items`,
@@ -169,7 +177,12 @@ async function verifyBatch(
       // standards pass (article was UNAVAILABLE) — both validated direction, but
       // only the former checked quotes/claims against the live page.
       const basis = it.article ? 'article-grounded' : 'standards-checked (source unavailable)';
-      return { ...it.f, summary, whyBad, verificationLog: `DeepSeek verify: ${basis} ${day}` };
+      // Apply the re-assessed severity (verify judges it against the real article and
+      // corrects over-rated drafts); fall back to the draft's severity if the model
+      // returned something off-scale.
+      const severity = (r.severity === 'low' || r.severity === 'medium' || r.severity === 'high')
+        ? r.severity : it.f.severity;
+      return { ...it.f, severity, summary, whyBad, verificationLog: `DeepSeek verify: ${basis} ${day}` };
     }
     return { ...it.f, verificationLog: `desk-audit only (verify gate miss) ${day}` }; // output failed quality gates
   });

@@ -101,7 +101,9 @@ Category notes:
 
 high: actively dehumanizes a group, argues for stripping rights or lives, promotes/launders outright disinformation, explicit propaganda for extremist ideology, or direct cover for atrocities
 medium: sanitizes, rationalizes, or excuses regressive policy or economic exploitation — stops short of dehumanization but meaningfully advances a harmful agenda
-low: one-sided position with some genuine legal/economic/good-faith grounding; framing subtly tilts toward excusing harm but is mild
+low: one-sided position with some genuine legal/economic/good-faith grounding; framing subtly tilts toward excusing harm but is mild — this includes narrow or technocratic op-eds (e.g. "this specific tax is ineffective, use another instead")
+
+When an entry could fit two levels, choose the LOWER. A measured policy op-ed with real economic or legal grounding is low, not medium. Downgrade drafts whose severity was over-rated relative to what the piece actually argues.
 
 ═══ FIELD STANDARDS ═══
 
@@ -154,12 +156,17 @@ Evaluate each entry on SEVEN dimensions:
    BORDERLINE = genuinely ambiguous; article has both critical and defensive elements
 
 2. SUMMARY_ACCURACY: Does the summary faithfully represent what the article actually argues?
-   Check: claims match article text; no fabricated details; framing is supported
+   Check: claims match article text; no fabricated details; framing is supported AND is not
+   inflated beyond the article's actual stance (do not describe a narrow argument as a sweeping one)
    PASS / FAIL
 
 3. WHYBAD_ACCURACY: Are the specific points in whyBad traceable to what the article actually does/argues?
-   Check: claims are verifiable; no invented quotes, stats, or actions not in article
-   PASS / FAIL
+   Check: claims are verifiable; no invented quotes, stats, or actions not in article.
+   Also FAIL on STANCE INFLATION — attributing a stronger, broader, or more ideological position
+   than the piece takes (e.g. claiming it treats something as "natural," "necessary," "inevitable,"
+   or "good for everyone," or that it defends a position the article never states). A narrow or
+   technocratic argument must be described as exactly that, not as sweeping ideological advocacy.
+   PASS / FAIL (provide corrected_whybad when it can be fixed in place)
 
 4. QUOTE_FIDELITY: Any text in quotation marks in summary or whyBad — does it appear verbatim in the article?
    PASS = all quotes confirmed, or no quotes present
