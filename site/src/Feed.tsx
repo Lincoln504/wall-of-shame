@@ -35,6 +35,11 @@ const SIDE_MIN = 24;      // min breathing room each side of the card on narrow 
 const GAP_MIN = 32;       // floor for the inter-card gap (narrow screens)
 const EDGE_OVERSHOOT = 28; // neighbours rest this many px PAST each screen edge (fully off, sweep in)
 const FALLBACK_H = 360;   // clip height before the first measure, to avoid a 1-frame collapse
+const EDGE_FEATHER = 34;  // px the card edge fades over at each screen edge (soft clip, see below)
+// A mask-image feather softens the hard clip line where a card is cut by the screen edge: the
+// incoming/outgoing card edge fades to transparent over EDGE_FEATHER px instead of a sharp cut.
+// This is a GPU-composited alpha mask — no blur filter, no extra DOM, effectively free per frame.
+const EDGE_MASK = `linear-gradient(to right, transparent 0, #000 ${EDGE_FEATHER}px, #000 calc(100% - ${EDGE_FEATHER}px), transparent 100%)`;
 
 export default function Feed(props: { findings: Finding[]; onShare: (f: Finding) => void }) {
   const reducedMotion = usePrefersReducedMotion();
@@ -228,6 +233,8 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
         padding: '0.4rem 0', overflow: 'clip', 'overflow-clip-margin': '20px',
         'touch-action': 'pan-y',
         'min-height': `${clipH() || FALLBACK_H}px`,
+        // Soft-clip the card edges at the screen edge (cheap GPU alpha mask, no blur filter).
+        '-webkit-mask-image': EDGE_MASK, 'mask-image': EDGE_MASK,
         ...(dragActive() ? { 'user-select': 'none', '-webkit-user-select': 'none' } : {}),
       }}
       onPointerDown={onPointerDown}
