@@ -3,35 +3,6 @@
   "maxResolveAttempts": 3,
   "flagged": [
     {
-      "url": "https://www.nationalreview.com/2015/06/police-protesters-increase-crime/",
-      "title": "Police Protesters Increase Crime",
-      "category": "policing",
-      "severity": "low",
-      "auditResult": {
-        "id": "https://www.nationalreview.com/2015/06/police-protesters-increase-crime/",
-        "dim1_directional": "BORDERLINE",
-        "dim1_note": "Article text is unavailable; the summary describes a piece blaming anti-police protests for increased crime, which likely defends harmful policing, but the text cannot be confirmed.",
-        "dim2_summary": "PASS",
-        "dim2_note": "Summary accurately describes the article's argument linking protests to officer reluctance and rising crime.",
-        "dim3_whybad": "PASS",
-        "dim3_note": "WhyBad correctly identifies victim-blaming and the normalization of resisting police accountability.",
-        "dim4_quotes": "N/A",
-        "dim4_note": "Article text is unavailable, so quotes cannot be verified.",
-        "dim5_format": "PASS",
-        "dim5_note": "Summary is a single paragraph, whyBad has numbered points 1-3, is within word limits, and contains no formatting errors.",
-        "dim6_category": "PASS",
-        "dim6_note": "The entry is correctly categorized under 'policing' as it concerns police conduct and public protest.",
-        "dim7_severity": "PASS",
-        "dim7_note": "Severity 'low' is appropriate; the piece uses a mild scare tactic to argue against reform, which is a low-level defense of the status quo.",
-        "overall": "FLAG_FOR_REVIEW",
-        "overall_reason": "Article text is unavailable, making the directional test borderline and preventing full verification of the entry's claims."
-      },
-      "flaggedAt": "2026-06-19T16:20:35.695Z",
-      "flaggedBy": "sample_audit",
-      "resolveAttempts": 0,
-      "resolved": false
-    },
-    {
       "url": "https://www.heritage.org/marriage-and-family/report/saving-america-saving-the-family-foundation-the-next-250-years",
       "title": "Saving America, Saving the Family: The Foundation for the Next 250 Years",
       "category": "gender",
