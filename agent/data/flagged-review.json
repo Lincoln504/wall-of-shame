@@ -262,6 +262,35 @@
       "flaggedBy": "sample_audit",
       "resolveAttempts": 0,
       "resolved": false
+    },
+    {
+      "url": "https://jasonrobinovitz.substack.com/p/the-accommodation-trap-when-help",
+      "title": "The Accommodation Trap: When Help Becomes Unfair Advantage",
+      "category": "disability",
+      "severity": "medium",
+      "auditResult": {
+        "id": "https://jasonrobinovitz.substack.com/p/the-accommodation-trap-when-help",
+        "dim1_directional": "BORDERLINE",
+        "dim1_note": "The article text is unavailable, and the summary describes a piece arguing accommodations have become 'unfair advantage' — this could be a critic exposing a problem or a defender arguing against accommodations; without the text, directionality is ambiguous.",
+        "dim2_summary": "PASS",
+        "dim2_note": "Cannot verify against unavailable text, but the summary is internally consistent and plausible based on the title and description.",
+        "dim3_whybad": "PASS",
+        "dim3_note": "Cannot verify against unavailable text, but the whyBad points are logically derived from the summary's description of the article's arguments.",
+        "dim4_quotes": "N/A",
+        "dim4_note": "Article text is unavailable; quote fidelity cannot be checked.",
+        "dim5_format": "PASS",
+        "dim5_note": "The summary is a single paragraph, whyBad has numbered points 1-4 with substantive content, no markdown, no banned phrases, and no metadata leakage.",
+        "dim6_category": "PASS",
+        "dim6_note": "The article is about disability accommodations in education, fitting the disability category.",
+        "dim7_severity": "FAIL",
+        "dim7_note": "Without the article text, the severity cannot be confidently assessed; the summary suggests arguments that could be medium, but the unavailable text makes verification impossible, so the entry should be flagged for review rather than assigned a severity.",
+        "overall": "FLAG_FOR_REVIEW",
+        "overall_reason": "Article text is unavailable and the directional stance is ambiguous without it; the piece could be a critic exposing a problem or a defender arguing against accommodations, requiring human review."
+      },
+      "flaggedAt": "2026-06-20T03:39:06.231Z",
+      "flaggedBy": "sample_audit",
+      "resolveAttempts": 0,
+      "resolved": false
     }
   ]
 }
