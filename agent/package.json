@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@lincoln504/pi-research": "file:../../pi-research",
-    "@earendil-works/pi-ai": "0.79.2",
-    "@earendil-works/pi-coding-agent": "0.79.2",
+    "@earendil-works/pi-ai": "0.80.2",
+    "@earendil-works/pi-coding-agent": "0.80.2",
     "tsx": "^4.19.0",
     "typebox": "^1.1.37"
   },

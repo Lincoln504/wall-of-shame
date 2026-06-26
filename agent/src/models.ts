@@ -27,7 +27,8 @@
 import { homedir } from 'os';
 import { join } from 'path';
 import { AuthStorage, ModelRegistry } from '@earendil-works/pi-coding-agent';
-import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai';
+import { completeSimple } from '@earendil-works/pi-ai/compat';
+import { type ThinkingLevel } from '@earendil-works/pi-ai';
 
 export const OPENROUTER_PROVIDER = 'openrouter';
 
