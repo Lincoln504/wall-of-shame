@@ -54,6 +54,12 @@ const SIDE_MIN = 24;      // min breathing room each side of the card on narrow 
 const GAP_MIN = 32;       // floor for the inter-card gap (narrow screens)
 const EDGE_OVERSHOOT = 28; // neighbours rest this many px PAST each screen edge (fully off, sweep in)
 const FALLBACK_H = 360;   // clip height before the first measure, to avoid a 1-frame collapse
+// Vertical line the desktop arrows sit on. Card heights vary per finding (measured over 30 cards
+// at the 712px column: median ≈ 860px, p25–p75 ≈ 793–921, range 699–1075), so centring on the
+// CURRENT card made the arrows ride up/down with every advance, and centring on the viewport sat
+// too high because the cards start well below the header. Instead the arrows hold ONE fixed line:
+// the middle of a typical card (measured median / 2), independent of which card is showing.
+const TYPICAL_CARD_H = 860;
 const EDGE_FEATHER = 34;  // px the card edge fades over at each screen edge (soft clip, see below)
 // A mask-image feather softens the hard clip line where a card is cut by the screen edge: the
 // incoming/outgoing card edge fades to transparent over EDGE_FEATHER px instead of a sharp cut.
@@ -289,11 +295,31 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
   const slotTransform = (i: number) => `translateX(${(i - currentIdx()) * step() + dragX()}px)`;
 
   return (
-    // Full-bleed stage: breaks out of the centred column to the full viewport so neighbours can
-    // enter from the actual screen edges. The negative-margin technique (NOT left:50%+translateX)
-    // is used because a relative `left` offset leaks horizontal scroll width on mobile — making the
-    // page pannable / not-fully-zoomed-out; negative margins centre it symmetrically with no
-    // overflow regardless of the parent column's padding. overflow:clip contains the slide.
+    <>
+    {/* Desktop arrows sit on a FIXED line — TYPICAL_CARD_H/2 below the card top — instead of
+        centring on the current card (whose height changes every advance) or the viewport (too high:
+        the cards start below the page header). They live in a relative wrapper that spans the card
+        region, NOT inside the stage: the stage's mask-image feather and overflow:clip would
+        otherwise fade/clip them at the screen edges. left: calc(...) is relative to the wrapper,
+        whose centre equals the viewport centre (the column is centred), so it still lines up with
+        the card edges. Absolute (page-anchored) means the line scrolls along with the cards. */}
+    <div style={{ position: 'relative' }}>
+    <Show when={inputClass() === 'pointer'}>
+      <button
+        style={{ ...s.feedArrowBtn, position: 'absolute', top: `${TYPICAL_CARD_H / 2}px`, left: `calc(50% - ${cardW() / 2}px - 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
+        onClick={goPrev} disabled={!canBack()} aria-label="Previous entry"
+      >{'←'}</button>
+      <button
+        style={{ ...s.feedArrowBtn, position: 'absolute', top: `${TYPICAL_CARD_H / 2}px`, left: `calc(50% + ${cardW() / 2}px + 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canNext() ? {} : s.feedArrowBtnDisabled) }}
+        onClick={goNext} disabled={!canNext()} aria-label="Next entry"
+      >{'→'}</button>
+    </Show>
+
+    {/* Full-bleed stage: breaks out of the centred column to the full viewport so neighbours can
+        enter from the actual screen edges. The negative-margin technique (NOT left:50%+translateX)
+        is used because a relative `left` offset leaks horizontal scroll width on mobile — making the
+        page pannable / not-fully-zoomed-out; negative margins centre it symmetrically with no
+        overflow regardless of the parent column's padding. overflow:clip contains the slide. */}
     <div
       ref={stageRef}
       style={{
@@ -314,18 +340,6 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
     >
-      {/* Desktop only: clickable arrows just outside the card's left/right edges. */}
-      <Show when={inputClass() === 'pointer'}>
-        <button
-          style={{ ...s.feedArrowBtn, top: '50%', left: `calc(50% - ${cardW() / 2}px - 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canBack() ? {} : s.feedArrowBtnDisabled) }}
-          onClick={goPrev} disabled={!canBack()} aria-label="Previous entry"
-        >{'←'}</button>
-        <button
-          style={{ ...s.feedArrowBtn, top: '50%', left: `calc(50% + ${cardW() / 2}px + 3.4rem)`, transform: 'translate(-50%, -50%)', ...(canNext() ? {} : s.feedArrowBtnDisabled) }}
-          onClick={goNext} disabled={!canNext()} aria-label="Next entry"
-        >{'→'}</button>
-      </Show>
-
       <div aria-live="polite" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
         {current()?.title ?? ''}
       </div>
@@ -351,5 +365,7 @@ export default function Feed(props: { findings: Finding[]; onShare: (f: Finding)
         <div style={s.empty}>No entries found.</div>
       </Show>
     </div>
+    </div>
+    </>
   );
 }

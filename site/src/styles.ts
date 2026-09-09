@@ -123,7 +123,10 @@ export const s: Record<string, any> = {
   // Full-bleed feed stage + per-slot transforms are styled inline in Feed.tsx (they derive from
   // measured viewport/card widths). Only the round arrow button keeps a static style here.
   feedArrowBtn: {
-    position: 'absolute', top: '50%', 'z-index': 2,
+    // NOTE: no `top` here on purpose — Feed.tsx positions the arrows on a fixed line (top is set
+    // per call site). A base top here gets re-applied by Solid's runtime style spread and would
+    // override the call site's statically-hoisted top (it centred on the current card).
+    position: 'absolute', 'z-index': 2,
     'font-family': UI, display: 'flex', 'align-items': 'center', 'justify-content': 'center',
     width: '2.7rem', height: '2.7rem', 'font-size': '1.25rem', 'line-height': 1,
     background: 'rgba(255,255,255,0.94)', border: '1px solid #e2dfd7', color: '#555',
